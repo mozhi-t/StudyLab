@@ -4,7 +4,8 @@ from datetime import datetime
 
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CardWidget, SubtitleLabel, TransparentPushButton
+from qfluentwidgets import BodyLabel, SubtitleLabel, TransparentPushButton
+from ui.widgets.styled_card import StyledCardWidget
 
 
 class HomePage(QWidget):
@@ -16,7 +17,7 @@ class HomePage(QWidget):
         root.setContentsMargins(40, 40, 40, 40)
         root.setSpacing(24)
 
-        self.main_card = CardWidget(self)
+        self.main_card = StyledCardWidget(self)
         card_layout = QVBoxLayout(self.main_card)
         card_layout.setContentsMargins(28, 28, 28, 28)
         card_layout.setSpacing(20)

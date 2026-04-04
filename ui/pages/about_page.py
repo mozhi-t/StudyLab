@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, CardWidget, HeaderCardWidget, SubtitleLabel
+from qfluentwidgets import BodyLabel, CaptionLabel, HeaderCardWidget, SubtitleLabel
+from ui.widgets.styled_card import StyledCardWidget
 
 
 class AboutPage(QWidget):
@@ -10,7 +11,7 @@ class AboutPage(QWidget):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(40, 40, 40, 40)
-        self.main_card = CardWidget(self)
+        self.main_card = StyledCardWidget(self)
         card_layout = QVBoxLayout(self.main_card)
         card_layout.setContentsMargins(24, 24, 24, 24)
         card_layout.setSpacing(16)

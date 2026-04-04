@@ -46,6 +46,7 @@ APP_SETTINGS_TEMPLATE = {
     "theme": DEFAULT_THEME,
     "theme_color": DEFAULT_THEME_COLOR,
     "language": DEFAULT_LANGUAGE,
+    "ui_scale": "跟随系统设置",
 }
 
 

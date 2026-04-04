@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CardWidget, ComboBox, LineEdit, PushButton, ScrollArea
+from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PushButton, ScrollArea
 
 from config.settings import SUBJECTS
 from ui.widgets.question_card import QuestionCard, bank_card_title
 from ui.widgets.question_detail_dialog import QuestionDetailDialog
+from ui.widgets.styled_card import StyledCardWidget
 
 
 class FavoritePage(QWidget):
@@ -20,7 +21,7 @@ class FavoritePage(QWidget):
         root.setContentsMargins(20, 20, 20, 20)
         root.setSpacing(16)
 
-        self.filter_card = CardWidget(self)
+        self.filter_card = StyledCardWidget(self)
         filter_layout = QVBoxLayout(self.filter_card)
         filter_layout.setContentsMargins(20, 20, 20, 20)
         filter_widget = QWidget(self.filter_card)
@@ -38,7 +39,7 @@ class FavoritePage(QWidget):
         filter_layout.addWidget(filter_widget)
         root.addWidget(self.filter_card)
 
-        self.list_card = CardWidget(self)
+        self.list_card = StyledCardWidget(self)
         list_layout_root = QVBoxLayout(self.list_card)
         list_layout_root.setContentsMargins(20, 20, 20, 20)
         list_widget = QWidget(self.list_card)

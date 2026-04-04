@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CardWidget, LineEdit, PrimaryPushButton
+from qfluentwidgets import BodyLabel, LineEdit, PrimaryPushButton
+from ui.widgets.styled_card import StyledCardWidget
 
 
 class NetworkBankPage(QWidget):
@@ -11,7 +12,7 @@ class NetworkBankPage(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(16)
 
-        self.connect_card = CardWidget(self)
+        self.connect_card = StyledCardWidget(self)
         connect_root = QVBoxLayout(self.connect_card)
         connect_root.setContentsMargins(20, 20, 20, 20)
         connect_widget = QWidget(self.connect_card)
@@ -24,7 +25,7 @@ class NetworkBankPage(QWidget):
         connect_root.addWidget(connect_widget)
         layout.addWidget(self.connect_card)
 
-        self.list_card = CardWidget(self)
+        self.list_card = StyledCardWidget(self)
         list_root = QVBoxLayout(self.list_card)
         list_root.setContentsMargins(20, 20, 20, 20)
         list_widget = QWidget(self.list_card)

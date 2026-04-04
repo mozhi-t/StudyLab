@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CardWidget, ComboBox, LineEdit, PrimaryPushButton, PushButton, ScrollArea, StateToolTip
+from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PrimaryPushButton, PushButton, ScrollArea, StateToolTip
 
 from config.settings import SUBJECTS
 from ui.widgets.index_refresh_dialog import IndexRefreshDialog
 from ui.widgets.question_card import QuestionCard, bank_card_title
+from ui.widgets.styled_card import StyledCardWidget
 
 
 class IndexRefreshThread(QThread):
@@ -39,7 +40,7 @@ class LocalBankPage(QWidget):
         root.setContentsMargins(20, 20, 20, 20)
         root.setSpacing(16)
 
-        self.filter_card = CardWidget(self)
+        self.filter_card = StyledCardWidget(self)
         filter_layout = QVBoxLayout(self.filter_card)
         filter_layout.setContentsMargins(20, 20, 20, 20)
         toolbar_widget = QWidget(self.filter_card)
@@ -64,7 +65,7 @@ class LocalBankPage(QWidget):
         filter_layout.addWidget(toolbar_widget)
         root.addWidget(self.filter_card)
 
-        self.list_card = CardWidget(self)
+        self.list_card = StyledCardWidget(self)
         list_layout_root = QVBoxLayout(self.list_card)
         list_layout_root.setContentsMargins(20, 20, 20, 20)
         list_widget = QWidget(self.list_card)

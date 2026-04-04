@@ -1,5 +1,7 @@
 {
-  "theme": "Auto",
+  "theme": "Light",
   "theme_color": "#1578aa",
-  "language": "zh_CN"
+  "language": "zh_CN",
+  "ui_scale": "跟随系统设置",
+  "mica_enabled": false
 }
