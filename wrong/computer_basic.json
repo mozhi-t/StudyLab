@@ -32,5 +32,56 @@
     "answer": "B",
     "explanation": "CPU（Central Processing Unit）中文名称为中央处理器，是计算机的核心部件。",
     "error_count": 1
+  },
+  {
+    "question_id": "computer_basic_计算机硬件选择题库_1",
+    "question_num": 1,
+    "bank_name": "计算机硬件选择题库",
+    "bank_question_id": 1,
+    "subject": "computer_basic",
+    "question": "计算机主板上最重要的组件是？",
+    "options": {
+      "A": "显卡",
+      "B": "CPU插座",
+      "C": "内存槽",
+      "D": "芯片组"
+    },
+    "answer": "D",
+    "explanation": "芯片组是主板的核心，控制CPU、内存、显卡等各个部件之间的数据传输。",
+    "error_count": 1
+  },
+  {
+    "question_id": "computer_basic_计算机网络选择题库_1",
+    "question_num": 1,
+    "bank_name": "计算机网络选择题库",
+    "bank_question_id": 1,
+    "subject": "computer_basic",
+    "question": "HTTP协议默认使用的端口号是？",
+    "options": {
+      "A": "21",
+      "B": "80",
+      "C": "443",
+      "D": "8080"
+    },
+    "answer": "B",
+    "explanation": "HTTP（超文本传输协议）默认端口号是80，HTTPS默认端口号是443。",
+    "error_count": 1
+  },
+  {
+    "question_id": "computer_basic_计算机软件选择题库_2",
+    "question_num": 2,
+    "bank_name": "计算机软件选择题库",
+    "bank_question_id": 2,
+    "subject": "computer_basic",
+    "question": "操作系统的核心功能不包括？",
+    "options": {
+      "A": "管理硬件资源",
+      "B": "提供用户界面",
+      "C": "执行应用程序",
+      "D": "制造新硬件"
+    },
+    "answer": "D",
+    "explanation": "操作系统的主要功能是管理硬件资源、提供用户界面、执行应用程序等，制造硬件不是操作系统的功能。",
+    "error_count": 1
   }
 ]

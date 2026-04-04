@@ -1,1 +1,53 @@
-[]
+[
+  {
+    "question_id": "chinese_语文基础选择题库_6",
+    "question_num": 6,
+    "bank_name": "语文基础选择题库",
+    "bank_question_id": 6,
+    "subject": "chinese",
+    "question": "下列文学常识中，对应正确的是？",
+    "options": {
+      "A": "《红楼梦》——罗贯中",
+      "B": "《西游记》——吴承恩",
+      "C": "《水浒传》——曹雪芹",
+      "D": "《三国演义》——施耐庵"
+    },
+    "answer": "B",
+    "explanation": "《西游记》作者是吴承恩。《红楼梦》——曹雪芹，《水浒传》——施耐庵，《三国演义》——罗贯中。",
+    "error_count": 1
+  },
+  {
+    "question_id": "chinese_语文基础选择题库_4",
+    "question_num": 4,
+    "bank_name": "语文基础选择题库",
+    "bank_question_id": 4,
+    "subject": "chinese",
+    "question": "下列成语中，属于褒义词的是？",
+    "options": {
+      "A": "画蛇添足",
+      "B": "守株待兔",
+      "C": "精益求精",
+      "D": "掩耳盗铃"
+    },
+    "answer": "C",
+    "explanation": "精益求精：已经很好了，还要求更好，是褒义词。其他三个都是贬义词。",
+    "error_count": 1
+  },
+  {
+    "question_id": "chinese_语文基础选择题库_5",
+    "question_num": 5,
+    "bank_name": "语文基础选择题库",
+    "bank_question_id": 5,
+    "subject": "chinese",
+    "question": "'春风又绿江南岸'中'绿'字的词性是？",
+    "options": {
+      "A": "名词",
+      "B": "形容词",
+      "C": "动词",
+      "D": "副词"
+    },
+    "answer": "C",
+    "explanation": "此处'绿'作动词用，意为'使……变绿'，是形容词活用为动词。",
+    "error_count": 1
+  }
+]

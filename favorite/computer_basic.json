@@ -13,5 +13,35 @@
     },
     "answer": "B",
     "explanation": "二进制1010 = 1×2³ + 0×2² + 1×2¹ + 0×2⁰ = 8 + 0 + 2 + 0 = 10。"
+  },
+  {
+    "question_id": "computer_basic_计算机硬件选择题库_5",
+    "bank_name": "计算机硬件选择题库",
+    "bank_question_id": 5,
+    "subject": "computer_basic",
+    "question": "电源供应器的主要作用是？",
+    "options": {
+      "A": "存储电能",
+      "B": "稳压和供电",
+      "C": "散热",
+      "D": "控制风扇"
+    },
+    "answer": "B",
+    "explanation": "电源供应器（PSU）将交流电转换为直流电，并提供稳定的电压给各部件供电。"
+  },
+  {
+    "question_id": "computer_basic_计算机网络选择题库_3",
+    "bank_name": "计算机网络选择题库",
+    "bank_question_id": 3,
+    "subject": "computer_basic",
+    "question": "IP地址的作用是？",
+    "options": {
+      "A": "加密数据",
+      "B": "唯一标识网络中的设备",
+      "C": "加快网速",
+      "D": "存储数据"
+    },
+    "answer": "B",
+    "explanation": "IP地址是网络中的唯一标识符，用于定位和识别网络设备。"
   }
 ]

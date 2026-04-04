@@ -1,11 +1,54 @@
 {
-  "chinese": [],
+  "chinese": [
+    {
+      "question_id": "chinese_语文基础选择题库_6",
+      "subject": "chinese",
+      "question_content": "下列文学常识中，对应正确的是？",
+      "error_count": 1
+    },
+    {
+      "question_id": "chinese_语文基础选择题库_4",
+      "subject": "chinese",
+      "question_content": "下列成语中，属于褒义词的是？",
+      "error_count": 1
+    },
+    {
+      "question_id": "chinese_语文基础选择题库_5",
+      "subject": "chinese",
+      "question_content": "'春风又绿江南岸'中'绿'字的词性是？",
+      "error_count": 1
+    }
+  ],
   "math": [
     {
       "question_id": "math_数学基础选择题库_6",
       "subject": "math",
       "question_content": "等差数列1, 3, 5, 7, ... 的第10项是？",
       "error_count": 8
+    },
+    {
+      "question_id": "math_数学基础选择题库_2",
+      "subject": "math",
+      "question_content": "一个三角形的三个内角分别是60度、60度、60度，这个三角形是？",
+      "error_count": 1
+    },
+    {
+      "question_id": "math_数学基础选择题库_3",
+      "subject": "math",
+      "question_content": "若x的平方等于16，则x的值为？",
+      "error_count": 1
+    },
+    {
+      "question_id": "math_数学基础选择题库_9",
+      "subject": "math",
+      "question_content": "从5个不同元素中取出3个的组合数C(5,3) = ?",
+      "error_count": 1
+    },
+    {
+      "question_id": "math_数学基础选择题库_10",
+      "subject": "math",
+      "question_content": "不等式|x - 3| < 2的解集是？",
+      "error_count": 1
     }
   ],
   "english": [],
@@ -20,6 +63,24 @@
       "question_id": "computer_basic_计算机基础选择题库_3",
       "subject": "computer_basic",
       "question_content": "CPU的中文名称是？",
+      "error_count": 1
+    },
+    {
+      "question_id": "computer_basic_计算机硬件选择题库_1",
+      "subject": "computer_basic",
+      "question_content": "计算机主板上最重要的组件是？",
+      "error_count": 1
+    },
+    {
+      "question_id": "computer_basic_计算机网络选择题库_1",
+      "subject": "computer_basic",
+      "question_content": "HTTP协议默认使用的端口号是？",
+      "error_count": 1
+    },
+    {
+      "question_id": "computer_basic_计算机软件选择题库_2",
+      "subject": "computer_basic",
+      "question_content": "操作系统的核心功能不包括？",
       "error_count": 1
     }
   ],

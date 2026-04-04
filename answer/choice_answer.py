@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QTimer, Qt
-from PyQt6.QtGui import QColor, QFont
-from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QVBoxLayout, QWidget
+from PyQt6.QtGui import QColor, QFont, QKeySequence, QShortcut
+from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     FluentIcon,
@@ -15,6 +15,8 @@ from qfluentwidgets import (
 )
 
 from answer.answer_window import AnswerWindow
+from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
+from core.json_store import JsonStore
 from models.favorite_question import FavoriteQuestion
 from models.question_bank import QuestionBank, QuestionItem
 from models.wrong_question import WrongQuestion
@@ -24,19 +26,29 @@ from ui.widgets.styled_card import StyledCardWidget
 
 class OptionCard(StyledCardWidget):
     def __init__(self, option_key: str, parent: QWidget | None = None):
+        self._state = "default"
         super().__init__(parent, radius=12, light_border_alpha=34)
         self.option_key = option_key
-        self._state = "default"
+        self.setMinimumHeight(56)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         self.button = RadioButton(self)
         self.button.setObjectName(f"choiceOption{option_key}")
+        self.button.setText("")
+        self.button.setFixedWidth(24)
+        self.button.setMinimumHeight(24)
+        self.button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 12, 16, 12)
-        layout.addWidget(self.button)
+        self.text_label = BodyLabel("", self)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(18, 8, 18, 8)
+        layout.setSpacing(12)
+        layout.addWidget(self.button, 0, Qt.AlignmentFlag.AlignVCenter)
+        layout.addWidget(self.text_label, 1, Qt.AlignmentFlag.AlignVCenter)
 
     def set_option_text(self, text: str) -> None:
-        self.button.setText(text)
+        self.text_label.setText(text)
 
     def set_checked(self, checked: bool) -> None:
         self.button.setChecked(checked)
@@ -58,11 +70,18 @@ class OptionCard(StyledCardWidget):
 
     def _apply_state_style(self) -> None:
         if self._state == "correct":
-            self.button.setStyleSheet("color: rgb(19, 126, 67); font-weight: 600;")
+            self.text_label.setStyleSheet("color: rgb(19, 126, 67); font-weight: 600;")
         elif self._state == "wrong":
-            self.button.setStyleSheet("color: rgb(198, 52, 52); font-weight: 600;")
+            self.text_label.setStyleSheet("color: rgb(198, 52, 52); font-weight: 600;")
         else:
-            self.button.setStyleSheet("")
+            self.text_label.setStyleSheet("")
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self.button.isEnabled():
+            self.button.click()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
 
 class ChoiceAnswerWindow(AnswerWindow):
@@ -72,17 +91,19 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.user_manager = user_manager
         self.wrong_manager = wrong_manager
         self.favorite_manager = favorite_manager
+        self.settings = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE).load()
         self.current_index = 0
         self.selected_answers: dict[int, str] = {}
         self.answer_results: dict[int, bool] = {}
         self.option_cards: dict[str, OptionCard] = {}
 
         self.setWindowTitle(question_bank.name)
-        self.resize(1280, 800)
+        self.setWindowFlag(Qt.WindowType.Window, True)
+        self.resize(1040, 660)
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(20, 18, 20, 20)
-        root.setSpacing(18)
+        root.setContentsMargins(16, 14, 16, 16)
+        root.setSpacing(14)
 
         top = QHBoxLayout()
         top.setSpacing(10)
@@ -97,19 +118,26 @@ class ChoiceAnswerWindow(AnswerWindow):
         root.addLayout(top)
 
         body = QHBoxLayout()
-        body.setSpacing(18)
+        body.setSpacing(14)
 
         self.answer_card = AnswerCard(self)
+        self.answer_card.setFixedWidth(232)
         self.answer_card.set_questions(len(question_bank.questions))
         self.answer_card.question_selected.connect(self.jump_to_question)
         body.addWidget(self.answer_card, 0, Qt.AlignmentFlag.AlignTop)
 
+        self.divider = QWidget(self)
+        self.divider.setFixedWidth(1)
+        self.divider.setStyleSheet("background-color: rgba(128, 128, 128, 0.35);")
+        body.addWidget(self.divider)
+
         right = QVBoxLayout()
-        right.setSpacing(14)
+        right.setSpacing(10)
 
         self.question_label = StrongBodyLabel("", self)
         question_font = QFont(self.question_label.font())
-        question_font.setPointSize(question_font.pointSize() + 1)
+        question_font.setPointSize(12)
+        question_font.setBold(False)
         self.question_label.setFont(question_font)
         self.question_label.setWordWrap(True)
         right.addWidget(self.question_label, 0, Qt.AlignmentFlag.AlignTop)
@@ -130,6 +158,9 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.explanation_label.hide()
         right.addWidget(self.answer_label)
         right.addWidget(self.explanation_label)
+        right.addStretch(1)
+        body.addLayout(right, 1)
+        root.addLayout(body, 1)
 
         nav = QHBoxLayout()
         nav.setSpacing(10)
@@ -139,15 +170,14 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.prev_button.clicked.connect(self.prev_question)
         self.next_button.clicked.connect(self.next_question)
         self.favorite_button.clicked.connect(self.favorite_current_question)
+        nav.addSpacing(self.answer_card.width() + self.divider.width() + 28)
         nav.addWidget(self.prev_button)
         nav.addWidget(self.next_button)
-        nav.addStretch(1)
         nav.addWidget(self.favorite_button)
-        right.addLayout(nav)
-        right.addStretch(1)
+        nav.addStretch(1)
+        root.addLayout(nav)
 
-        body.addLayout(right, 1)
-        root.addLayout(body, 1)
+        self._init_shortcuts()
         self.render_question()
 
     @property
@@ -204,17 +234,24 @@ class ChoiceAnswerWindow(AnswerWindow):
             self.wrong_manager.add_wrong(self._build_wrong(question))
 
     def favorite_current_question(self):
-        if self._is_current_favorite():
-            return
-
         is_favorite = self.favorite_manager.toggle_favorite(self._build_favorite(self.current_question))
+        self._sync_favorite_button()
         if is_favorite:
-            self.favorite_button.setText("已收藏")
             TeachingTip.create(
                 self.favorite_button,
                 "收藏成功",
                 "题目已加入收藏夹",
                 icon=FluentIcon.HEART,
+                duration=1500,
+                tailPosition=TeachingTipTailPosition.BOTTOM,
+                parent=self,
+            )
+        else:
+            TeachingTip.create(
+                self.favorite_button,
+                "已移出收藏",
+                "题目已从收藏夹移除",
+                icon=FluentIcon.DELETE,
                 duration=1500,
                 tailPosition=TeachingTipTailPosition.BOTTOM,
                 parent=self,
@@ -239,6 +276,13 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.selected_answers.clear()
         self.answer_results.clear()
         self.render_question()
+
+    def _init_shortcuts(self) -> None:
+        shortcuts = APP_SETTINGS_TEMPLATE["answer_shortcuts"] | self.settings.get("answer_shortcuts", {})
+        self.prev_shortcut = QShortcut(QKeySequence(shortcuts.get("prev_question", "1")), self)
+        self.prev_shortcut.activated.connect(self.prev_question)
+        self.next_shortcut = QShortcut(QKeySequence(shortcuts.get("next_question", "2")), self)
+        self.next_shortcut.activated.connect(self.next_question)
 
     def _auto_next(self):
         if self.current_index in self.answer_results and self.answer_results[self.current_index]:

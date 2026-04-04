@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from PyQt6.QtGui import QColor, QFont
+from PyQt6.QtGui import QColor, QFont, QKeySequence
 from PyQt6.QtWidgets import QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, StrongBodyLabel, SubtitleLabel, isDarkTheme
+from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, LineEdit, StrongBodyLabel, SubtitleLabel, isDarkTheme
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
@@ -45,11 +45,39 @@ class PreferenceCard(StyledCardWidget):
         layout.addWidget(PreferenceRow(icon, title, description, control, self))
 
 
+class ShortcutEdit(LineEdit):
+    def __init__(self, text: str = "", parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setClearButtonEnabled(False)
+        self.setText(text)
+        self.setFixedWidth(170)
+
+    def keyPressEvent(self, event) -> None:
+        key = event.key()
+        if key in (16777219, 16777223):  # Backspace / Delete
+            self.clear()
+            event.accept()
+            return
+
+        if key in (
+            16777248, 16777249, 16777250, 16777251,
+            16777252, 16777253, 16777254, 16777255,
+        ):
+            event.accept()
+            return
+
+        sequence = QKeySequence(event.keyCombination()).toString(QKeySequence.SequenceFormat.PortableText)
+        if sequence:
+            self.setText(sequence)
+        event.accept()
+
+
 class SettingsPage(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
         self.settings = APP_SETTINGS_TEMPLATE | self.store.load()
+        self.settings["answer_shortcuts"] = APP_SETTINGS_TEMPLATE["answer_shortcuts"] | self.settings.get("answer_shortcuts", {})
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -85,6 +113,12 @@ class SettingsPage(QWidget):
         self.scale_combo.setCurrentText(self.settings.get("ui_scale", "跟随系统设置"))
         self.scale_combo.currentTextChanged.connect(self.update_settings)
         self.scale_combo.setFixedWidth(170)
+
+        shortcuts = self.settings["answer_shortcuts"]
+        self.prev_shortcut_edit = ShortcutEdit(shortcuts.get("prev_question", "1"), self)
+        self.prev_shortcut_edit.editingFinished.connect(self.update_settings)
+        self.next_shortcut_edit = ShortcutEdit(shortcuts.get("next_question", "2"), self)
+        self.next_shortcut_edit.editingFinished.connect(self.update_settings)
 
         initial_color = QColor(self.settings.get("theme_color", APP_SETTINGS_TEMPLATE["theme_color"]))
         self.color_button = ColorPickerButton(initial_color, "选择主题色", self)
@@ -126,12 +160,34 @@ class SettingsPage(QWidget):
                 self,
             )
         )
+        layout.addWidget(
+            PreferenceCard(
+                FluentIcon.LEFT_ARROW,
+                "上一题快捷键",
+                "答题界面中触发上一题操作",
+                self.prev_shortcut_edit,
+                self,
+            )
+        )
+        layout.addWidget(
+            PreferenceCard(
+                FluentIcon.RIGHT_ARROW,
+                "下一题快捷键",
+                "答题界面中触发下一题操作",
+                self.next_shortcut_edit,
+                self,
+            )
+        )
         layout.addStretch(1)
 
     def update_settings(self):
         self.settings["theme"] = self.theme_combo.currentText()
         self.settings["language"] = self.language_combo.currentText()
         self.settings["ui_scale"] = self.scale_combo.currentText()
+        self.settings["answer_shortcuts"] = {
+            "prev_question": self.prev_shortcut_edit.text().strip() or APP_SETTINGS_TEMPLATE["answer_shortcuts"]["prev_question"],
+            "next_question": self.next_shortcut_edit.text().strip() or APP_SETTINGS_TEMPLATE["answer_shortcuts"]["next_question"],
+        }
         self.store.save(self.settings)
         apply_theme()
 

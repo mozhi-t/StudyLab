@@ -12,15 +12,15 @@ class QuestionStatusCard(StyledCardWidget):
     clicked = pyqtSignal()
 
     def __init__(self, text: str, parent: QWidget | None = None):
-        super().__init__(parent, radius=10, light_border_alpha=34)
         self._state = "default"
         self._is_current = False
-        self.setFixedSize(44, 44)
+        super().__init__(parent, radius=10, light_border_alpha=34)
+        self.setFixedSize(36, 36)
 
         self.label = BodyLabel(text, self)
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         font = QFont(self.label.font())
-        font.setPointSize(10)
+        font.setPointSize(9)
         font.setBold(True)
         self.label.setFont(font)
 
@@ -79,8 +79,8 @@ class AnswerCard(QWidget):
         self.buttons: list[QuestionStatusCard] = []
         self.grid = QGridLayout()
         self.grid.setContentsMargins(0, 0, 0, 0)
-        self.grid.setHorizontalSpacing(8)
-        self.grid.setVerticalSpacing(8)
+        self.grid.setHorizontalSpacing(4)
+        self.grid.setVerticalSpacing(4)
 
         self.summary_card = StyledCardWidget(self, radius=12, light_border_alpha=34)
         self.summary_label = BodyLabel("已做题数：0/0", self.summary_card)
@@ -90,7 +90,7 @@ class AnswerCard(QWidget):
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(10)
+        root.setSpacing(6)
         root.addLayout(self.grid)
         root.addWidget(self.summary_card)
 
@@ -102,7 +102,7 @@ class AnswerCard(QWidget):
                 widget.deleteLater()
         self.buttons.clear()
 
-        columns = 4
+        columns = 6
         for idx in range(count):
             button = QuestionStatusCard(str(idx + 1), self)
             button.clicked.connect(lambda i=idx: self.question_selected.emit(i))

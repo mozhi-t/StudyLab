@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "question_id": "math_数学基础选择题库_1",
+    "bank_name": "数学基础选择题库",
+    "bank_question_id": 1,
+    "subject": "math",
+    "question": "下列哪个数是质数？",
+    "options": {
+      "A": "15",
+      "B": "17",
+      "C": "21",
+      "D": "25"
+    },
+    "answer": "B",
+    "explanation": "质数是指大于1且只能被1和自身整除的自然数。17只能被1和17整除，是质数。"
+  },
+  {
+    "question_id": "math_数学基础选择题库_10",
+    "bank_name": "数学基础选择题库",
+    "bank_question_id": 10,
+    "subject": "math",
+    "question": "不等式|x - 3| < 2的解集是？",
+    "options": {
+      "A": "1 < x < 5",
+      "B": "-5 < x < -1",
+      "C": "x < 1或x > 5",
+      "D": "-1 < x < 5"
+    },
+    "answer": "A",
+    "explanation": "|x - 3| < 2等价于-2 < x - 3 < 2，解得1 < x < 5。"
+  }
+]

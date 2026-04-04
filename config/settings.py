@@ -47,6 +47,10 @@ APP_SETTINGS_TEMPLATE = {
     "theme_color": DEFAULT_THEME_COLOR,
     "language": DEFAULT_LANGUAGE,
     "ui_scale": "跟随系统设置",
+    "answer_shortcuts": {
+        "prev_question": "1",
+        "next_question": "2",
+    },
 }
 
 

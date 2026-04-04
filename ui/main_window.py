@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from PyQt6.QtCore import QEvent, Qt
+from PyQt6.QtWidgets import QWidget
 from qfluentwidgets import FluentIcon, MSFluentWindow
 
 from answer.choice_answer import ChoiceAnswerWindow
@@ -42,6 +44,18 @@ class MainWindow(MSFluentWindow):
         self.settings_page.setObjectName("settings_page")
         self.about_page = AboutPage(self)
         self.about_page.setObjectName("about_page")
+        self.pages = [
+            self.home_page,
+            self.local_bank_page,
+            self.network_bank_page,
+            self.exam_page,
+            self.wrong_book_page,
+            self.favorite_page,
+            self.settings_page,
+            self.about_page,
+        ]
+        self.page_lock_overlays: list[QWidget] = []
+        self._init_page_lock_overlays()
 
         self.home_page.navigate_requested.connect(self.switch_to_page)
         self.local_bank_page.open_bank_requested.connect(self.open_choice_answer)
@@ -57,6 +71,15 @@ class MainWindow(MSFluentWindow):
         self.addSubInterface(self.favorite_page, FluentIcon.HEART, "收藏夹")
         self.addSubInterface(self.settings_page, FluentIcon.SETTING, "设置")
         self.addSubInterface(self.about_page, FluentIcon.INFO, "关于")
+
+    def _init_page_lock_overlays(self) -> None:
+        for page in self.pages:
+            overlay = QWidget(page)
+            overlay.hide()
+            overlay.setStyleSheet("background-color: rgba(0, 0, 0, 76); border-radius: 0px;")
+            overlay.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+            page.installEventFilter(self)
+            self.page_lock_overlays.append(overlay)
 
     def switch_to_page(self, key: str):
         mapping = {
@@ -78,14 +101,49 @@ class MainWindow(MSFluentWindow):
             favorite_manager=self.favorite_manager,
         )
         self.answer_window.window_closed.connect(self._restore_after_answer)
+        self._set_locked(True)
         self.showMinimized()
         self.answer_window.show()
+        self.answer_window.raise_()
+        self.answer_window.activateWindow()
 
     def _restore_after_answer(self):
         if not self.isVisible():
             return
+        self._set_locked(False)
+        self.answer_window = None
         self.showNormal()
         self.raise_()
         self.activateWindow()
         self.wrong_book_page.reload()
         self.favorite_page.reload()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._update_page_lock_overlays()
+
+    def eventFilter(self, obj, event):
+        if hasattr(self, "pages") and obj in self.pages and event.type() in {QEvent.Type.Resize, QEvent.Type.Show, QEvent.Type.LayoutRequest}:
+            self._update_overlay_for_page(obj)
+        return super().eventFilter(obj, event)
+
+    def _set_locked(self, locked: bool) -> None:
+        self._update_page_lock_overlays()
+        for overlay in self.page_lock_overlays:
+            overlay.setVisible(locked)
+            if locked:
+                overlay.raise_()
+
+    def _update_page_lock_overlays(self) -> None:
+        for page in self.pages:
+            self._update_overlay_for_page(page)
+
+    def _update_overlay_for_page(self, page) -> None:
+        try:
+            index = self.pages.index(page)
+        except ValueError:
+            return
+        overlay = self.page_lock_overlays[index]
+        overlay.setGeometry(page.rect())
+        if overlay.isVisible():
+            overlay.raise_()
