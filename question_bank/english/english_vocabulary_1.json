@@ -1,0 +1,129 @@
+{
+  "name": "英语词汇选择题库",
+  "subject": "english",
+  "create_time": "2026-04-04T10:00:00",
+  "difficulty": 2,
+  "total_questions": 10,
+  "questions": [
+    {
+      "id": 1,
+      "question": "The meaning of 'abundant' is closest to ___.",
+      "options": {
+        "A": "scarce",
+        "B": "plentiful",
+        "C": "expensive",
+        "D": "important"
+      },
+      "answer": "B",
+      "explanation": "abundant意思是丰富的、充裕的，与plentiful意思相近。"
+    },
+    {
+      "id": 2,
+      "question": "Please ___ the lights when you leave the room.",
+      "options": {
+        "A": "turn on",
+        "B": "turn off",
+        "C": "turn up",
+        "D": "turn down"
+      },
+      "answer": "B",
+      "explanation": "离开房间时应该关灯，turn off意为关闭。"
+    },
+    {
+      "id": 3,
+      "question": "The scientist made a great ___ to the project.",
+      "options": {
+        "A": "contribution",
+        "B": "condition",
+        "C": "connection",
+        "D": "collection"
+      },
+      "answer": "A",
+      "explanation": "make a contribution to是固定搭配，意思是为...做出贡献。"
+    },
+    {
+      "id": 4,
+      "question": "The child is ___ of walking alone.",
+      "options": {
+        "A": "able",
+        "B": "capable",
+        "C": "capable",
+        "D": "capable"
+      },
+      "answer": "B",
+      "explanation": "be capable of doing something是固定搭配，意为能够做某事。"
+    },
+    {
+      "id": 5,
+      "question": "I am looking forward to ___ from you soon.",
+      "options": {
+        "A": "hear",
+        "B": "hearing",
+        "C": "heard",
+        "D": "hears"
+      },
+      "answer": "B",
+      "explanation": "look forward to doing something是固定搭配，意思是盼望做某事。"
+    },
+    {
+      "id": 6,
+      "question": "The movie was so ___ that everyone fell asleep.",
+      "options": {
+        "A": "exciting",
+        "B": "boring",
+        "C": "interesting",
+        "D": "amazing"
+      },
+      "answer": "B",
+      "explanation": "根据后半句'大家都睡着了'可以判断电影很无聊，boring意为无聊的。"
+    },
+    {
+      "id": 7,
+      "question": "She has a ___ for singing.",
+      "options": {
+        "A": "gift",
+        "B": "present",
+        "C": "skill",
+        "D": "ability"
+      },
+      "answer": "A",
+      "explanation": "have a gift for是固定搭配，意思是 有...的天赋。"
+    },
+    {
+      "id": 8,
+      "question": "The boss ___ the meeting until next week.",
+      "options": {
+        "A": "put off",
+        "B": "put up",
+        "C": "put on",
+        "D": "put down"
+      },
+      "answer": "A",
+      "explanation": "put off意为推迟，与句意相符。"
+    },
+    {
+      "id": 9,
+      "question": "It is important to ___ a balance between work and rest.",
+      "options": {
+        "A": "keep",
+        "B": "make",
+        "C": "take",
+        "D": "have"
+      },
+      "answer": "A",
+      "explanation": "keep a balance是固定搭配，意思是保持平衡。"
+    },
+    {
+      "id": 10,
+      "question": "The weather ___ our plans for the picnic.",
+      "options": {
+        "A": "affected",
+        "B": "effected",
+        "C": "infected",
+        "D": "defected"
+      },
+      "answer": "A",
+      "explanation": "affect是动词，意思是影响；effect是名词。"
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "name": "英语阅读理解选择题库",
+  "subject": "english",
+  "create_time": "2026-04-04T10:00:00",
+  "difficulty": 2,
+  "total_questions": 10,
+  "questions": [
+    {
+      "id": 1,
+      "question": "In the passage, the word 'ubiquitous' is closest in meaning to ___.",
+      "options": {
+        "A": "rare",
+        "B": "present everywhere",
+        "C": "expensive",
+        "D": "important"
+      },
+      "answer": "B",
+      "explanation": "ubiquitous的意思是'无处不在的'，与present everywhere意思相近。"
+    },
+    {
+      "id": 2,
+      "question": "The main idea of the passage is about ___.",
+      "options": {
+        "A": "the author's personal experience",
+        "B": "the importance of technology",
+        "C": "how to study English",
+        "D": "the history of a city"
+      },
+      "answer": "B",
+      "explanation": "阅读理解的主旨题需要把握文章的整体大意，通常在首段或末尾段落找到主题句。"
+    },
+    {
+      "id": 3,
+      "question": "According to the passage, which of the following is TRUE?",
+      "options": {
+        "A": "The weather was bad.",
+        "B": "Everyone enjoyed the party.",
+        "C": "The meeting was cancelled.",
+        "D": "She went to the hospital."
+      },
+      "answer": "D",
+      "explanation": "根据文章内容进行判断，需要在文中找到相关的信息点进行验证。"
+    },
+    {
+      "id": 4,
+      "question": "The author's attitude toward the topic is ___.",
+      "options": {
+        "A": "positive",
+        "B": "negative",
+        "C": "neutral",
+        "D": "indifferent"
+      },
+      "answer": "A",
+      "explanation": "通过文章中的用词和语气可以判断作者的态度，positive表示积极支持的态度。"
+    },
+    {
+      "id": 5,
+      "question": "The word 'it' in paragraph 2 refers to ___.",
+      "options": {
+        "A": "the book",
+        "B": "the problem",
+        "C": "the solution",
+        "D": "the decision"
+      },
+      "answer": "B",
+      "explanation": "代词指代题需要根据上下文进行判断，通常指代最近提到的相关名词。"
+    },
+    {
+      "id": 6,
+      "question": "Which of the following can be inferred from the passage?",
+      "options": {
+        "A": "The project was a failure.",
+        "B": "They decided to continue.",
+        "C": "The budget was increased.",
+        "D": "New members joined the team."
+      },
+      "answer": "B",
+      "explanation": "推理题需要根据文章中的信息进行合理推断，不是直接陈述的内容。"
+    },
+    {
+      "id": 7,
+      "question": "The passage is mainly intended for ___.",
+      "options": {
+        "A": "children",
+        "B": "scientists",
+        "C": "general readers",
+        "D": "businessmen"
+      },
+      "answer": "C",
+      "explanation": "根据文章的内容和语言难度，可以判断文章的目标读者群。"
+    },
+    {
+      "id": 8,
+      "question": "The best title for this passage would be ___.",
+      "options": {
+        "A": "A Lucky Day",
+        "B": "The Power of Reading",
+        "C": "How to Stay Healthy",
+        "D": "My School Life"
+      },
+      "answer": "B",
+      "explanation": "标题题需要选择最能概括文章内容的选项，既要简洁又要涵盖主要信息。"
+    },
+    {
+      "id": 9,
+      "question": "According to the passage, the writer went to the city because ___.",
+      "options": {
+        "A": "he was invited",
+        "B": "he wanted to find a job",
+        "C": "he was on vacation",
+        "D": "he had to meet a friend"
+      },
+      "answer": "B",
+      "explanation": "细节题需要根据文章中的具体信息来回答，通常可以在文中直接找到答案。"
+    },
+    {
+      "id": 10,
+      "question": "The passage suggests that ___.",
+      "options": {
+        "A": "technology is always good",
+        "B": "we should be careful with technology",
+        "C": "technology is not important",
+        "D": "we should stop using technology"
+      },
+      "answer": "B",
+      "explanation": "推理暗示题需要理解文章的隐含意义，从文章的字里行间推测作者的观点。"
+    }
+  ]
+}

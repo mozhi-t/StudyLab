@@ -5,6 +5,7 @@ from datetime import datetime
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, SubtitleLabel, TransparentPushButton
+from ui.styles.title_style import apply_page_title_style
 from ui.widgets.styled_card import StyledCardWidget
 
 
@@ -16,6 +17,10 @@ class HomePage(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(40, 40, 40, 40)
         root.setSpacing(24)
+
+        self.page_title = SubtitleLabel("主页", self)
+        apply_page_title_style(self.page_title)
+        root.addWidget(self.page_title)
 
         self.main_card = StyledCardWidget(self)
         card_layout = QVBoxLayout(self.main_card)

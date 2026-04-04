@@ -1,0 +1,129 @@
+{
+  "name": "英语完形填空选择题库",
+  "subject": "english",
+  "create_time": "2026-04-04T10:00:00",
+  "difficulty": 2,
+  "total_questions": 10,
+  "questions": [
+    {
+      "id": 1,
+      "question": "Every day, Tom ___ to school by bus.",
+      "options": {
+        "A": "go",
+        "B": "goes",
+        "C": "going",
+        "D": "went"
+      },
+      "answer": "B",
+      "explanation": "一般现在时，主语是Tom，第三人称单数，动词用goes。"
+    },
+    {
+      "id": 2,
+      "question": "There ___ some water in the bottle.",
+      "options": {
+        "A": "is",
+        "B": "are",
+        "C": "was",
+        "D": "were"
+      },
+      "answer": "A",
+      "explanation": "water是不可数名词，用单数形式。句子描述现在的情况，用一般现在时。"
+    },
+    {
+      "id": 3,
+      "question": "My mother ___ cooking when I got home.",
+      "options": {
+        "A": "is",
+        "B": "was",
+        "C": "are",
+        "D": "were"
+      },
+      "answer": "B",
+      "explanation": "when引导的时间状语从句，主句用过去进行时，be动词用was。"
+    },
+    {
+      "id": 4,
+      "question": "If I ___ rich, I would buy a big house.",
+      "options": {
+        "A": "am",
+        "B": "was",
+        "C": "were",
+        "D": "be"
+      },
+      "answer": "C",
+      "explanation": "与现在事实相反的虚拟语气，if从句用过去式，be动词用were。"
+    },
+    {
+      "id": 5,
+      "question": "The book ___ on the desk is mine.",
+      "options": {
+        "A": "lie",
+        "B": "lies",
+        "C": "lying",
+        "D": "lain"
+      },
+      "answer": "C",
+      "explanation": "现在分词lying作后置定语，表示正在进行的动作。"
+    },
+    {
+      "id": 6,
+      "question": "I have ___ apples than you.",
+      "options": {
+        "A": "many",
+        "B": "more",
+        "C": "most",
+        "D": "much"
+      },
+      "answer": "B",
+      "explanation": "than表示比较，用比较级more。"
+    },
+    {
+      "id": 7,
+      "question": "She told me ___ the door.",
+      "options": {
+        "A": "to close",
+        "B": "close",
+        "C": "closing",
+        "D": "closed"
+      },
+      "answer": "A",
+      "explanation": "tell sb. to do sth.是固定搭配，意思是告诉某人做某事。"
+    },
+    {
+      "id": 8,
+      "question": "Neither the teacher ___ the students knew the answer.",
+      "options": {
+        "A": "or",
+        "B": "and",
+        "C": "but",
+        "D": "nor"
+      },
+      "answer": "D",
+      "explanation": "neither...nor...是固定搭配，意思是既不...也不..."
+    },
+    {
+      "id": 9,
+      "question": "___ is known to all, the earth goes around the sun.",
+      "options": {
+        "A": "It",
+        "B": "As",
+        "C": "That",
+        "D": "What"
+      },
+      "answer": "B",
+      "explanation": "as引导的非限制性定语从句，as is known to all意为众所周知。"
+    },
+    {
+      "id": 10,
+      "question": "The boy is too young to ___ himself.",
+      "options": {
+        "A": "dress",
+        "B": "dresses",
+        "C": "dressed",
+        "D": "dressing"
+      },
+      "answer": "A",
+      "explanation": "too young to do something，动词用原形。dress oneself意为穿衣服。"
+    }
+  ]
+}

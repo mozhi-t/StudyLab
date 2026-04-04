@@ -1,0 +1,129 @@
+{
+  "name": "计算机网络选择题库",
+  "subject": "computer_basic",
+  "create_time": "2026-04-04T10:00:00",
+  "difficulty": 2,
+  "total_questions": 10,
+  "questions": [
+    {
+      "id": 1,
+      "question": "HTTP协议默认使用的端口号是？",
+      "options": {
+        "A": "21",
+        "B": "80",
+        "C": "443",
+        "D": "8080"
+      },
+      "answer": "B",
+      "explanation": "HTTP（超文本传输协议）默认端口号是80，HTTPS默认端口号是443。"
+    },
+    {
+      "id": 2,
+      "question": "下列哪个协议用于发送电子邮件？",
+      "options": {
+        "A": "HTTP",
+        "B": "FTP",
+        "C": "SMTP",
+        "D": "TELNET"
+      },
+      "answer": "C",
+      "explanation": "SMTP（简单邮件传输协议）用于发送邮件，POP3和IMAP用于接收邮件。"
+    },
+    {
+      "id": 3,
+      "question": "IP地址的作用是？",
+      "options": {
+        "A": "加密数据",
+        "B": "唯一标识网络中的设备",
+        "C": "加快网速",
+        "D": "存储数据"
+      },
+      "answer": "B",
+      "explanation": "IP地址是网络中的唯一标识符，用于定位和识别网络设备。"
+    },
+    {
+      "id": 4,
+      "question": "DNS的中文名称是？",
+      "options": {
+        "A": "文件传输协议",
+        "B": "超文本传输协议",
+        "C": "域名系统",
+        "D": "动态主机配置协议"
+      },
+      "answer": "C",
+      "explanation": "DNS（Domain Name System）中文名称是域名系统，用于将域名解析为IP地址。"
+    },
+    {
+      "id": 5,
+      "question": "下列哪个不是合法的URL组成部分？",
+      "options": {
+        "A": "协议",
+        "B": "域名",
+        "C": "路径",
+        "D": "密码"
+      },
+      "answer": "D",
+      "explanation": "URL由协议、域名、路径等组成，密码不是URL的必需组成部分。"
+    },
+    {
+      "id": 6,
+      "question": "TCP和UDP的主要区别是？",
+      "options": {
+        "A": "传输速度",
+        "B": "是否面向连接",
+        "C": "使用场景",
+        "D": "以上都是"
+      },
+      "answer": "D",
+      "explanation": "TCP是面向连接的可靠传输，UDP是无连接的快速传输。两者在速度、可靠性、使用场景上都有区别。"
+    },
+    {
+      "id": 7,
+      "question": "局域网常用的拓扑结构不包括？",
+      "options": {
+        "A": "总线型",
+        "B": "星型",
+        "C": "环型",
+        "D": "金字塔型"
+      },
+      "answer": "D",
+      "explanation": "局域网常见的拓扑结构有总线型、星型、环型、网状型等，金字塔型不是网络拓扑结构。"
+    },
+    {
+      "id": 8,
+      "question": "ping命令的作用是？",
+      "options": {
+        "A": "上传文件",
+        "B": "测试网络连接",
+        "C": "下载文件",
+        "D": "发送邮件"
+      },
+      "answer": "B",
+      "explanation": "ping命令用于测试网络连通性，通过发送ICMP数据包检测两台设备之间的连接。"
+    },
+    {
+      "id": 9,
+      "question": "下列哪个协议是安全的网页传输协议？",
+      "options": {
+        "A": "HTTP",
+        "B": "FTP",
+        "C": "HTTPS",
+        "D": "SMTP"
+      },
+      "answer": "C",
+      "explanation": "HTTPS是在HTTP基础上加入SSL/TLS加密的安全协议，用于安全网页传输。"
+    },
+    {
+      "id": 10,
+      "question": "子网掩码255.255.255.0对应多少位网络位？",
+      "options": {
+        "A": "8位",
+        "B": "16位",
+        "C": "24位",
+        "D": "32位"
+      },
+      "answer": "C",
+      "explanation": "255.255.255.0转换为二进制是24个1，所以是24位网络位。"
+    }
+  ]
+}

@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PrimaryPushButton, PushButton, ScrollArea, StateToolTip
+from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PrimaryPushButton, StateToolTip, SubtitleLabel
 
 from config.settings import SUBJECTS
+from ui.styles.title_style import apply_page_title_style
 from ui.widgets.index_refresh_dialog import IndexRefreshDialog
 from ui.widgets.question_card import QuestionCard, bank_card_title
 from ui.widgets.styled_card import StyledCardWidget
@@ -40,6 +41,10 @@ class LocalBankPage(QWidget):
         root.setContentsMargins(20, 20, 20, 20)
         root.setSpacing(16)
 
+        self.page_title = SubtitleLabel("本地题库", self)
+        apply_page_title_style(self.page_title)
+        root.addWidget(self.page_title)
+
         self.filter_card = StyledCardWidget(self)
         filter_layout = QVBoxLayout(self.filter_card)
         filter_layout.setContentsMargins(20, 20, 20, 20)
@@ -68,28 +73,18 @@ class LocalBankPage(QWidget):
         self.list_card = StyledCardWidget(self)
         list_layout_root = QVBoxLayout(self.list_card)
         list_layout_root.setContentsMargins(20, 20, 20, 20)
-        list_widget = QWidget(self.list_card)
-        list_layout = QVBoxLayout(list_widget)
-        self.page_info = BodyLabel("", self)
-        list_layout.addWidget(self.page_info)
-
-        self.scroll = ScrollArea(self)
-        self.scroll.setWidgetResizable(True)
-        self.content = QWidget(self.scroll)
+        self.content = QWidget(self.list_card)
         self.content_layout = QVBoxLayout(self.content)
         self.content_layout.addStretch(1)
-        self.scroll.setWidget(self.content)
-        list_layout.addWidget(self.scroll, 1)
+        list_layout_root.addWidget(self.content, 1)
 
         pager = QHBoxLayout()
-        self.prev_button = PushButton("上一页", self)
-        self.next_button = PushButton("下一页", self)
-        self.prev_button.clicked.connect(self.prev_page)
-        self.next_button.clicked.connect(self.next_page)
-        pager.addWidget(self.prev_button)
-        pager.addWidget(self.next_button)
-        list_layout.addLayout(pager)
-        list_layout_root.addWidget(list_widget)
+        self.pager = PipsPager(self)
+        self.pager.currentIndexChanged.connect(self.on_page_changed)
+        pager.addStretch(1)
+        pager.addWidget(self.pager)
+        pager.addStretch(1)
+        list_layout_root.addLayout(pager)
         root.addWidget(self.list_card, 1)
 
         self.reload()
@@ -107,9 +102,9 @@ class LocalBankPage(QWidget):
         for item in items:
             card = QuestionCard(
                 title=bank_card_title(item.subject, item.name),
-                subtitle="双击进入答题",
-                meta=f"创建时间：{item.create_time}",
+                right_meta=f"创建时间：{item.create_time}",
                 action_text="删除",
+                action_icon=FluentIcon.DELETE,
                 parent=self.content,
             )
             if card.action_button:
@@ -118,8 +113,7 @@ class LocalBankPage(QWidget):
             self.content_layout.insertWidget(self.content_layout.count() - 1, card)
             self.cards.append(card)
         max_page = self._update_page_info()
-        self.prev_button.setEnabled(self.current_page > 1)
-        self.next_button.setEnabled(self.current_page < max_page)
+        self._sync_pager(max_page)
 
     def refresh_index(self):
         dialog = IndexRefreshDialog(self)
@@ -136,16 +130,12 @@ class LocalBankPage(QWidget):
         self.question_index_manager.remove_bank(subject, bank_name)
         self.reload()
 
-    def prev_page(self):
-        if self.current_page > 1:
-            self.current_page -= 1
-            self.reload()
-
-    def next_page(self):
-        max_page = max((self.total_count - 1) // 50 + 1, 1)
-        if self.current_page < max_page:
-            self.current_page += 1
-            self.reload()
+    def on_page_changed(self, index: int):
+        page = index + 1
+        if page == self.current_page:
+            return
+        self.current_page = page
+        self.reload()
 
     def _finish_refresh(self, tooltip: StateToolTip, success: bool, payload):
         tooltip.setContent("刷新成功" if success else str(payload))
@@ -161,5 +151,10 @@ class LocalBankPage(QWidget):
 
     def _update_page_info(self) -> int:
         max_page = max((self.total_count - 1) // 50 + 1, 1)
-        self.page_info.setText(f"共 {self.total_count} 个题库，第 {self.current_page}/{max_page} 页")
         return max_page
+
+    def _sync_pager(self, max_page: int) -> None:
+        self.pager.blockSignals(True)
+        self.pager.setPageNumber(max_page)
+        self.pager.setCurrentIndex(max(self.current_page - 1, 0))
+        self.pager.blockSignals(False)

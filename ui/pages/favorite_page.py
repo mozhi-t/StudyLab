@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PushButton, ScrollArea
+from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PushButton, ScrollArea, SubtitleLabel
 
 from config.settings import SUBJECTS
+from ui.styles.title_style import apply_page_title_style
 from ui.widgets.question_card import QuestionCard, bank_card_title
 from ui.widgets.question_detail_dialog import QuestionDetailDialog
 from ui.widgets.styled_card import StyledCardWidget
@@ -20,6 +21,10 @@ class FavoritePage(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
         root.setSpacing(16)
+
+        self.page_title = SubtitleLabel("收藏夹", self)
+        apply_page_title_style(self.page_title)
+        root.addWidget(self.page_title)
 
         self.filter_card = StyledCardWidget(self)
         filter_layout = QVBoxLayout(self.filter_card)

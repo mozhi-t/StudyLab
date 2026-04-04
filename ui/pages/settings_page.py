@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from PyQt6.QtGui import QColor
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, StrongBodyLabel, SubtitleLabel
+from PyQt6.QtGui import QColor, QFont
+from PyQt6.QtWidgets import QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, StrongBodyLabel, SubtitleLabel, isDarkTheme
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
 from core.json_store import JsonStore
+from ui.styles.title_style import apply_page_title_style
 from ui.widgets.styled_card import StyledCardWidget
 
 
@@ -15,17 +16,21 @@ class PreferenceRow(QWidget):
         super().__init__(parent)
         root = QHBoxLayout(self)
         root.setContentsMargins(0, 4, 0, 4)
-        root.setSpacing(12)
+        root.setSpacing(0)
+
+        root.addSpacerItem(QSpacerItem(8, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum))
 
         self.icon_widget = IconWidget(icon, self)
         self.icon_widget.setFixedSize(20, 20)
         root.addWidget(self.icon_widget)
+        root.addSpacerItem(QSpacerItem(28, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum))
 
         text_layout = QVBoxLayout()
+        text_layout.setSpacing(1)
         title_label = StrongBodyLabel(title, self)
         desc_label = CaptionLabel(description, self)
         desc_label.setWordWrap(True)
-        desc_label.setStyleSheet("color: #7a7a7a;")
+        desc_label.setStyleSheet(f"color: {'rgba(255, 255, 255, 0.62)' if isDarkTheme() else '#7a7a7a'};")
         text_layout.addWidget(title_label)
         text_layout.addWidget(desc_label)
         root.addLayout(text_layout, 1)
@@ -36,7 +41,7 @@ class PreferenceCard(StyledCardWidget):
     def __init__(self, icon, title: str, description: str, control: QWidget, parent: QWidget | None = None):
         super().__init__(parent, radius=10)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setContentsMargins(14, 12, 16, 12)
         layout.addWidget(PreferenceRow(icon, title, description, control, self))
 
 
@@ -50,8 +55,18 @@ class SettingsPage(QWidget):
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(5)
 
+        self.page_title = SubtitleLabel("设置", self)
+        apply_page_title_style(self.page_title)
+        layout.addWidget(self.page_title)
+        layout.addSpacing(18)
+
         self.title_label = SubtitleLabel("个性化", self)
+        title_font = QFont(self.title_label.font())
+        title_font.setPointSize(16)
+        title_font.setWeight(QFont.Weight.DemiBold)
+        self.title_label.setFont(title_font)
         layout.addWidget(self.title_label)
+        layout.addSpacing(18)
 
         self.theme_combo = ComboBox(self)
         self.theme_combo.addItems(["Light", "Dark", "Auto"])

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, CardWidget, CheckBox, PushButton, StrongBodyLabel
+from qfluentwidgets import BodyLabel, CaptionLabel, CardWidget, CheckBox, FluentIcon, PushButton, StrongBodyLabel
 
 from config.settings import SUBJECTS
 
@@ -11,15 +11,18 @@ class QuestionCard(CardWidget):
     def __init__(
         self,
         title: str,
-        subtitle: str,
+        subtitle: str = "",
         meta: str = "",
         action_text: str | None = None,
+        action_icon=None,
+        right_meta: str = "",
         checkable: bool = False,
         parent: QWidget | None = None,
     ):
         super().__init__(parent)
         self.checkbox = CheckBox(self) if checkable else None
-        self.action_button = PushButton(action_text, self) if action_text else None
+        self.action_button = PushButton(action_text or "", self) if (action_text or action_icon) else None
+        self.right_meta_label = CaptionLabel(right_meta, self) if right_meta else None
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(16, 12, 16, 12)
@@ -35,12 +38,20 @@ class QuestionCard(CardWidget):
         self.subtitle_label.setWordWrap(True)
         self.meta_label.setWordWrap(True)
         text_layout.addWidget(self.title_label)
-        text_layout.addWidget(self.subtitle_label)
+        if subtitle:
+            text_layout.addWidget(self.subtitle_label)
         if meta:
             text_layout.addWidget(self.meta_label)
         layout.addLayout(text_layout, 1)
 
+        if self.right_meta_label:
+            layout.addWidget(self.right_meta_label, alignment=Qt.AlignmentFlag.AlignVCenter)
+
         if self.action_button:
+            if action_icon:
+                self.action_button.setIcon(action_icon)
+            if not action_text:
+                self.action_button.setFixedWidth(36)
             layout.addWidget(self.action_button, alignment=Qt.AlignmentFlag.AlignVCenter)
 
 

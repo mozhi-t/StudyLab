@@ -1,0 +1,129 @@
+{
+  "name": "计算机软件选择题库",
+  "subject": "computer_basic",
+  "create_time": "2026-04-04T10:00:00",
+  "difficulty": 2,
+  "total_questions": 10,
+  "questions": [
+    {
+      "id": 1,
+      "question": "下列哪个不是办公软件？",
+      "options": {
+        "A": "Microsoft Word",
+        "B": "Microsoft Excel",
+        "C": "Photoshop",
+        "D": "PowerPoint"
+      },
+      "answer": "C",
+      "explanation": "Photoshop是图像处理软件，不是办公软件。Word、Excel、PowerPoint是微软Office办公套件的组成部分。"
+    },
+    {
+      "id": 2,
+      "question": "操作系统的核心功能不包括？",
+      "options": {
+        "A": "管理硬件资源",
+        "B": "提供用户界面",
+        "C": "执行应用程序",
+        "D": "制造新硬件"
+      },
+      "answer": "D",
+      "explanation": "操作系统的主要功能是管理硬件资源、提供用户界面、执行应用程序等，制造硬件不是操作系统的功能。"
+    },
+    {
+      "id": 3,
+      "question": "下列哪个是开源操作系统？",
+      "options": {
+        "A": "Windows",
+        "B": "macOS",
+        "C": "Linux",
+        "D": "iOS"
+      },
+      "answer": "C",
+      "explanation": "Linux是开源操作系统，其源代码可以自由访问和修改。Windows、macOS、iOS都是闭源操作系统。"
+    },
+    {
+      "id": 4,
+      "question": "数据库管理系统简称为？",
+      "options": {
+        "A": "DBMS",
+        "B": "DBA",
+        "C": "SQL",
+        "D": "ORM"
+      },
+      "answer": "A",
+      "explanation": "DBMS（Database Management System）是数据库管理系统的缩写。"
+    },
+    {
+      "id": 5,
+      "question": "下列哪个不是常用的压缩软件？",
+      "options": {
+        "A": "WinRAR",
+        "B": "7-Zip",
+        "C": "Photoshop",
+        "D": "WinZip"
+      },
+      "answer": "C",
+      "explanation": "Photoshop是图像处理软件，不是压缩软件。WinRAR、7-Zip、WinZip都是常用的压缩软件。"
+    },
+    {
+      "id": 6,
+      "question": "虚拟内存的作用是？",
+      "options": {
+        "A": "加快运行速度",
+        "B": "扩展可用内存",
+        "C": "保护重要数据",
+        "D": "降低功耗"
+      },
+      "answer": "B",
+      "explanation": "虚拟内存将硬盘空间模拟成内存使用，当物理内存不足时，可以临时使用硬盘空间，扩展可用内存。"
+    },
+    {
+      "id": 7,
+      "question": "下列哪个不是防病毒软件的功能？",
+      "options": {
+        "A": "病毒查杀",
+        "B": "漏洞修复",
+        "C": "文件加密",
+        "D": "实时监控"
+      },
+      "answer": "C",
+      "explanation": "防病毒软件的主要功能是病毒查杀、漏洞修复、实时监控等，文件加密不是防病毒软件的核心功能。"
+    },
+    {
+      "id": 8,
+      "question": "下列哪个软件用于版本控制？",
+      "options": {
+        "A": "Microsoft Office",
+        "B": "Git",
+        "C": "Notepad++",
+        "D": "VLC"
+      },
+      "answer": "B",
+      "explanation": "Git是常用的分布式版本控制系统，用于管理代码版本。其他选项都不是版本控制软件。"
+    },
+    {
+      "id": 9,
+      "question": "驱动程序的作用是？",
+      "options": {
+        "A": "加快启动速度",
+        "B": "让操作系统识别硬件",
+        "C": "清理垃圾文件",
+        "D": "保护系统安全"
+      },
+      "answer": "B",
+      "explanation": "驱动程序是操作系统与硬件之间的桥梁，让操作系统能够识别和控制硬件设备。"
+    },
+    {
+      "id": 10,
+      "question": "下列哪个不是系统软件？",
+      "options": {
+        "A": "Windows 10",
+        "B": "Ubuntu",
+        "C": "微信",
+        "D": "Android"
+      },
+      "answer": "C",
+      "explanation": "微信是应用软件，用于社交和通讯。Windows、Ubuntu、Android都是操作系统，属于系统软件。"
+    }
+  ]
+}

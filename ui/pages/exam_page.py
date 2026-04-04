@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import QStackedWidget, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, HeaderCardWidget, SegmentedWidget
+from qfluentwidgets import BodyLabel, HeaderCardWidget, SegmentedWidget, SubtitleLabel
+from ui.styles.title_style import apply_page_title_style
 
 
 class ExamPage(QWidget):
@@ -9,6 +10,10 @@ class ExamPage(QWidget):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(16)
+        self.page_title = SubtitleLabel("考试", self)
+        apply_page_title_style(self.page_title)
+        layout.addWidget(self.page_title)
         self.exam_card = HeaderCardWidget("考试模式", self)
         card_widget = QWidget(self.exam_card)
         card_layout = QVBoxLayout(card_widget)

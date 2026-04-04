@@ -1,0 +1,129 @@
+{
+  "name": "计算机硬件选择题库",
+  "subject": "computer_basic",
+  "create_time": "2026-04-04T10:00:00",
+  "difficulty": 2,
+  "total_questions": 10,
+  "questions": [
+    {
+      "id": 1,
+      "question": "计算机主板上最重要的组件是？",
+      "options": {
+        "A": "显卡",
+        "B": "CPU插座",
+        "C": "内存槽",
+        "D": "芯片组"
+      },
+      "answer": "D",
+      "explanation": "芯片组是主板的核心，控制CPU、内存、显卡等各个部件之间的数据传输。"
+    },
+    {
+      "id": 2,
+      "question": "下列哪个不是硬盘的接口类型？",
+      "options": {
+        "A": "SATA",
+        "B": "PCIe",
+        "C": "IDE",
+        "D": "USB"
+      },
+      "answer": "D",
+      "explanation": "硬盘接口类型有SATA、IDE、M.2、PCIe等，USB是外接接口，不是硬盘内置接口。"
+    },
+    {
+      "id": 3,
+      "question": "显卡的主要功能是？",
+      "options": {
+        "A": "存储数据",
+        "B": "处理图像和图形",
+        "C": "控制网络",
+        "D": "管理内存"
+      },
+      "answer": "B",
+      "explanation": "显卡（GPU）主要用于处理图像和图形数据，将数据转换为显示器可以显示的画面。"
+    },
+    {
+      "id": 4,
+      "question": "DDR内存目前主流的代数是？",
+      "options": {
+        "A": "DDR",
+        "B": "DDR2",
+        "C": "DDR3",
+        "D": "DDR4"
+      },
+      "answer": "D",
+      "explanation": "DDR4是目前主流的内存代数，DDR5已经开始出现但尚未普及。"
+    },
+    {
+      "id": 5,
+      "question": "电源供应器的主要作用是？",
+      "options": {
+        "A": "存储电能",
+        "B": "稳压和供电",
+        "C": "散热",
+        "D": "控制风扇"
+      },
+      "answer": "B",
+      "explanation": "电源供应器（PSU）将交流电转换为直流电，并提供稳定的电压给各部件供电。"
+    },
+    {
+      "id": 6,
+      "question": "下列哪个部件决定了计算机的整体运算速度？",
+      "options": {
+        "A": "硬盘",
+        "B": "内存",
+        "C": "CPU",
+        "D": "显卡"
+      },
+      "answer": "C",
+      "explanation": "CPU（中央处理器）是计算机的大脑，决定了计算机的整体运算速度和处理能力。"
+    },
+    {
+      "id": 7,
+      "question": "固态硬盘（SSD）相比机械硬盘的优势是？",
+      "options": {
+        "A": "价格便宜",
+        "B": "容量大",
+        "C": "读写速度快",
+        "D": "数据可恢复"
+      },
+      "answer": "C",
+      "explanation": "固态硬盘采用闪存芯片，没有机械部件，所以读写速度远快于机械硬盘。"
+    },
+    {
+      "id": 8,
+      "question": "BIOS存储在计算机的哪个部件中？",
+      "options": {
+        "A": "硬盘",
+        "B": "内存",
+        "C": "主板的ROM芯片",
+        "D": "显卡"
+      },
+      "answer": "C",
+      "explanation": "BIOS（基本输入输出系统）存储在主板的ROM或Flash芯片中，负责计算机的启动初始化。"
+    },
+    {
+      "id": 9,
+      "question": "下列哪个接口用于连接显示器？",
+      "options": {
+        "A": "USB",
+        "B": "HDMI",
+        "C": "SATA",
+        "D": "PCI"
+      },
+      "answer": "B",
+      "explanation": "HDMI是高清多媒体接口，用于连接显示器、电视等显示设备。"
+    },
+    {
+      "id": 10,
+      "question": "CPU的频率单位是？",
+      "options": {
+        "A": "MB",
+        "B": "GHz",
+        "C": "RPM",
+        "D": "V"
+      },
+      "answer": "B",
+      "explanation": "CPU频率的单位是GHz（吉赫兹），表示CPU的时钟频率，越高表示运算速度越快。"
+    }
+  ]
+}

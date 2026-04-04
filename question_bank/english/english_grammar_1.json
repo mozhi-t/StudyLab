@@ -1,0 +1,129 @@
+{
+  "name": "英语语法选择题库",
+  "subject": "english",
+  "create_time": "2026-04-04T10:00:00",
+  "difficulty": 2,
+  "total_questions": 10,
+  "questions": [
+    {
+      "id": 1,
+      "question": "She ___ English since 2010.",
+      "options": {
+        "A": "studies",
+        "B": "studied",
+        "C": "has studied",
+        "D": "is studying"
+      },
+      "answer": "C",
+      "explanation": "since + 时间点，表示从过去到现在，应该用现在完成时。"
+    },
+    {
+      "id": 2,
+      "question": "If I ___ you, I would go.",
+      "options": {
+        "A": "am",
+        "B": "was",
+        "C": "were",
+        "D": "be"
+      },
+      "answer": "C",
+      "explanation": "与现在事实相反的虚拟语气中，if从句用过去式，be动词用were。"
+    },
+    {
+      "id": 3,
+      "question": "The book ___ I bought yesterday is interesting.",
+      "options": {
+        "A": "who",
+        "B": "which",
+        "C": "whom",
+        "D": "whose"
+      },
+      "answer": "B",
+      "explanation": "此处作定语从句，先行词是book，用which引导。"
+    },
+    {
+      "id": 4,
+      "question": "He suggested ___ to the park.",
+      "options": {
+        "A": "go",
+        "B": "going",
+        "C": "to go",
+        "D": "gone"
+      },
+      "answer": "B",
+      "explanation": "suggest doing something是固定搭配，意思是建议做某事。"
+    },
+    {
+      "id": 5,
+      "question": "___ the weather is fine, we will go out.",
+      "options": {
+        "A": "If",
+        "B": "Unless",
+        "C": "Because",
+        "D": "Although"
+      },
+      "answer": "B",
+      "explanation": "unless意为'如果不'，unless the weather is fine = if the weather is not fine。"
+    },
+    {
+      "id": 6,
+      "question": "I remember ___ her at the party.",
+      "options": {
+        "A": "meet",
+        "B": "meeting",
+        "C": "to meet",
+        "D": "met"
+      },
+      "answer": "B",
+      "explanation": "remember doing something记得做过某事；remember to do something记得要做某事。"
+    },
+    {
+      "id": 7,
+      "question": "The room needs ___.",
+      "options": {
+        "A": "clean",
+        "B": "cleaning",
+        "C": "to clean",
+        "D": "cleaned"
+      },
+      "answer": "B",
+      "explanation": "need doing something = need to be done，表示需要被做。"
+    },
+    {
+      "id": 8,
+      "question": "___ he is tired, he still works.",
+      "options": {
+        "A": "Although",
+        "B": "Because",
+        "C": "If",
+        "D": "Unless"
+      },
+      "answer": "A",
+      "explanation": "although引导让步状语从句，意为'虽然'，符合句意。"
+    },
+    {
+      "id": 9,
+      "question": "It is no use ___ now.",
+      "options": {
+        "A": "cry",
+        "B": "crying",
+        "C": "to cry",
+        "D": "cried"
+      },
+      "answer": "B",
+      "explanation": "It is no use doing something是固定句型，意思是做某事没用。"
+    },
+    {
+      "id": 10,
+      "question": "He would rather ___ at home than go out.",
+      "options": {
+        "A": "stay",
+        "B": "staying",
+        "C": "to stay",
+        "D": "stayed"
+      },
+      "answer": "A",
+      "explanation": "would rather do something than do something，意思是宁愿做...而不愿做..."
+    }
+  ]
+}

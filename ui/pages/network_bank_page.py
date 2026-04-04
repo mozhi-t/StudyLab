@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, LineEdit, PrimaryPushButton
+from qfluentwidgets import BodyLabel, LineEdit, PrimaryPushButton, SubtitleLabel
+from ui.styles.title_style import apply_page_title_style
 from ui.widgets.styled_card import StyledCardWidget
 
 
@@ -11,6 +12,10 @@ class NetworkBankPage(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(16)
+
+        self.page_title = SubtitleLabel("网络题库", self)
+        apply_page_title_style(self.page_title)
+        layout.addWidget(self.page_title)
 
         self.connect_card = StyledCardWidget(self)
         connect_root = QVBoxLayout(self.connect_card)
