@@ -1,0 +1,129 @@
+{
+  "name": "英语基础选择题库",
+  "subject": "english",
+  "create_time": "2026-04-04T10:00:00",
+  "difficulty": 1,
+  "total_questions": 10,
+  "questions": [
+    {
+      "id": 1,
+      "question": "She ___ to school every day.",
+      "options": {
+        "A": "go",
+        "B": "goes",
+        "C": "going",
+        "D": "went"
+      },
+      "answer": "B",
+      "explanation": "主语She是第三人称单数，一般现在时中动词要加-es，所以用goes。"
+    },
+    {
+      "id": 2,
+      "question": "下列哪个单词的复数形式不正确？",
+      "options": {
+        "A": "child → children",
+        "B": "foot → feet",
+        "C": "mouse → mouses",
+        "D": "tooth → teeth"
+      },
+      "answer": "C",
+      "explanation": "mouse的复数形式是mice，不是mouses。其他选项都是正确的不规则复数变化。"
+    },
+    {
+      "id": 3,
+      "question": "'I have been studying English ___ three years.' 空格处应填？",
+      "options": {
+        "A": "since",
+        "B": "for",
+        "C": "at",
+        "D": "in"
+      },
+      "answer": "B",
+      "explanation": "for后接时间段（three years），since后接时间点。此处表示持续了三年，用for。"
+    },
+    {
+      "id": 4,
+      "question": "下列哪个词是形容词？",
+      "options": {
+        "A": "quickly",
+        "B": "happiness",
+        "C": "beautiful",
+        "D": "run"
+      },
+      "answer": "C",
+      "explanation": "beautiful是形容词。quickly是副词，happiness是名词，run是动词。"
+    },
+    {
+      "id": 5,
+      "question": "He is ___ than his brother.",
+      "options": {
+        "A": "tall",
+        "B": "taller",
+        "C": "tallest",
+        "D": "the tallest"
+      },
+      "answer": "B",
+      "explanation": "than表示比较，需要用比较级。tall的比较级是taller。"
+    },
+    {
+      "id": 6,
+      "question": "'The book ___ on the table is mine.' 空格处应填？",
+      "options": {
+        "A": "lie",
+        "B": "lies",
+        "C": "lying",
+        "D": "lay"
+      },
+      "answer": "C",
+      "explanation": "此处用现在分词lying作后置定语修饰book，表示'放在桌子上的那本书'。"
+    },
+    {
+      "id": 7,
+      "question": "下列句子中，语法正确的是？",
+      "options": {
+        "A": "He don't like apples.",
+        "B": "She can sings very well.",
+        "C": "They are playing football now.",
+        "D": "I has finished my homework."
+      },
+      "answer": "C",
+      "explanation": "A应为He doesn't；B应为She can sing（情态动词后接原形）；D应为I have。C正确，现在进行时。"
+    },
+    {
+      "id": 8,
+      "question": "'Break a leg!' 这个习语的意思是？",
+      "options": {
+        "A": "小心摔倒",
+        "B": "祝你好运",
+        "C": "腿断了",
+        "D": "快点跑"
+      },
+      "answer": "B",
+      "explanation": "'Break a leg!' 是英语中常用的习语，用于祝别人好运，特别是在演出或表演之前。"
+    },
+    {
+      "id": 9,
+      "question": "If it ___ tomorrow, we will stay at home.",
+      "options": {
+        "A": "will rain",
+        "B": "rains",
+        "C": "rained",
+        "D": "would rain"
+      },
+      "answer": "B",
+      "explanation": "if引导的条件状语从句中，主句用将来时，从句用一般现在时表示将来。"
+    },
+    {
+      "id": 10,
+      "question": "下列哪个单词的发音与其他三个不同？",
+      "options": {
+        "A": "cat",
+        "B": "hat",
+        "C": "car",
+        "D": "bat"
+      },
+      "answer": "C",
+      "explanation": "cat /kæt/, hat /hæt/, bat /bæt/ 中的元音都是/æ/，而car /kɑːr/ 中的元音是/ɑː/。"
+    }
+  ]
+}

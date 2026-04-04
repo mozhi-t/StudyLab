@@ -1,0 +1,17 @@
+[
+  {
+    "question_id": "computer_basic_计算机基础选择题库_4",
+    "bank_name": "计算机基础选择题库",
+    "bank_question_id": 4,
+    "subject": "computer_basic",
+    "question": "二进制数1010转换为十进制数是？",
+    "options": {
+      "A": "8",
+      "B": "10",
+      "C": "12",
+      "D": "14"
+    },
+    "answer": "B",
+    "explanation": "二进制1010 = 1×2³ + 0×2² + 1×2¹ + 0×2⁰ = 8 + 0 + 2 + 0 = 10。"
+  }
+]

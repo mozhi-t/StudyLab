@@ -1,0 +1,91 @@
+from __future__ import annotations
+
+from qfluentwidgets import FluentIcon, MSFluentWindow
+
+from answer.choice_answer import ChoiceAnswerWindow
+from core.errors import raise_app_error
+from ui.pages.about_page import AboutPage
+from ui.pages.exam_page import ExamPage
+from ui.pages.favorite_page import FavoritePage
+from ui.pages.home_page import HomePage
+from ui.pages.local_bank_page import LocalBankPage
+from ui.pages.network_bank_page import NetworkBankPage
+from ui.pages.settings_page import SettingsPage
+from ui.pages.wrong_book_page import WrongBookPage
+
+
+class MainWindow(MSFluentWindow):
+    def __init__(self, user_manager, question_index_manager, wrong_manager, favorite_manager):
+        super().__init__()
+        self.user_manager = user_manager
+        self.question_index_manager = question_index_manager
+        self.wrong_manager = wrong_manager
+        self.favorite_manager = favorite_manager
+        self.answer_window = None
+
+        self.setWindowTitle("Study Lab")
+        self.resize(1280, 800)
+
+        self.home_page = HomePage(self)
+        self.home_page.setObjectName("home_page")
+        self.local_bank_page = LocalBankPage(question_index_manager, self)
+        self.local_bank_page.setObjectName("local_bank_page")
+        self.network_bank_page = NetworkBankPage(self)
+        self.network_bank_page.setObjectName("network_bank_page")
+        self.exam_page = ExamPage(self)
+        self.exam_page.setObjectName("exam_page")
+        self.wrong_book_page = WrongBookPage(wrong_manager, self)
+        self.wrong_book_page.setObjectName("wrong_book_page")
+        self.favorite_page = FavoritePage(favorite_manager, self)
+        self.favorite_page.setObjectName("favorite_page")
+        self.settings_page = SettingsPage(self)
+        self.settings_page.setObjectName("settings_page")
+        self.about_page = AboutPage(self)
+        self.about_page.setObjectName("about_page")
+
+        self.home_page.navigate_requested.connect(self.switch_to_page)
+        self.local_bank_page.open_bank_requested.connect(self.open_choice_answer)
+
+        self._register_pages()
+
+    def _register_pages(self):
+        self.addSubInterface(self.home_page, FluentIcon.HOME, "主页")
+        self.addSubInterface(self.local_bank_page, FluentIcon.LIBRARY, "本地题库")
+        self.addSubInterface(self.network_bank_page, FluentIcon.GLOBE, "网络题库")
+        self.addSubInterface(self.exam_page, FluentIcon.EDUCATION, "考试")
+        self.addSubInterface(self.wrong_book_page, FluentIcon.HISTORY, "错题本")
+        self.addSubInterface(self.favorite_page, FluentIcon.HEART, "收藏夹")
+        self.addSubInterface(self.settings_page, FluentIcon.SETTING, "设置")
+        self.addSubInterface(self.about_page, FluentIcon.INFO, "关于")
+
+    def switch_to_page(self, key: str):
+        mapping = {
+            "local_bank": self.local_bank_page,
+            "wrong_book": self.wrong_book_page,
+            "favorite": self.favorite_page,
+        }
+        page = mapping.get(key)
+        if not page:
+            raise_app_error("E023", key)
+        self.switchTo(page)
+
+    def open_choice_answer(self, subject: str, bank_name: str):
+        bank = self.question_index_manager.load_bank(subject, bank_name)
+        self.answer_window = ChoiceAnswerWindow(
+            question_bank=bank,
+            user_manager=self.user_manager,
+            wrong_manager=self.wrong_manager,
+            favorite_manager=self.favorite_manager,
+        )
+        self.answer_window.window_closed.connect(self._restore_after_answer)
+        self.showMinimized()
+        self.answer_window.show()
+
+    def _restore_after_answer(self):
+        if not self.isVisible():
+            return
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+        self.wrong_book_page.reload()
+        self.favorite_page.reload()

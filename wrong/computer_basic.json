@@ -1,0 +1,36 @@
+[
+  {
+    "question_id": "computer_basic_计算机基础选择题库_1",
+    "question_num": 1,
+    "bank_name": "计算机基础选择题库",
+    "bank_question_id": 1,
+    "subject": "computer_basic",
+    "question": "计算机中，1KB等于多少字节？",
+    "options": {
+      "A": "100字节",
+      "B": "1000字节",
+      "C": "1024字节",
+      "D": "1048字节"
+    },
+    "answer": "C",
+    "explanation": "在计算机中，1KB = 1024字节（2¹⁰字节），这是二进制计数方式。",
+    "error_count": 4
+  },
+  {
+    "question_id": "computer_basic_计算机基础选择题库_3",
+    "question_num": 3,
+    "bank_name": "计算机基础选择题库",
+    "bank_question_id": 3,
+    "subject": "computer_basic",
+    "question": "CPU的中文名称是？",
+    "options": {
+      "A": "存储器",
+      "B": "中央处理器",
+      "C": "输入设备",
+      "D": "输出设备"
+    },
+    "answer": "B",
+    "explanation": "CPU（Central Processing Unit）中文名称为中央处理器，是计算机的核心部件。",
+    "error_count": 1
+  }
+]

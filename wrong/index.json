@@ -1,0 +1,21 @@
+{
+  "chinese": [],
+  "math": [],
+  "english": [],
+  "computer_basic": [
+    {
+      "question_id": "computer_basic_计算机基础选择题库_1",
+      "subject": "computer_basic",
+      "question_content": "计算机中，1KB等于多少字节？",
+      "error_count": 4
+    },
+    {
+      "question_id": "computer_basic_计算机基础选择题库_3",
+      "subject": "computer_basic",
+      "question_content": "CPU的中文名称是？",
+      "error_count": 1
+    }
+  ],
+  "python": [],
+  "mysql": []
+}

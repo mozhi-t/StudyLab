@@ -1,0 +1,14 @@
+{
+  "chinese": [],
+  "math": [],
+  "english": [],
+  "computer_basic": [
+    {
+      "question_id": "computer_basic_计算机基础选择题库_4",
+      "subject": "computer_basic",
+      "question_content": "二进制数1010转换为十进制数是？"
+    }
+  ],
+  "python": [],
+  "mysql": []
+}
