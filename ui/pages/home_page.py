@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, SubtitleLabel, TransparentPushButton
 from ui.styles.title_style import apply_page_title_style
-from ui.widgets.styled_card import StyledCardWidget
 
 
 class HomePage(QWidget):
@@ -21,27 +20,24 @@ class HomePage(QWidget):
         self.page_title = SubtitleLabel("主页", self)
         apply_page_title_style(self.page_title)
         root.addWidget(self.page_title)
+        root.addStretch(1)
 
-        self.main_card = StyledCardWidget(self)
-        card_layout = QVBoxLayout(self.main_card)
-        card_layout.setContentsMargins(28, 28, 28, 28)
-        card_layout.setSpacing(20)
-
-        welcome_widget = QWidget(self.main_card)
-        welcome_layout = QVBoxLayout(welcome_widget)
         greeting = SubtitleLabel(self._greeting(), self)
-        welcome_layout.addWidget(greeting)
-        welcome_layout.addWidget(BodyLabel("从主页快速进入本地题库、错题本或收藏夹。", self))
-        card_layout.addWidget(welcome_widget)
+        greeting.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        root.addWidget(greeting)
 
-        quick_widget = QWidget(self.main_card)
-        button_row = QHBoxLayout(quick_widget)
+        description = BodyLabel("从主页快速进入本地题库、错题本或收藏夹。", self)
+        description.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        root.addWidget(description)
+
+        quick_widget = QWidget(self)
+        button_row = QVBoxLayout(quick_widget)
+        button_row.setSpacing(10)
         for key, text in [("local_bank", "开始刷题"), ("wrong_book", "错题本"), ("favorite", "收藏夹")]:
             button = TransparentPushButton(text, self)
             button.clicked.connect(lambda checked=False, page=key: self.navigate_requested.emit(page))
             button_row.addWidget(button)
-        card_layout.addWidget(quick_widget)
-        root.addWidget(self.main_card)
+        root.addWidget(quick_widget, alignment=Qt.AlignmentFlag.AlignHCenter)
         root.addStretch(1)
 
     def _greeting(self) -> str:

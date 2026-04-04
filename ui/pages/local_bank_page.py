@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PyQt6.QtCore import QThread, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PrimaryPushButton, StateToolTip, SubtitleLabel
+from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PrimaryPushButton, ScrollArea, StateToolTip, SubtitleLabel
 
 from config.settings import SUBJECTS
 from ui.styles.title_style import apply_page_title_style
@@ -34,6 +34,7 @@ class LocalBankPage(QWidget):
         self.question_index_manager = question_index_manager
         self.current_page = 1
         self.total_count = 0
+        self.page_size = 50
         self.cards: list[QuestionCard] = []
         self.refresh_thread: IndexRefreshThread | None = None
 
@@ -47,15 +48,19 @@ class LocalBankPage(QWidget):
 
         self.filter_card = StyledCardWidget(self)
         filter_layout = QVBoxLayout(self.filter_card)
-        filter_layout.setContentsMargins(20, 20, 20, 20)
+        filter_layout.setContentsMargins(12, 12, 12, 12)
         toolbar_widget = QWidget(self.filter_card)
         toolbar = QVBoxLayout(toolbar_widget)
+        toolbar.setContentsMargins(0, 0, 0, 0)
+        toolbar.setSpacing(8)
         self.search_edit = LineEdit(self)
         self.search_edit.setPlaceholderText("搜索题库")
         self.search_edit.textChanged.connect(self._reset_then_reload)
         toolbar.addWidget(self.search_edit)
 
         filter_row = QHBoxLayout()
+        filter_row.setContentsMargins(0, 0, 0, 0)
+        filter_row.setSpacing(8)
         self.subject_combo = ComboBox(self)
         self.subject_combo.addItem("全部科目", "")
         for key, label in SUBJECTS.items():
@@ -71,12 +76,38 @@ class LocalBankPage(QWidget):
         root.addWidget(self.filter_card)
 
         self.list_card = StyledCardWidget(self)
-        list_layout_root = QVBoxLayout(self.list_card)
-        list_layout_root.setContentsMargins(20, 20, 20, 20)
-        self.content = QWidget(self.list_card)
+        self.list_layout_root = QVBoxLayout(self.list_card)
+        self.list_layout_root.setContentsMargins(10, 10, 10, 10)
+        self.list_layout_root.setSpacing(10)
+        self.scroll = ScrollArea(self.list_card)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setFrameShape(self.scroll.Shape.NoFrame)
+        self.scroll.setObjectName("bankListScroll")
+        self.scroll.viewport().setObjectName("bankListViewport")
+        self.content = QWidget(self.scroll)
+        self.content.setObjectName("bankListContent")
         self.content_layout = QVBoxLayout(self.content)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setSpacing(8)
         self.content_layout.addStretch(1)
-        list_layout_root.addWidget(self.content, 1)
+        self.scroll.setWidget(self.content)
+        self.scroll.setStyleSheet(
+            """
+            QAbstractScrollArea#bankListScroll {
+                background: transparent;
+                border: none;
+            }
+            QWidget#bankListViewport {
+                background: transparent;
+                border: none;
+            }
+            QWidget#bankListContent {
+                background: transparent;
+                border: none;
+            }
+            """
+        )
+        self.list_layout_root.addWidget(self.scroll, 1)
 
         pager = QHBoxLayout()
         self.pager = PipsPager(self)
@@ -84,7 +115,7 @@ class LocalBankPage(QWidget):
         pager.addStretch(1)
         pager.addWidget(self.pager)
         pager.addStretch(1)
-        list_layout_root.addLayout(pager)
+        self.list_layout_root.addLayout(pager)
         root.addWidget(self.list_card, 1)
 
         self.reload()
@@ -96,8 +127,16 @@ class LocalBankPage(QWidget):
     def reload(self):
         subject = self.subject_combo.currentData()
         keyword = self.search_edit.text()
-        items, total = self.question_index_manager.list_banks(subject=subject or None, keyword=keyword, page=self.current_page)
+        items, total = self.question_index_manager.list_banks(
+            subject=subject or None,
+            keyword=keyword,
+            page=self.current_page,
+            page_size=self.page_size,
+        )
         self.total_count = total
+        max_page = max((self.total_count - 1) // self.page_size + 1, 1)
+        if self.current_page > max_page:
+            self.current_page = max_page
         self._clear_cards()
         for item in items:
             card = QuestionCard(
@@ -150,7 +189,7 @@ class LocalBankPage(QWidget):
         self.cards.clear()
 
     def _update_page_info(self) -> int:
-        max_page = max((self.total_count - 1) // 50 + 1, 1)
+        max_page = max((self.total_count - 1) // self.page_size + 1, 1)
         return max_page
 
     def _sync_pager(self, max_page: int) -> None:
