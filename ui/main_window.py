@@ -24,7 +24,7 @@ class MainWindow(MSFluentWindow):
         self.answer_window = None
 
         self.setWindowTitle("Study Lab")
-        self.resize(1280, 800)
+        self.resize(1040, 680)
 
         self.home_page = HomePage(self)
         self.home_page.setObjectName("home_page")

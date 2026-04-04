@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
-from qfluentwidgets import CardWidget, CheckBox, PushButton
+from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, CaptionLabel, CardWidget, CheckBox, PushButton, StrongBodyLabel
 
 from config.settings import SUBJECTS
 
@@ -29,12 +29,11 @@ class QuestionCard(CardWidget):
             layout.addWidget(self.checkbox, alignment=Qt.AlignmentFlag.AlignTop)
 
         text_layout = QVBoxLayout()
-        self.title_label = QLabel(title, self)
-        self.subtitle_label = QLabel(subtitle, self)
-        self.meta_label = QLabel(meta, self)
-        self.title_label.setStyleSheet("font-size: 16px; font-weight: 600;")
+        self.title_label = StrongBodyLabel(title, self)
+        self.subtitle_label = BodyLabel(subtitle, self)
+        self.meta_label = CaptionLabel(meta, self)
         self.subtitle_label.setWordWrap(True)
-        self.meta_label.setStyleSheet("color: gray;")
+        self.meta_label.setWordWrap(True)
         text_layout.addWidget(self.title_label)
         text_layout.addWidget(self.subtitle_label)
         if meta:

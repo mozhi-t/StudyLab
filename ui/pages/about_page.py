@@ -1,21 +1,31 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, CaptionLabel, CardWidget, HeaderCardWidget, SubtitleLabel
 
 
 class AboutPage(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(40, 40, 40, 40)
+        self.main_card = CardWidget(self)
+        card_layout = QVBoxLayout(self.main_card)
+        card_layout.setContentsMargins(24, 24, 24, 24)
+        card_layout.setSpacing(16)
         layout.addStretch(1)
-        for text, style in [
-            ("Study Lab", "font-size: 28px; font-weight: 700;"),
-            ("MoZhi", "font-size: 18px;"),
-            ("Beta 开发版本", "font-size: 12px; color: gray;"),
+        self.about_card = HeaderCardWidget("关于项目", self.main_card)
+        card_widget = QWidget(self.about_card)
+        info_layout = QVBoxLayout(card_widget)
+        for label in [
+            SubtitleLabel("Study Lab", self),
+            BodyLabel("MoZhi", self),
+            CaptionLabel("Beta 开发版本", self),
         ]:
-            label = QLabel(text, self)
             label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            label.setStyleSheet(style)
-            layout.addWidget(label)
+            info_layout.addWidget(label)
+        self.about_card.viewLayout.addWidget(card_widget)
+        card_layout.addWidget(self.about_card)
+        layout.addWidget(self.main_card)
         layout.addStretch(1)

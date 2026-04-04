@@ -3,8 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
-from qfluentwidgets import TransparentPushButton
+from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, CardWidget, SubtitleLabel, TransparentPushButton
 
 
 class HomePage(QWidget):
@@ -16,18 +16,27 @@ class HomePage(QWidget):
         root.setContentsMargins(40, 40, 40, 40)
         root.setSpacing(24)
 
-        greeting = QLabel(self._greeting(), self)
-        greeting.setStyleSheet("font-size: 28px; font-weight: 600;")
-        root.addWidget(greeting)
-        root.addStretch(1)
+        self.main_card = CardWidget(self)
+        card_layout = QVBoxLayout(self.main_card)
+        card_layout.setContentsMargins(28, 28, 28, 28)
+        card_layout.setSpacing(20)
 
-        button_row = QHBoxLayout()
+        welcome_widget = QWidget(self.main_card)
+        welcome_layout = QVBoxLayout(welcome_widget)
+        greeting = SubtitleLabel(self._greeting(), self)
+        welcome_layout.addWidget(greeting)
+        welcome_layout.addWidget(BodyLabel("从主页快速进入本地题库、错题本或收藏夹。", self))
+        card_layout.addWidget(welcome_widget)
+
+        quick_widget = QWidget(self.main_card)
+        button_row = QHBoxLayout(quick_widget)
         for key, text in [("local_bank", "开始刷题"), ("wrong_book", "错题本"), ("favorite", "收藏夹")]:
             button = TransparentPushButton(text, self)
             button.clicked.connect(lambda checked=False, page=key: self.navigate_requested.emit(page))
             button_row.addWidget(button)
-        root.addLayout(button_row)
-        root.addStretch(2)
+        card_layout.addWidget(quick_widget)
+        root.addWidget(self.main_card)
+        root.addStretch(1)
 
     def _greeting(self) -> str:
         hour = datetime.now().hour

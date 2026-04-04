@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "question_id": "math_数学基础选择题库_6",
+    "question_num": 6,
+    "bank_name": "数学基础选择题库",
+    "bank_question_id": 6,
+    "subject": "math",
+    "question": "等差数列1, 3, 5, 7, ... 的第10项是？",
+    "options": {
+      "A": "17",
+      "B": "19",
+      "C": "21",
+      "D": "23"
+    },
+    "answer": "B",
+    "explanation": "等差数列通项公式：aₙ = a₁ + (n-1)d，其中a₁=1，d=2。a₁₀ = 1 + (10-1)×2 = 1 + 18 = 19。",
+    "error_count": 8
+  }
+]

@@ -1,6 +1,13 @@
 {
   "chinese": [],
-  "math": [],
+  "math": [
+    {
+      "question_id": "math_数学基础选择题库_6",
+      "subject": "math",
+      "question_content": "等差数列1, 3, 5, 7, ... 的第10项是？",
+      "error_count": 8
+    }
+  ],
   "english": [],
   "computer_basic": [
     {

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QLabel, QVBoxLayout
-from qfluentwidgets import MessageBoxBase, SubtitleLabel
+from PyQt6.QtWidgets import QVBoxLayout
+from qfluentwidgets import BodyLabel, MessageBoxBase, StrongBodyLabel, SubtitleLabel
 
 
 class QuestionDetailDialog(MessageBoxBase):
@@ -11,17 +11,17 @@ class QuestionDetailDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.titleLabel)
 
         content = QVBoxLayout()
-        question_label = QLabel(f"题目：{question}", self)
+        question_label = StrongBodyLabel(f"题目：{question}", self)
         question_label.setWordWrap(True)
         content.addWidget(question_label)
 
         for key, value in options.items():
-            option_label = QLabel(f"{key}. {value}", self)
+            option_label = BodyLabel(f"{key}. {value}", self)
             option_label.setWordWrap(True)
             content.addWidget(option_label)
 
-        answer_label = QLabel(f"答案：{answer}", self)
-        explanation_label = QLabel(f"解析：{explanation}", self)
+        answer_label = StrongBodyLabel(f"答案：{answer}", self)
+        explanation_label = BodyLabel(f"解析：{explanation}", self)
         explanation_label.setWordWrap(True)
         content.addWidget(answer_label)
         content.addWidget(explanation_label)

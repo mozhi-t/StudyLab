@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtWidgets import QGridLayout, QLabel, QVBoxLayout, QWidget
-from qfluentwidgets import PillPushButton
+from PyQt6.QtWidgets import QGridLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, PillPushButton
 
 
 class AnswerCard(QWidget):
@@ -12,7 +12,7 @@ class AnswerCard(QWidget):
         super().__init__(parent)
         self.buttons: list[PillPushButton] = []
         self.grid = QGridLayout()
-        self.summary_label = QLabel("已答题数: 0 / 未答题数: 0", self)
+        self.summary_label = BodyLabel("已答题数: 0 / 未答题数: 0", self)
         self.summary_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         root = QVBoxLayout(self)

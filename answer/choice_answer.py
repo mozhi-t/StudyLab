@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QTimer
-from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QLabel, QRadioButton, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CardWidget, PrimaryPushButton, PushButton
+from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, CardWidget, PrimaryPushButton, PushButton, RadioButton, StrongBodyLabel
 
 from answer.answer_window import AnswerWindow
 from models.favorite_question import FavoriteQuestion
@@ -20,7 +20,7 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.favorite_manager = favorite_manager
         self.current_index = 0
         self.answered_indices: set[int] = set()
-        self.answer_buttons: dict[str, QRadioButton] = {}
+        self.answer_buttons: dict[str, RadioButton] = {}
 
         self.setWindowTitle(question_bank.name)
         self.resize(1280, 800)
@@ -29,7 +29,7 @@ class ChoiceAnswerWindow(AnswerWindow):
         top = QHBoxLayout()
         self.back_button = PushButton("返回", self)
         self.back_button.clicked.connect(self.close)
-        self.title_label = QLabel(question_bank.name, self)
+        self.title_label = StrongBodyLabel(question_bank.name, self)
         self.reset_button = PushButton("重置答题", self)
         self.reset_button.clicked.connect(self.reset_session)
         top.addWidget(self.back_button)
@@ -50,7 +50,7 @@ class ChoiceAnswerWindow(AnswerWindow):
 
         self.option_group = QButtonGroup(self)
         for key in ["A", "B", "C", "D"]:
-            button = QRadioButton(self)
+            button = RadioButton(self)
             button.clicked.connect(lambda checked=False, option=key: self.submit_answer(option))
             self.option_group.addButton(button)
             self.answer_buttons[key] = button
@@ -58,8 +58,8 @@ class ChoiceAnswerWindow(AnswerWindow):
 
         self.feedback_card = CardWidget(self)
         feedback_layout = QVBoxLayout(self.feedback_card)
-        self.answer_label = QLabel("答案：", self.feedback_card)
-        self.explanation_label = QLabel("解析：", self.feedback_card)
+        self.answer_label = StrongBodyLabel("答案：", self.feedback_card)
+        self.explanation_label = BodyLabel("解析：", self.feedback_card)
         self.explanation_label.setWordWrap(True)
         feedback_layout.addWidget(self.answer_label)
         feedback_layout.addWidget(self.explanation_label)

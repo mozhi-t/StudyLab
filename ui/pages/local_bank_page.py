@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QThread, pyqtSignal
-from PyQt6.QtWidgets import QComboBox, QHBoxLayout, QLabel, QScrollArea, QVBoxLayout, QWidget
-from qfluentwidgets import LineEdit, PrimaryPushButton, PushButton, StateToolTip
+from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, CardWidget, ComboBox, LineEdit, PrimaryPushButton, PushButton, ScrollArea, StateToolTip
 
 from config.settings import SUBJECTS
 from ui.widgets.index_refresh_dialog import IndexRefreshDialog
@@ -39,14 +39,18 @@ class LocalBankPage(QWidget):
         root.setContentsMargins(20, 20, 20, 20)
         root.setSpacing(16)
 
-        toolbar = QVBoxLayout()
+        self.filter_card = CardWidget(self)
+        filter_layout = QVBoxLayout(self.filter_card)
+        filter_layout.setContentsMargins(20, 20, 20, 20)
+        toolbar_widget = QWidget(self.filter_card)
+        toolbar = QVBoxLayout(toolbar_widget)
         self.search_edit = LineEdit(self)
         self.search_edit.setPlaceholderText("搜索题库")
         self.search_edit.textChanged.connect(self._reset_then_reload)
         toolbar.addWidget(self.search_edit)
 
         filter_row = QHBoxLayout()
-        self.subject_combo = QComboBox(self)
+        self.subject_combo = ComboBox(self)
         self.subject_combo.addItem("全部科目", "")
         for key, label in SUBJECTS.items():
             self.subject_combo.addItem(label, key)
@@ -57,18 +61,24 @@ class LocalBankPage(QWidget):
         self.refresh_button.clicked.connect(self.refresh_index)
         filter_row.addWidget(self.refresh_button)
         toolbar.addLayout(filter_row)
-        root.addLayout(toolbar)
+        filter_layout.addWidget(toolbar_widget)
+        root.addWidget(self.filter_card)
 
-        self.page_info = QLabel("", self)
-        root.addWidget(self.page_info)
+        self.list_card = CardWidget(self)
+        list_layout_root = QVBoxLayout(self.list_card)
+        list_layout_root.setContentsMargins(20, 20, 20, 20)
+        list_widget = QWidget(self.list_card)
+        list_layout = QVBoxLayout(list_widget)
+        self.page_info = BodyLabel("", self)
+        list_layout.addWidget(self.page_info)
 
-        self.scroll = QScrollArea(self)
+        self.scroll = ScrollArea(self)
         self.scroll.setWidgetResizable(True)
         self.content = QWidget(self.scroll)
         self.content_layout = QVBoxLayout(self.content)
         self.content_layout.addStretch(1)
         self.scroll.setWidget(self.content)
-        root.addWidget(self.scroll, 1)
+        list_layout.addWidget(self.scroll, 1)
 
         pager = QHBoxLayout()
         self.prev_button = PushButton("上一页", self)
@@ -77,7 +87,9 @@ class LocalBankPage(QWidget):
         self.next_button.clicked.connect(self.next_page)
         pager.addWidget(self.prev_button)
         pager.addWidget(self.next_button)
-        root.addLayout(pager)
+        list_layout.addLayout(pager)
+        list_layout_root.addWidget(list_widget)
+        root.addWidget(self.list_card, 1)
 
         self.reload()
 
@@ -104,7 +116,9 @@ class LocalBankPage(QWidget):
             card.mouseDoubleClickEvent = lambda event, s=item.subject, n=item.name: self.open_bank_requested.emit(s, n)
             self.content_layout.insertWidget(self.content_layout.count() - 1, card)
             self.cards.append(card)
-        self._update_page_info()
+        max_page = self._update_page_info()
+        self.prev_button.setEnabled(self.current_page > 1)
+        self.next_button.setEnabled(self.current_page < max_page)
 
     def refresh_index(self):
         dialog = IndexRefreshDialog(self)
@@ -144,6 +158,7 @@ class LocalBankPage(QWidget):
             card.deleteLater()
         self.cards.clear()
 
-    def _update_page_info(self):
+    def _update_page_info(self) -> int:
         max_page = max((self.total_count - 1) // 50 + 1, 1)
         self.page_info.setText(f"共 {self.total_count} 个题库，第 {self.current_page}/{max_page} 页")
+        return max_page
