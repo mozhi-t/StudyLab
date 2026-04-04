@@ -82,6 +82,12 @@
       "subject": "computer_basic",
       "question_content": "操作系统的核心功能不包括？",
       "error_count": 1
+    },
+    {
+      "question_id": "computer_basic_计算机Office选择题库_9",
+      "subject": "computer_basic",
+      "question_content": "在Excel中，公式通常以什么符号开头？",
+      "error_count": 2
     }
   ],
   "python": [],
