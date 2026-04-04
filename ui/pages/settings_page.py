@@ -160,6 +160,14 @@ class SettingsPage(QWidget):
                 self,
             )
         )
+        self.shortcut_title = SubtitleLabel("快捷键", self)
+        shortcut_font = QFont(self.shortcut_title.font())
+        shortcut_font.setPointSize(16)
+        shortcut_font.setWeight(QFont.Weight.DemiBold)
+        self.shortcut_title.setFont(shortcut_font)
+        layout.addSpacing(18)
+        layout.addWidget(self.shortcut_title)
+        layout.addSpacing(18)
         layout.addWidget(
             PreferenceCard(
                 FluentIcon.LEFT_ARROW,

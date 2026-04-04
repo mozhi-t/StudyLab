@@ -4,8 +4,8 @@
   "language": "zh_CN",
   "ui_scale": "跟随系统设置",
   "answer_shortcuts": {
-    "prev_question": "Z",
-    "next_question": "X"
+    "prev_question": "1",
+    "next_question": "2"
   },
   "mica_enabled": false
 }
