@@ -1,14 +1,14 @@
 {
   "records": [
     {
-      "client_id": "g0Xq3zFD",
+      "client_id": "NMV1lp28",
       "device_name": "MoZhi-G",
       "ip_address": "198.18.0.1",
-      "username": "123",
-      "joined_at": "2026-04-06T02:06:33",
-      "submitted_at": "2026-04-06T02:06:46",
+      "username": "13",
+      "joined_at": "2026-04-06T02:44:56",
+      "submitted_at": "2026-04-06T02:45:01",
       "submission_state": "submitted",
-      "score": 27,
+      "score": 18,
       "score_visible": true,
       "answer_visible": true
     }

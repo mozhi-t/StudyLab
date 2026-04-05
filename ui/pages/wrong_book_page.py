@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PipsPager, PipsScrollButtonDisplayMode, PrimaryPushButton, ScrollArea, SubtitleLabel
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PipsPager, PipsScrollButtonDisplayMode, PrimaryPushButton, SingleDirectionScrollArea, SubtitleLabel
 
 from config.settings import SUBJECTS
 from ui.styles.title_style import apply_page_title_style
@@ -60,11 +61,9 @@ class WrongBookPage(QWidget):
         self.page_info.hide()
         list_layout.addWidget(self.page_info)
 
-        self.scroll = ScrollArea(self)
+        self.scroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(self.scroll.Shape.NoFrame)
-        self.scroll.setObjectName("wrongListScroll")
-        self.scroll.viewport().setObjectName("wrongListViewport")
+        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.content = QWidget(self.scroll)
         self.content.setObjectName("wrongListContent")
         self.content_layout = QVBoxLayout(self.content)
@@ -72,22 +71,8 @@ class WrongBookPage(QWidget):
         self.content_layout.setSpacing(8)
         self.content_layout.addStretch(1)
         self.scroll.setWidget(self.content)
-        self.scroll.setStyleSheet(
-            """
-            QAbstractScrollArea#wrongListScroll {
-                background: transparent;
-                border: none;
-            }
-            QWidget#wrongListViewport {
-                background: transparent;
-                border: none;
-            }
-            QWidget#wrongListContent {
-                background: transparent;
-                border: none;
-            }
-            """
-        )
+        self.scroll.enableTransparentBackground()
+        self.content.setStyleSheet("QWidget#wrongListContent{background: transparent; border: none;}")
         list_layout.addWidget(self.scroll, 1)
 
         pager = QHBoxLayout()

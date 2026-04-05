@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, LineEdit, PrimaryPushButton, SubtitleLabel
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, LineEdit, PrimaryPushButton, SingleDirectionScrollArea, SubtitleLabel
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.styled_card import StyledCardWidget
 
@@ -35,10 +36,17 @@ class NetworkBankPage(QWidget):
         self.list_card = StyledCardWidget(self)
         list_root = QVBoxLayout(self.list_card)
         list_root.setContentsMargins(10, 10, 10, 10)
-        self.result_container = QWidget(self.list_card)
+        self.result_scroll = SingleDirectionScrollArea(self.list_card, Qt.Orientation.Vertical)
+        self.result_scroll.setWidgetResizable(True)
+        self.result_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.result_container = QWidget(self.result_scroll)
+        self.result_container.setObjectName("networkBankResultContent")
         result_layout = QVBoxLayout(self.result_container)
         result_layout.setContentsMargins(0, 0, 0, 0)
         result_layout.addWidget(BodyLabel("网络题库下载接口预留，待接入实际服务协议。", self))
-        self.result_container.setStyleSheet("background: transparent; border: none;")
-        list_root.addWidget(self.result_container)
+        result_layout.addStretch(1)
+        self.result_scroll.setWidget(self.result_container)
+        self.result_scroll.enableTransparentBackground()
+        self.result_container.setStyleSheet("QWidget#networkBankResultContent{background: transparent; border: none;}")
+        list_root.addWidget(self.result_scroll)
         layout.addWidget(self.list_card, 1)

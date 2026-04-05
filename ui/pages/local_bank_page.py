@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QPoint, QThread, pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PrimaryPushButton, ScrollArea, StateToolTip, SubtitleLabel
+from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PrimaryPushButton, SingleDirectionScrollArea, StateToolTip, SubtitleLabel
 
 from config.settings import SUBJECTS
 from ui.styles.title_style import apply_page_title_style
@@ -79,11 +79,9 @@ class LocalBankPage(QWidget):
         self.list_layout_root = QVBoxLayout(self.list_card)
         self.list_layout_root.setContentsMargins(10, 10, 10, 10)
         self.list_layout_root.setSpacing(10)
-        self.scroll = ScrollArea(self.list_card)
+        self.scroll = SingleDirectionScrollArea(self.list_card, Qt.Orientation.Vertical)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(self.scroll.Shape.NoFrame)
-        self.scroll.setObjectName("bankListScroll")
-        self.scroll.viewport().setObjectName("bankListViewport")
+        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.content = QWidget(self.scroll)
         self.content.setObjectName("bankListContent")
         self.content_layout = QVBoxLayout(self.content)
@@ -91,22 +89,8 @@ class LocalBankPage(QWidget):
         self.content_layout.setSpacing(8)
         self.content_layout.addStretch(1)
         self.scroll.setWidget(self.content)
-        self.scroll.setStyleSheet(
-            """
-            QAbstractScrollArea#bankListScroll {
-                background: transparent;
-                border: none;
-            }
-            QWidget#bankListViewport {
-                background: transparent;
-                border: none;
-            }
-            QWidget#bankListContent {
-                background: transparent;
-                border: none;
-            }
-            """
-        )
+        self.scroll.enableTransparentBackground()
+        self.content.setStyleSheet("QWidget#bankListContent{background: transparent; border: none;}")
         self.list_layout_root.addWidget(self.scroll, 1)
 
         pager = QHBoxLayout()

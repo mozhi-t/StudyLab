@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QFont, QKeySequence
-from PyQt6.QtWidgets import QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, LineEdit, StrongBodyLabel, SubtitleLabel, isDarkTheme
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, LineEdit, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel, isDarkTheme
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
@@ -79,16 +80,31 @@ class SettingsPage(QWidget):
         self.settings = APP_SETTINGS_TEMPLATE | self.store.load()
         self.settings["answer_shortcuts"] = APP_SETTINGS_TEMPLATE["answer_shortcuts"] | self.settings.get("answer_shortcuts", {})
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(20, 20, 20, 20)
+        root.setSpacing(0)
+
+        self.scroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll.enableTransparentBackground()
+        root.addWidget(self.scroll)
+
+        self.content = QWidget(self.scroll)
+        self.content.setObjectName("settingsPageContent")
+        self.content.setStyleSheet("QWidget#settingsPageContent{background: transparent; border: none;}")
+        self.scroll.setWidget(self.content)
+
+        layout = QVBoxLayout(self.content)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(5)
 
-        self.page_title = SubtitleLabel("设置", self)
+        self.page_title = SubtitleLabel("设置", self.content)
         apply_page_title_style(self.page_title)
         layout.addWidget(self.page_title)
         layout.addSpacing(18)
 
-        self.title_label = SubtitleLabel("个性化", self)
+        self.title_label = SubtitleLabel("个性化", self.content)
         title_font = QFont(self.title_label.font())
         title_font.setPointSize(16)
         title_font.setWeight(QFont.Weight.DemiBold)
@@ -96,34 +112,34 @@ class SettingsPage(QWidget):
         layout.addWidget(self.title_label)
         layout.addSpacing(18)
 
-        self.theme_combo = ComboBox(self)
+        self.theme_combo = ComboBox(self.content)
         self.theme_combo.addItems(["Light", "Dark", "Auto"])
         self.theme_combo.setCurrentText(self.settings.get("theme", "Auto"))
         self.theme_combo.currentTextChanged.connect(self.update_settings)
         self.theme_combo.setFixedWidth(170)
 
-        self.language_combo = ComboBox(self)
+        self.language_combo = ComboBox(self.content)
         self.language_combo.addItems(["跟随系统设置", "zh_CN", "en_US"])
         self.language_combo.setCurrentText(self.settings.get("language", "zh_CN"))
         self.language_combo.currentTextChanged.connect(self.update_settings)
         self.language_combo.setFixedWidth(170)
 
-        self.scale_combo = ComboBox(self)
+        self.scale_combo = ComboBox(self.content)
         self.scale_combo.addItems(["跟随系统设置", "100%", "110%", "125%"])
         self.scale_combo.setCurrentText(self.settings.get("ui_scale", "跟随系统设置"))
         self.scale_combo.currentTextChanged.connect(self.update_settings)
         self.scale_combo.setFixedWidth(170)
 
         shortcuts = self.settings["answer_shortcuts"]
-        self.prev_shortcut_edit = ShortcutEdit(shortcuts.get("prev_question", "1"), self)
+        self.prev_shortcut_edit = ShortcutEdit(shortcuts.get("prev_question", "1"), self.content)
         self.prev_shortcut_edit.editingFinished.connect(self.update_settings)
-        self.next_shortcut_edit = ShortcutEdit(shortcuts.get("next_question", "2"), self)
+        self.next_shortcut_edit = ShortcutEdit(shortcuts.get("next_question", "2"), self.content)
         self.next_shortcut_edit.editingFinished.connect(self.update_settings)
-        self.mark_shortcut_edit = ShortcutEdit(shortcuts.get("mark_question", "3"), self)
+        self.mark_shortcut_edit = ShortcutEdit(shortcuts.get("mark_question", "3"), self.content)
         self.mark_shortcut_edit.editingFinished.connect(self.update_settings)
 
         initial_color = QColor(self.settings.get("theme_color", APP_SETTINGS_TEMPLATE["theme_color"]))
-        self.color_button = ColorPickerButton(initial_color, "选择主题色", self)
+        self.color_button = ColorPickerButton(initial_color, "选择主题色", self.content)
         self.color_button.colorChanged.connect(self.update_color)
 
         layout.addWidget(
@@ -132,7 +148,7 @@ class SettingsPage(QWidget):
                 "应用主题",
                 "调整您的应用的外观",
                 self.theme_combo,
-                self,
+                self.content,
             )
         )
         layout.addWidget(
@@ -141,7 +157,7 @@ class SettingsPage(QWidget):
                 "主题色",
                 "调整您的应用的主题色",
                 self.color_button,
-                self,
+                self.content,
             )
         )
         layout.addWidget(
@@ -150,7 +166,7 @@ class SettingsPage(QWidget):
                 "界面缩放",
                 "调整少部件和字体的大小",
                 self.scale_combo,
-                self,
+                self.content,
             )
         )
         layout.addWidget(
@@ -159,10 +175,10 @@ class SettingsPage(QWidget):
                 "语言",
                 "选择界面所使用的语言",
                 self.language_combo,
-                self,
+                self.content,
             )
         )
-        self.shortcut_title = SubtitleLabel("快捷键", self)
+        self.shortcut_title = SubtitleLabel("快捷键", self.content)
         shortcut_font = QFont(self.shortcut_title.font())
         shortcut_font.setPointSize(16)
         shortcut_font.setWeight(QFont.Weight.DemiBold)
@@ -176,7 +192,7 @@ class SettingsPage(QWidget):
                 "上一题快捷键",
                 "答题界面中触发上一题操作",
                 self.prev_shortcut_edit,
-                self,
+                self.content,
             )
         )
         layout.addWidget(
@@ -185,7 +201,7 @@ class SettingsPage(QWidget):
                 "下一题快捷键",
                 "答题界面中触发下一题操作",
                 self.next_shortcut_edit,
-                self,
+                self.content,
             )
         )
         layout.addWidget(
@@ -194,7 +210,7 @@ class SettingsPage(QWidget):
                 "标记题目快捷键",
                 "考试界面中标记或取消标记当前题目",
                 self.mark_shortcut_edit,
-                self,
+                self.content,
             )
         )
         layout.addStretch(1)

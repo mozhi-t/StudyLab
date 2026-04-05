@@ -6,8 +6,8 @@ import socket
 
 from PyQt6 import sip
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, InfoBar, InfoBarPosition, Pivot, PrimaryPushButton, ScrollArea, StateToolTip, SubtitleLabel, LineEdit
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, InfoBar, InfoBarPosition, Pivot, PrimaryPushButton, SingleDirectionScrollArea, StateToolTip, SubtitleLabel, LineEdit
 
 from answer.lan_exam_window import LanExamWindow
 from core.lan_exam_client import LanExamClientThread
@@ -131,10 +131,11 @@ class ExamPage(QWidget):
         self.content_card = StyledCardWidget(page)
         content_layout = QVBoxLayout(self.content_card)
         content_layout.setContentsMargins(12, 12, 12, 12)
-        self.scroll = ScrollArea(self.content_card)
+        self.scroll = SingleDirectionScrollArea(self.content_card, Qt.Orientation.Vertical)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(self.scroll.Shape.NoFrame)
+        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.content = QWidget(self.scroll)
+        self.content.setObjectName("lanExamListContent")
         self.content_layout = QVBoxLayout(self.content)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.setSpacing(8)
@@ -142,6 +143,8 @@ class ExamPage(QWidget):
         self.content_layout.addWidget(self.placeholder_label)
         self.content_layout.addStretch(1)
         self.scroll.setWidget(self.content)
+        self.scroll.enableTransparentBackground()
+        self.content.setStyleSheet("QWidget#lanExamListContent{background: transparent; border: none;}")
         content_layout.addWidget(self.scroll)
         layout.addWidget(self.content_card, 1)
         return page

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ComboBox, FluentIcon, LineEdit, PrimaryPushButton, PushButton, ScrollArea, StrongBodyLabel, SubtitleLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, CaptionLabel, ComboBox, FluentIcon, LineEdit, PrimaryPushButton, PushButton, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel
 
 from ui.pages.settings_page import PreferenceCard
 from ui.styles.title_style import apply_page_title_style
@@ -44,15 +44,18 @@ class ServerHomePage(QWidget):
         self.list_card = StyledCardWidget(self)
         list_layout = QVBoxLayout(self.list_card)
         list_layout.setContentsMargins(12, 12, 12, 12)
-        self.scroll = ScrollArea(self.list_card)
+        self.scroll = SingleDirectionScrollArea(self.list_card, Qt.Orientation.Vertical)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(self.scroll.Shape.NoFrame)
+        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_content = QWidget(self.scroll)
+        self.scroll_content.setObjectName("serverHomeConnectionsContent")
         self.scroll_layout = QVBoxLayout(self.scroll_content)
         self.scroll_layout.setContentsMargins(0, 0, 0, 0)
         self.scroll_layout.setSpacing(8)
         self.scroll_layout.addStretch(1)
         self.scroll.setWidget(self.scroll_content)
+        self.scroll.enableTransparentBackground()
+        self.scroll_content.setStyleSheet("QWidget#serverHomeConnectionsContent{background: transparent; border: none;}")
         list_layout.addWidget(self.scroll)
         root.addWidget(self.list_card, 1)
         self.cards: list[QWidget] = []
@@ -138,15 +141,18 @@ class ServerExamListPage(QWidget):
         self.list_card = StyledCardWidget(self)
         list_layout = QVBoxLayout(self.list_card)
         list_layout.setContentsMargins(12, 12, 12, 12)
-        self.scroll = ScrollArea(self.list_card)
+        self.scroll = SingleDirectionScrollArea(self.list_card, Qt.Orientation.Vertical)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(self.scroll.Shape.NoFrame)
+        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.content = QWidget(self.scroll)
+        self.content.setObjectName("serverExamListContent")
         self.content_layout = QVBoxLayout(self.content)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.setSpacing(8)
         self.content_layout.addStretch(1)
         self.scroll.setWidget(self.content)
+        self.scroll.enableTransparentBackground()
+        self.content.setStyleSheet("QWidget#serverExamListContent{background: transparent; border: none;}")
         list_layout.addWidget(self.scroll)
         root.addWidget(self.list_card, 1)
 
@@ -181,79 +187,94 @@ class ServerSettingsPage(QWidget):
         self.host_ip = host_ip
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
-        root.setSpacing(5)
+        root.setSpacing(0)
 
-        title = SubtitleLabel("考试设置", self)
+        self.scroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
+        self.scroll.setWidgetResizable(True)
+        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.scroll.enableTransparentBackground()
+        root.addWidget(self.scroll)
+
+        self.content = QWidget(self.scroll)
+        self.content.setObjectName("serverSettingsContent")
+        self.content.setStyleSheet("QWidget#serverSettingsContent{background: transparent; border: none;}")
+        self.scroll.setWidget(self.content)
+
+        content_layout = QVBoxLayout(self.content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(5)
+
+        title = SubtitleLabel("考试设置", self.content)
         apply_page_title_style(title)
-        root.addWidget(title)
-        root.addSpacing(18)
+        content_layout.addWidget(title)
+        content_layout.addSpacing(18)
 
-        self.section_title = SubtitleLabel("服务端", self)
+        self.section_title = SubtitleLabel("服务端", self.content)
         section_font = QFont(self.section_title.font())
         section_font.setPointSize(16)
         section_font.setWeight(QFont.Weight.DemiBold)
         self.section_title.setFont(section_font)
-        root.addWidget(self.section_title)
-        root.addSpacing(18)
+        content_layout.addWidget(self.section_title)
+        content_layout.addSpacing(18)
 
-        self.port_edit = LineEdit(self)
+        self.port_edit = LineEdit(self.content)
         self.port_edit.setPlaceholderText("端口号")
         self.port_edit.setFixedWidth(170)
         self.port_edit.editingFinished.connect(self._emit_settings_changed)
 
-        self.server_name_edit = LineEdit(self)
+        self.server_name_edit = LineEdit(self.content)
         self.server_name_edit.setPlaceholderText("服务端名称")
         self.server_name_edit.setFixedWidth(170)
         self.server_name_edit.editingFinished.connect(self._emit_settings_changed)
 
-        self.max_clients_edit = LineEdit(self)
+        self.max_clients_edit = LineEdit(self.content)
         self.max_clients_edit.setPlaceholderText("最大连接数")
         self.max_clients_edit.setFixedWidth(170)
         self.max_clients_edit.editingFinished.connect(self._emit_settings_changed)
 
-        self.auth_mode_combo = ComboBox(self)
+        self.auth_mode_combo = ComboBox(self.content)
         self.auth_mode_values = [0, 1, 2]
         self.auth_mode_combo.addItems(["无需认证", "仅用户名", "用户名+密码"])
         self.auth_mode_combo.setFixedWidth(170)
         self.auth_mode_combo.currentIndexChanged.connect(self._emit_settings_changed)
 
-        root.addWidget(
+        content_layout.addWidget(
             PreferenceCard(
                 FluentIcon.GLOBE,
                 "端口号",
                 "设置服务端对外监听的端口号",
                 self.port_edit,
-                self,
+                self.content,
             )
         )
-        root.addWidget(
+        content_layout.addWidget(
             PreferenceCard(
                 FluentIcon.INFO,
                 "服务端名称",
                 "用于局域网内识别当前考试服务端",
                 self.server_name_edit,
-                self,
+                self.content,
             )
         )
-        root.addWidget(
+        content_layout.addWidget(
             PreferenceCard(
                 FluentIcon.PEOPLE,
                 "最大连接数",
                 "限制同时连接到服务端的客户端数量",
                 self.max_clients_edit,
-                self,
+                self.content,
             )
         )
-        root.addWidget(
+        content_layout.addWidget(
             PreferenceCard(
                 FluentIcon.SETTING,
                 "认证模式",
                 "设置连接时是否需要用户名或用户名密码认证",
                 self.auth_mode_combo,
-                self,
+                self.content,
             )
         )
-        root.addStretch(1)
+        content_layout.addStretch(1)
 
     def set_settings(self, config: dict) -> None:
         self.port_edit.setText(str(config.get("listen_port", "")))

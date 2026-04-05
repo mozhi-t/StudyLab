@@ -5,7 +5,8 @@
   "ui_scale": "跟随系统设置",
   "answer_shortcuts": {
     "prev_question": "1",
-    "next_question": "2"
+    "next_question": "2",
+    "mark_question": "3"
   },
   "mica_enabled": false
 }

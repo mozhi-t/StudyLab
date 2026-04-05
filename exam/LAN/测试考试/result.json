@@ -5,7 +5,7 @@
   "message": "交卷成功",
   "show_score_immediately": 1,
   "show_correct_answer": 1,
-  "score": 27,
+  "score": 18,
   "total_score": 45,
   "details": {
     "math": {
@@ -20,10 +20,10 @@
             "D": "25"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "B",
           "explanation": "质数是指大于1且只能被1和自身整除的自然数。17只能被1和17整除，是质数。",
-          "is_correct": false
+          "is_correct": true
         },
         {
           "id": 2,
@@ -35,10 +35,10 @@
             "D": "钝角三角形"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "C",
           "explanation": "三个内角都是60度的三角形是等边三角形，三条边相等。",
-          "is_correct": true
+          "is_correct": false
         },
         {
           "id": 3,
@@ -50,10 +50,10 @@
             "D": "8"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "C",
           "explanation": "x的平方等于16，则x = 正负根号16 = 正负4，即x = 4或x = -4。",
-          "is_correct": true
+          "is_correct": false
         },
         {
           "id": 4,
@@ -65,10 +65,10 @@
             "D": "S = πd"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "C",
           "explanation": "圆的面积公式为S = πr的平方，其中r为半径。S = 2πr是圆的周长公式。",
-          "is_correct": true
+          "is_correct": false
         },
         {
           "id": 5,
@@ -80,10 +80,10 @@
             "D": "a的平方乘a的立方等于2a的5次方"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "B",
           "explanation": "同底数幂相乘，底数不变，指数相加：a的平方乘a的立方 = a的(2+3)次方 = a的5次方。",
-          "is_correct": false
+          "is_correct": true
         }
       ]
     },
@@ -99,10 +99,10 @@
             "D": "1048字节"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "C",
           "explanation": "在计算机中，1KB = 1024字节（2的10次方字节），这是二进制计数方式。",
-          "is_correct": true
+          "is_correct": false
         },
         {
           "id": 2,
@@ -114,10 +114,10 @@
             "D": "macOS"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "C",
           "explanation": "Photoshop是Adobe公司开发的图像处理软件，不是操作系统。Windows、Linux、macOS都是操作系统。",
-          "is_correct": true
+          "is_correct": false
         },
         {
           "id": 3,
@@ -129,10 +129,10 @@
             "D": "输出设备"
           },
           "score": 3,
-          "selected": "",
+          "selected": "B",
           "correct_answer": "B",
           "explanation": "CPU（Central Processing Unit）中文名称为中央处理器，是计算机的核心部件。",
-          "is_correct": false
+          "is_correct": true
         },
         {
           "id": 4,
@@ -144,10 +144,10 @@
             "D": "14"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "B",
           "explanation": "二进制1010 = 1×2³ + 0×2² + 1×2¹ + 0×2⁰ = 8 + 0 + 2 + 0 = 10。",
-          "is_correct": false
+          "is_correct": true
         },
         {
           "id": 5,
@@ -159,10 +159,10 @@
             "D": "U盘"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "C",
           "explanation": "存取速度：Cache > 内存 > 硬盘 > U盘。Cache是高速缓存，用于缓解CPU与内存之间的速度差异。",
-          "is_correct": true
+          "is_correct": false
         },
         {
           "id": 6,
@@ -174,10 +174,10 @@
             "D": "D类"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "C",
           "explanation": "C类地址范围是192.0.0.0~223.255.255.255，192.168.1.1是常见的C类私有地址。",
-          "is_correct": true
+          "is_correct": false
         },
         {
           "id": 7,
@@ -189,10 +189,10 @@
             "D": "Ctrl + Z"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "B",
           "explanation": "Ctrl+C是复制，Ctrl+V是粘贴，Ctrl+X是剪切，Ctrl+Z是撤销。",
-          "is_correct": false
+          "is_correct": true
         },
         {
           "id": 8,
@@ -204,10 +204,10 @@
             "D": "网络延迟"
           },
           "score": 3,
-          "selected": "",
+          "selected": "B",
           "correct_answer": "B",
           "explanation": "计算机病毒是一种恶意程序，能够自我复制并传播，破坏计算机系统或窃取信息。",
-          "is_correct": false
+          "is_correct": true
         },
         {
           "id": 9,
@@ -219,10 +219,10 @@
             "D": "存储容量固定不变"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "C",
           "explanation": "RAM（随机存取存储器）是易失性存储器，断电后其中的数据会丢失。",
-          "is_correct": true
+          "is_correct": false
         },
         {
           "id": 10,
@@ -234,10 +234,10 @@
             "D": "@user.domain.com"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "B",
           "correct_answer": "C",
           "explanation": "合法的电子邮件地址格式为：用户名@域名.后缀，如user@domain.com。",
-          "is_correct": true
+          "is_correct": false
         }
       ]
     }

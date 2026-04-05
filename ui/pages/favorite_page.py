@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PipsPager, PipsScrollButtonDisplayMode, ScrollArea, SubtitleLabel
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PipsPager, PipsScrollButtonDisplayMode, SingleDirectionScrollArea, SubtitleLabel
 
 from config.settings import SUBJECTS
 from ui.styles.title_style import apply_page_title_style
@@ -57,11 +58,9 @@ class FavoritePage(QWidget):
         self.page_info.hide()
         list_layout.addWidget(self.page_info)
 
-        self.scroll = ScrollArea(self)
+        self.scroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
         self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(self.scroll.Shape.NoFrame)
-        self.scroll.setObjectName("favoriteListScroll")
-        self.scroll.viewport().setObjectName("favoriteListViewport")
+        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.content = QWidget(self.scroll)
         self.content.setObjectName("favoriteListContent")
         self.content_layout = QVBoxLayout(self.content)
@@ -69,22 +68,8 @@ class FavoritePage(QWidget):
         self.content_layout.setSpacing(8)
         self.content_layout.addStretch(1)
         self.scroll.setWidget(self.content)
-        self.scroll.setStyleSheet(
-            """
-            QAbstractScrollArea#favoriteListScroll {
-                background: transparent;
-                border: none;
-            }
-            QWidget#favoriteListViewport {
-                background: transparent;
-                border: none;
-            }
-            QWidget#favoriteListContent {
-                background: transparent;
-                border: none;
-            }
-            """
-        )
+        self.scroll.enableTransparentBackground()
+        self.content.setStyleSheet("QWidget#favoriteListContent{background: transparent; border: none;}")
         list_layout.addWidget(self.scroll, 1)
 
         pager = QHBoxLayout()
