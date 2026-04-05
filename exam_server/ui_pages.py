@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPlainTextEdit, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CaptionLabel, ComboBox, FluentIcon, LineEdit, PrimaryPushButton, PushButton, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel
 
 from ui.pages.settings_page import PreferenceCard
@@ -82,6 +82,7 @@ class ServerHomePage(QWidget):
 
 class ExamActionCard(StyledCardWidget):
     enable_clicked = pyqtSignal(str)
+    score_clicked = pyqtSignal(str)
     edit_clicked = pyqtSignal(str)
     delete_clicked = pyqtSignal(str)
 
@@ -103,18 +104,22 @@ class ExamActionCard(StyledCardWidget):
         layout.addLayout(text_layout, 1)
         layout.addWidget(BodyLabel(f"时长：{exam['duration_minutes']} 分钟", self))
         self.enable_button = PrimaryPushButton("结束考试" if exam.get("enabled") else "启用考试", self)
+        self.score_button = PushButton("查看分数", self)
         self.settings_button = PushButton("设置", self)
         self.delete_button = PushButton("删除", self)
         self.enable_button.clicked.connect(lambda: self.enable_clicked.emit(self.exam_name))
+        self.score_button.clicked.connect(lambda: self.score_clicked.emit(self.exam_name))
         self.settings_button.clicked.connect(lambda: self.edit_clicked.emit(self.exam_name))
         self.delete_button.clicked.connect(lambda: self.delete_clicked.emit(self.exam_name))
         layout.addWidget(self.enable_button)
+        layout.addWidget(self.score_button)
         layout.addWidget(self.settings_button)
         layout.addWidget(self.delete_button)
 
 
 class ServerExamListPage(QWidget):
     enable_exam_requested = pyqtSignal(str)
+    view_scores_requested = pyqtSignal(str)
     edit_exam_requested = pyqtSignal(str)
     delete_exam_requested = pyqtSignal(str)
 
@@ -173,6 +178,7 @@ class ServerExamListPage(QWidget):
                 continue
             card = ExamActionCard(exam, self.content)
             card.enable_clicked.connect(self.enable_exam_requested)
+            card.score_clicked.connect(self.view_scores_requested)
             card.edit_clicked.connect(self.edit_exam_requested)
             card.delete_clicked.connect(self.delete_exam_requested)
             self.content_layout.insertWidget(self.content_layout.count() - 1, card)
@@ -291,3 +297,63 @@ class ServerSettingsPage(QWidget):
                 "listen_port": int(self.port_edit.text().strip() or 8765),
             }
         )
+
+
+class ServerLogPage(QWidget):
+    refresh_requested = pyqtSignal()
+    file_changed = pyqtSignal(str)
+
+    def __init__(self, parent: QWidget | None = None):
+        super().__init__(parent)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(20, 20, 20, 20)
+        root.setSpacing(5)
+
+        title = SubtitleLabel("日志", self)
+        apply_page_title_style(title)
+        root.addWidget(title)
+        root.addSpacing(18)
+
+        self.filter_card = StyledCardWidget(self)
+        filter_layout = QHBoxLayout(self.filter_card)
+        filter_layout.setContentsMargins(12, 12, 12, 12)
+        filter_layout.setSpacing(10)
+        self.file_combo = ComboBox(self.filter_card)
+        self.file_combo.setMinimumWidth(260)
+        self.file_combo.currentTextChanged.connect(self._emit_file_changed)
+        self.refresh_button = PrimaryPushButton("刷新", self.filter_card)
+        self.refresh_button.clicked.connect(self.refresh_requested.emit)
+        filter_layout.addWidget(self.file_combo, 1)
+        filter_layout.addWidget(self.refresh_button)
+        root.addWidget(self.filter_card)
+
+        self.content_card = StyledCardWidget(self)
+        content_layout = QVBoxLayout(self.content_card)
+        content_layout.setContentsMargins(12, 12, 12, 12)
+        self.log_view = QPlainTextEdit(self.content_card)
+        self.log_view.setReadOnly(True)
+        self.log_view.setFrameShape(QFrame.Shape.NoFrame)
+        self.log_view.setStyleSheet("QPlainTextEdit{background: transparent; border: none;}")
+        content_layout.addWidget(self.log_view)
+        root.addWidget(self.content_card, 1)
+
+    def set_log_files(self, filenames: list[str], current: str | None = None) -> None:
+        selected = current or self.file_combo.currentText()
+        self.file_combo.blockSignals(True)
+        self.file_combo.clear()
+        if filenames:
+            self.file_combo.addItems(filenames)
+            target = selected if selected in filenames else filenames[0]
+            self.file_combo.setCurrentText(target)
+        self.file_combo.blockSignals(False)
+
+    def set_log_content(self, content: str) -> None:
+        self.log_view.setPlainText(content)
+        self.log_view.verticalScrollBar().setValue(self.log_view.verticalScrollBar().maximum())
+
+    def current_file(self) -> str:
+        return self.file_combo.currentText().strip()
+
+    def _emit_file_changed(self, filename: str) -> None:
+        if filename.strip():
+            self.file_changed.emit(filename.strip())

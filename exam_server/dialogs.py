@@ -4,6 +4,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CheckBox, LineEdit, MessageBoxBase, PasswordLineEdit, SingleDirectionScrollArea, SubtitleLabel
 
+from ui.widgets.styled_card import StyledCardWidget
+
 
 class ExamMetadataDialog(MessageBoxBase):
     def __init__(self, exam: dict, parent=None):
@@ -76,3 +78,45 @@ class ExamMetadataDialog(MessageBoxBase):
             "show_correct_answer": 1 if self.answer_checkbox.isChecked() else 0,
             "disallow_reentry_after_submit": 1 if self.reentry_checkbox.isChecked() else 0,
         }
+
+
+class ExamScoresDialog(MessageBoxBase):
+    def __init__(self, exam_name: str, records: list[dict], parent=None):
+        super().__init__(parent)
+        self.widget.setMinimumWidth(560)
+        self.titleLabel = SubtitleLabel(f"{exam_name} - 已交卷分数", self)
+        self.viewLayout.addWidget(self.titleLabel)
+
+        self.scroll_area = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setMaximumHeight(420)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+
+        self.content_widget = QWidget(self.scroll_area)
+        self.content_widget.setObjectName("examScoresContent")
+        content = QVBoxLayout(self.content_widget)
+        content.setContentsMargins(0, 0, 4, 0)
+        content.setSpacing(10)
+
+        if records:
+            for item in records:
+                card = StyledCardWidget(self.content_widget)
+                layout = QVBoxLayout(card)
+                layout.setContentsMargins(14, 12, 14, 12)
+                layout.setSpacing(4)
+                layout.addWidget(BodyLabel(f"用户：{item.get('username') or '未命名用户'}", card))
+                layout.addWidget(BodyLabel(f"分数：{item.get('score', 0)}", card))
+                layout.addWidget(BodyLabel(f"设备：{item.get('device_name') or '未知设备'}", card))
+                layout.addWidget(BodyLabel(f"识别ID：{item.get('client_id', '')}", card))
+                layout.addWidget(BodyLabel(f"交卷时间：{item.get('submitted_at') or '未知'}", card))
+                content.addWidget(card)
+        else:
+            content.addWidget(BodyLabel("当前还没有用户交卷。", self.content_widget))
+        content.addStretch(1)
+
+        self.scroll_area.setWidget(self.content_widget)
+        self.scroll_area.enableTransparentBackground()
+        self.content_widget.setStyleSheet("QWidget#examScoresContent{background: transparent; border: none;}")
+        self.viewLayout.addWidget(self.scroll_area)
+        self.yesButton.setText("关闭")
+        self.cancelButton.hide()

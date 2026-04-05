@@ -1,4 +1,9 @@
 {
+  "type": "submit_exam",
+  "client_id": "VZMpVWGI",
+  "device_name": "MoZhi-G",
+  "exam_id": "demo_exam_001",
+  "exam_name": "测试考试",
   "subjects": {
     "math": {
       "choice_questions": [
@@ -27,15 +32,15 @@
     "computer_basic": {
       "choice_questions": [
         {
-          "id": 1,
-          "selected": "B"
-        },
-        {
           "id": 2,
           "selected": "B"
         },
         {
           "id": 3,
+          "selected": "B"
+        },
+        {
+          "id": 1,
           "selected": "B"
         },
         {
@@ -56,15 +61,15 @@
         },
         {
           "id": 8,
-          "selected": "D"
+          "selected": "B"
         },
         {
           "id": 9,
-          "selected": "D"
+          "selected": "B"
         },
         {
           "id": 10,
-          "selected": "D"
+          "selected": "B"
         }
       ]
     }

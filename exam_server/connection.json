@@ -1,3 +1,14 @@
 {
-  "connections": []
+  "connections": [
+    {
+      "client_id": "8Flk8E5x",
+      "device_name": "MoZhi-G",
+      "ip_address": "198.18.0.1",
+      "username": "123",
+      "auth_state": "authenticated",
+      "connected_at": "2026-04-06T03:30:36",
+      "last_heartbeat_at": "2026-04-06T03:30:37",
+      "websocket_session_id": 1400363283664
+    }
+  ]
 }

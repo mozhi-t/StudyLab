@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import re
 import socket
 import string
 from datetime import datetime
@@ -27,3 +28,12 @@ def get_local_ip() -> str:
             return socket.gethostbyname(socket.gethostname())
         except OSError:
             return "127.0.0.1"
+
+
+def safe_filename_part(value: str, fallback: str = "unknown") -> str:
+    text = (value or "").strip()
+    if not text:
+        return fallback
+    sanitized = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", text)
+    sanitized = re.sub(r"\s+", "_", sanitized).strip(" .")
+    return sanitized or fallback

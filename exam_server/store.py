@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import shutil
 from datetime import datetime
 from pathlib import Path
 
 from core.json_store import JsonStore
 from exam_server.defaults import ACCOUNTS_TEMPLATE, CONNECTION_TEMPLATE, SERVER_CONFIG_TEMPLATE
 from exam_server.paths import ACCOUNTS_FILE, CONFIG_FILE, CONNECTION_FILE, EXAM_BANK_DIR
+from exam_server.utils import safe_filename_part
 from models.lan_exam import ExamAnswerSheet, ExamPaper
 
 
@@ -94,10 +96,7 @@ class ExamServerStore:
         exam_dir = EXAM_BANK_DIR / exam_name
         if not exam_dir.exists():
             return
-        for item in exam_dir.iterdir():
-            if item.is_file():
-                item.unlink()
-        exam_dir.rmdir()
+        shutil.rmtree(exam_dir)
 
     def load_connections(self) -> dict:
         return self.connection_store.load()
@@ -124,6 +123,11 @@ class ExamServerStore:
     def exam_user_store(self, exam_name: str) -> JsonStore:
         return JsonStore(EXAM_BANK_DIR / exam_name / f"{exam_name}_user.json", {"records": []})
 
+    def exam_submission_dir(self, exam_name: str) -> Path:
+        directory = EXAM_BANK_DIR / exam_name / "user_submission"
+        directory.mkdir(parents=True, exist_ok=True)
+        return directory
+
     def upsert_exam_record(self, exam_name: str, record: dict) -> None:
         store = self.exam_user_store(exam_name)
         data = store.load()
@@ -135,6 +139,22 @@ class ExamServerStore:
                 return
         records.append(record)
         store.save({"records": records})
+
+    def save_submission_payload(self, exam_name: str, payload: dict, username: str, client_id: str, device_name: str) -> Path:
+        filename = (
+            f"{safe_filename_part(username)}_"
+            f"{safe_filename_part(client_id)}_"
+            f"{safe_filename_part(device_name)}_submission.json"
+        )
+        target = self.exam_submission_dir(exam_name) / filename
+        JsonStore(target, payload).save(payload)
+        return target
+
+    def list_submitted_scores(self, exam_name: str) -> list[dict]:
+        records = self.exam_user_store(exam_name).load().get("records", [])
+        submitted = [item for item in records if item.get("submission_state") == "submitted"]
+        submitted.sort(key=lambda item: item.get("submitted_at") or "", reverse=True)
+        return submitted
 
     def score_exam(self, exam_name: str, answers_payload: dict) -> dict:
         answer_sheet = ExamAnswerSheet(**self.load_exam_answers(exam_name))

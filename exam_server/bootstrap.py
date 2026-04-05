@@ -23,13 +23,16 @@ def ensure_sample_exam() -> None:
     question_file = exam_dir / "exam_questions.json"
     answer_file = exam_dir / "exam_answers.json"
     user_file = exam_dir / "测试考试_user.json"
+    submission_dir = exam_dir / "user_submission"
     if question_file.exists() and answer_file.exists() and user_file.exists():
+        submission_dir.mkdir(parents=True, exist_ok=True)
         return
 
     manager = QuestionIndexManager()
     math_bank = manager.load_bank("math", "数学基础选择题库")
     computer_bank = manager.load_bank("computer_basic", "计算机基础选择题库")
     exam_dir.mkdir(parents=True, exist_ok=True)
+    submission_dir.mkdir(parents=True, exist_ok=True)
 
     subjects = {
         "chinese": {"enabled": False, "choice_questions": []},

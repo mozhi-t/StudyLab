@@ -1,4 +1,9 @@
 {
+  "type": "submit_exam",
+  "client_id": "8Flk8E5x",
+  "device_name": "MoZhi-G",
+  "exam_id": "demo_exam_001",
+  "exam_name": "测试考试",
   "subjects": {
     "math": {
       "choice_questions": [
