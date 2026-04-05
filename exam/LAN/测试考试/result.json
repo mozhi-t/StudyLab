@@ -5,7 +5,7 @@
   "message": "交卷成功",
   "show_score_immediately": 1,
   "show_correct_answer": 1,
-  "score": 30,
+  "score": 27,
   "total_score": 45,
   "details": {
     "math": {
@@ -20,10 +20,10 @@
             "D": "25"
           },
           "score": 3,
-          "selected": "B",
+          "selected": "C",
           "correct_answer": "B",
           "explanation": "质数是指大于1且只能被1和自身整除的自然数。17只能被1和17整除，是质数。",
-          "is_correct": true
+          "is_correct": false
         },
         {
           "id": 2,
@@ -129,7 +129,7 @@
             "D": "输出设备"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "",
           "correct_answer": "B",
           "explanation": "CPU（Central Processing Unit）中文名称为中央处理器，是计算机的核心部件。",
           "is_correct": false
@@ -204,7 +204,7 @@
             "D": "网络延迟"
           },
           "score": 3,
-          "selected": "C",
+          "selected": "",
           "correct_answer": "B",
           "explanation": "计算机病毒是一种恶意程序，能够自我复制并传播，破坏计算机系统或窃取信息。",
           "is_correct": false

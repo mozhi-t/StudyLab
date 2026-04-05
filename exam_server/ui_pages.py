@@ -91,6 +91,12 @@ class ExamActionCard(StyledCardWidget):
         text_layout = QVBoxLayout()
         text_layout.addWidget(StrongBodyLabel(exam["exam_name"], self))
         text_layout.addWidget(BodyLabel(f"开始时间：{exam['start_time']}", self))
+        text_layout.addWidget(
+            CaptionLabel(
+                f"设置摘要：禁止重复进入：{'是' if int(exam.get('disallow_reentry_after_submit', 1)) else '否'}",
+                self,
+            )
+        )
         layout.addLayout(text_layout, 1)
         layout.addWidget(BodyLabel(f"时长：{exam['duration_minutes']} 分钟", self))
         self.enable_button = PrimaryPushButton("结束考试" if exam.get("enabled") else "启用考试", self)

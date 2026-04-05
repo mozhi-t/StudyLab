@@ -28,5 +28,20 @@
     },
     "answer": "A",
     "explanation": "|x - 3| < 2等价于-2 < x - 3 < 2，解得1 < x < 5。"
+  },
+  {
+    "question_id": "lan_exam_math_测试考试_5",
+    "bank_name": "测试考试",
+    "bank_question_id": 5,
+    "subject": "math",
+    "question": "下列运算正确的是？",
+    "options": {
+      "A": "a的平方乘a的立方等于a的6次方",
+      "B": "a的平方乘a的立方等于a的5次方",
+      "C": "a的平方加a的立方等于a的5次方",
+      "D": "a的平方乘a的立方等于2a的5次方"
+    },
+    "answer": "B",
+    "explanation": "同底数幂相乘，底数不变，指数相加：a的平方乘a的立方 = a的(2+3)次方 = a的5次方。"
   }
 ]

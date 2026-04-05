@@ -119,6 +119,8 @@ class SettingsPage(QWidget):
         self.prev_shortcut_edit.editingFinished.connect(self.update_settings)
         self.next_shortcut_edit = ShortcutEdit(shortcuts.get("next_question", "2"), self)
         self.next_shortcut_edit.editingFinished.connect(self.update_settings)
+        self.mark_shortcut_edit = ShortcutEdit(shortcuts.get("mark_question", "3"), self)
+        self.mark_shortcut_edit.editingFinished.connect(self.update_settings)
 
         initial_color = QColor(self.settings.get("theme_color", APP_SETTINGS_TEMPLATE["theme_color"]))
         self.color_button = ColorPickerButton(initial_color, "选择主题色", self)
@@ -186,6 +188,15 @@ class SettingsPage(QWidget):
                 self,
             )
         )
+        layout.addWidget(
+            PreferenceCard(
+                FluentIcon.TAG,
+                "标记题目快捷键",
+                "考试界面中标记或取消标记当前题目",
+                self.mark_shortcut_edit,
+                self,
+            )
+        )
         layout.addStretch(1)
 
     def update_settings(self):
@@ -195,6 +206,7 @@ class SettingsPage(QWidget):
         self.settings["answer_shortcuts"] = {
             "prev_question": self.prev_shortcut_edit.text().strip() or APP_SETTINGS_TEMPLATE["answer_shortcuts"]["prev_question"],
             "next_question": self.next_shortcut_edit.text().strip() or APP_SETTINGS_TEMPLATE["answer_shortcuts"]["next_question"],
+            "mark_question": self.mark_shortcut_edit.text().strip() or APP_SETTINGS_TEMPLATE["answer_shortcuts"]["mark_question"],
         }
         self.store.save(self.settings)
         apply_theme()

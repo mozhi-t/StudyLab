@@ -46,6 +46,7 @@ class ExamServerStore:
                     "exam_password": paper.exam_password,
                     "show_score_immediately": paper.show_score_immediately,
                     "show_correct_answer": paper.show_correct_answer,
+                    "disallow_reentry_after_submit": paper.disallow_reentry_after_submit,
                     "enabled_subjects": [name for name, subject in paper.subjects.items() if subject.enabled and subject.choice_questions],
                     "folder_name": exam_dir.name,
                 }
@@ -73,6 +74,7 @@ class ExamServerStore:
             "exam_password",
             "show_score_immediately",
             "show_correct_answer",
+            "disallow_reentry_after_submit",
         ]:
             question_data[key] = metadata[key]
             answer_data[key] = metadata[key]

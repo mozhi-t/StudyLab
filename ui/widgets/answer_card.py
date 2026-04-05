@@ -14,6 +14,7 @@ class QuestionStatusCard(StyledCardWidget):
     def __init__(self, text: str, parent: QWidget | None = None):
         self._state = "default"
         self._is_current = False
+        self._display_text = text
         super().__init__(parent, radius=10, light_border_alpha=34)
         self.setFixedSize(36, 36)
 
@@ -28,9 +29,12 @@ class QuestionStatusCard(StyledCardWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.label)
 
-    def set_state(self, state: str, is_current: bool = False) -> None:
+    def set_state(self, state: str, is_current: bool = False, display_text: str | None = None) -> None:
         self._state = state
         self._is_current = is_current
+        if display_text is not None:
+            self._display_text = display_text
+            self.label.setText(display_text)
         self.update()
 
     def mousePressEvent(self, event) -> None:
@@ -43,6 +47,10 @@ class QuestionStatusCard(StyledCardWidget):
             return QColor(15, 163, 97, 235)
         if self._state == "wrong":
             return QColor(224, 72, 72, 235)
+        if self._state == "pending":
+            return QColor(0, 120, 212, 235)
+        if self._state == "marked":
+            return QColor(243, 156, 18, 235)
         return super()._normalBackgroundColor()
 
     def paintEvent(self, event) -> None:
@@ -55,7 +63,7 @@ class QuestionStatusCard(StyledCardWidget):
 
         painter = QPainter(self)
         painter.setRenderHints(QPainter.RenderHint.Antialiasing)
-        pen_color = QColor(255, 255, 255, 140) if self._state in {"correct", "wrong"} else QColor(0, 120, 212, 170)
+        pen_color = QColor(255, 255, 255, 140) if self._state in {"correct", "wrong", "pending", "marked"} else QColor(0, 120, 212, 170)
         pen = painter.pen()
         pen.setColor(pen_color)
         pen.setWidth(2)
@@ -65,7 +73,7 @@ class QuestionStatusCard(StyledCardWidget):
         self._apply_text_color()
 
     def _apply_text_color(self) -> None:
-        if self._state in {"correct", "wrong"}:
+        if self._state in {"correct", "wrong", "pending", "marked"}:
             self.label.setStyleSheet("color: white;")
         else:
             self.label.setStyleSheet("")
@@ -124,5 +132,21 @@ class AnswerCard(QWidget):
                 answered += 1
             button.set_state(state, is_current=idx == current_index)
 
+        total = len(self.buttons)
+        self.summary_label.setText(f"已做题数：{answered}/{total}")
+
+    def update_exam_status(self, states: dict[int, dict], current_index: int) -> None:
+        answered = 0
+        for idx, button in enumerate(self.buttons):
+            payload = states.get(idx, {})
+            state = payload.get("state", "default")
+            marked = payload.get("marked", False)
+            answered_flag = payload.get("answered", False)
+            if answered_flag:
+                answered += 1
+            display_text = str(idx + 1)
+            if marked and answered_flag:
+                display_text += "*"
+            button.set_state(state, is_current=idx == current_index, display_text=display_text)
         total = len(self.buttons)
         self.summary_label.setText(f"已做题数：{answered}/{total}")

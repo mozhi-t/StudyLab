@@ -52,6 +52,7 @@ APP_SETTINGS_TEMPLATE = {
     "answer_shortcuts": {
         "prev_question": "1",
         "next_question": "2",
+        "mark_question": "3",
     },
 }
 

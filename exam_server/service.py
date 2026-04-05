@@ -149,6 +149,18 @@ class ExamRealtimeService:
             await websocket.send_json({"type": "exam_request_result", "success": False, "message": "考试未启用"})
             return
         paper = self.store.load_exam_paper(exam_name)
+        if int(paper.get("disallow_reentry_after_submit", 1)):
+            records = self.store.exam_user_store(exam_name).load().get("records", [])
+            submitted = next(
+                (
+                    item for item in records
+                    if item.get("client_id") == client_id and item.get("submission_state") == "submitted"
+                ),
+                None,
+            )
+            if submitted:
+                await websocket.send_json({"type": "exam_request_result", "success": False, "message": "该考试已交卷，禁止重复进入"})
+                return
         if datetime.now() > datetime.fromisoformat(paper["end_time"]):
             await websocket.send_json({"type": "exam_request_result", "success": False, "message": "考试已结束"})
             return

@@ -10,6 +10,11 @@
       "question_id": "math_数学基础选择题库_10",
       "subject": "math",
       "question_content": "不等式|x - 3| < 2的解集是？"
+    },
+    {
+      "question_id": "lan_exam_math_测试考试_5",
+      "subject": "math",
+      "question_content": "下列运算正确的是？"
     }
   ],
   "english": [],
@@ -28,6 +33,26 @@
       "question_id": "computer_basic_计算机网络选择题库_3",
       "subject": "computer_basic",
       "question_content": "IP地址的作用是？"
+    },
+    {
+      "question_id": "lan_exam_computer_basic_测试考试_3",
+      "subject": "computer_basic",
+      "question_content": "CPU的中文名称是？"
+    },
+    {
+      "question_id": "lan_exam_computer_basic_测试考试_4",
+      "subject": "computer_basic",
+      "question_content": "二进制数1010转换为十进制数是？"
+    },
+    {
+      "question_id": "lan_exam_computer_basic_测试考试_5",
+      "subject": "computer_basic",
+      "question_content": "下列存储设备中，存取速度最快的是？"
+    },
+    {
+      "question_id": "lan_exam_computer_basic_测试考试_10",
+      "subject": "computer_basic",
+      "question_content": "下列哪个是合法的电子邮件地址格式？"
     }
   ],
   "python": [],

@@ -4,7 +4,7 @@
       "choice_questions": [
         {
           "id": 1,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 2,
@@ -35,10 +35,6 @@
           "selected": "C"
         },
         {
-          "id": 3,
-          "selected": "C"
-        },
-        {
           "id": 4,
           "selected": "C"
         },
@@ -52,10 +48,6 @@
         },
         {
           "id": 7,
-          "selected": "C"
-        },
-        {
-          "id": 8,
           "selected": "C"
         },
         {

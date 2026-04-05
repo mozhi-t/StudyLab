@@ -1,16 +1,28 @@
 from __future__ import annotations
 
-from PyQt6.QtWidgets import QVBoxLayout
-from qfluentwidgets import BodyLabel, CheckBox, LineEdit, MessageBoxBase, PasswordLineEdit, SubtitleLabel
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, CheckBox, LineEdit, MessageBoxBase, PasswordLineEdit, SingleDirectionScrollArea, SubtitleLabel
 
 
 class ExamMetadataDialog(MessageBoxBase):
     def __init__(self, exam: dict, parent=None):
         super().__init__(parent)
+        self.widget.setMinimumWidth(380)
         self.titleLabel = SubtitleLabel("考试基础信息", self)
         self.viewLayout.addWidget(self.titleLabel)
 
-        content = QVBoxLayout()
+        self.scroll_area = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setMaximumHeight(380)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+
+        self.content_widget = QWidget(self.scroll_area)
+        self.content_widget.setObjectName("examMetadataContent")
+        content = QVBoxLayout(self.content_widget)
+        content.setContentsMargins(0, 0, 4, 0)
+        content.setSpacing(10)
+
         self.exam_id_edit = LineEdit(self)
         self.exam_name_edit = LineEdit(self)
         self.start_time_edit = LineEdit(self)
@@ -19,6 +31,7 @@ class ExamMetadataDialog(MessageBoxBase):
         self.password_edit = PasswordLineEdit(self)
         self.score_checkbox = CheckBox("交卷后立即显示分数", self)
         self.answer_checkbox = CheckBox("交卷后显示正确答案和解析", self)
+        self.reentry_checkbox = CheckBox("交卷后禁止重复进入考试", self)
         for label, control in [
             ("考试 ID", self.exam_id_edit),
             ("考试名称", self.exam_name_edit),
@@ -31,7 +44,13 @@ class ExamMetadataDialog(MessageBoxBase):
             content.addWidget(control)
         content.addWidget(self.score_checkbox)
         content.addWidget(self.answer_checkbox)
-        self.viewLayout.addLayout(content)
+        content.addWidget(self.reentry_checkbox)
+        content.addStretch(1)
+
+        self.scroll_area.setWidget(self.content_widget)
+        self.scroll_area.enableTransparentBackground()
+        self.content_widget.setStyleSheet("QWidget#examMetadataContent{background: transparent; border: none;}")
+        self.viewLayout.addWidget(self.scroll_area)
         self.yesButton.setText("保存")
         self.cancelButton.setText("取消")
 
@@ -43,6 +62,7 @@ class ExamMetadataDialog(MessageBoxBase):
         self.password_edit.setText(str(exam.get("exam_password", "")))
         self.score_checkbox.setChecked(bool(exam.get("show_score_immediately", 0)))
         self.answer_checkbox.setChecked(bool(exam.get("show_correct_answer", 0)))
+        self.reentry_checkbox.setChecked(bool(exam.get("disallow_reentry_after_submit", 1)))
 
     def metadata(self) -> dict:
         return {
@@ -54,4 +74,5 @@ class ExamMetadataDialog(MessageBoxBase):
             "exam_password": self.password_edit.text().strip(),
             "show_score_immediately": 1 if self.score_checkbox.isChecked() else 0,
             "show_correct_answer": 1 if self.answer_checkbox.isChecked() else 0,
+            "disallow_reentry_after_submit": 1 if self.reentry_checkbox.isChecked() else 0,
         }

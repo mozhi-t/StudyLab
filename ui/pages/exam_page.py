@@ -4,7 +4,8 @@ import json
 import platform
 import socket
 
-from PyQt6.QtCore import QPoint, Qt
+from PyQt6 import sip
+from PyQt6.QtCore import QPoint, Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, InfoBar, InfoBarPosition, Pivot, PrimaryPushButton, ScrollArea, StateToolTip, SubtitleLabel, LineEdit
 
@@ -40,6 +41,8 @@ class LanExamCard(QuestionCard):
 
 
 class ExamPage(QWidget):
+    favorite_changed = pyqtSignal()
+
     def __init__(self, wrong_manager, favorite_manager, parent: QWidget | None = None):
         super().__init__(parent)
         self.wrong_manager = wrong_manager
@@ -283,6 +286,7 @@ class ExamPage(QWidget):
         self.store.save_inputs(exam_name, {"subjects": {}})
         self.lan_exam_window = LanExamWindow(paper, self.wrong_manager, self.favorite_manager)
         self.lan_exam_window.submit_requested.connect(self.submit_exam)
+        self.lan_exam_window.favorite_changed.connect(self.favorite_changed)
         self.lan_exam_window.show()
         self.lan_exam_window.raise_()
         self.lan_exam_window.activateWindow()
@@ -322,7 +326,7 @@ class ExamPage(QWidget):
         self.render_exam_list()
 
     def show_tip(self, title: str, content: str) -> None:
-        if self.state_tooltip:
+        if self.state_tooltip and not sip.isdeleted(self.state_tooltip):
             self.state_tooltip.close()
         self.state_tooltip = StateToolTip(title, content, self)
         self.state_tooltip.show()
@@ -331,7 +335,8 @@ class ExamPage(QWidget):
         self.state_tooltip.move(QPoint(max(self.width() - self.state_tooltip.width() - margin, margin), margin))
 
     def finish_tip(self, content: str, success: bool) -> None:
-        if not self.state_tooltip:
+        if not self.state_tooltip or sip.isdeleted(self.state_tooltip):
+            self.state_tooltip = None
             return
         self.state_tooltip.setContent(content)
         self.state_tooltip.setState(success)

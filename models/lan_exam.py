@@ -52,6 +52,7 @@ class ExamPaper:
     exam_password: str
     show_score_immediately: int
     show_correct_answer: int
+    disallow_reentry_after_submit: int = 1
     subjects: dict[str, ExamSubjectPaper] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -71,6 +72,7 @@ class ExamAnswerSheet:
     exam_password: str
     show_score_immediately: int
     show_correct_answer: int
+    disallow_reentry_after_submit: int = 1
     subjects: dict[str, ExamSubjectAnswer] = field(default_factory=dict)
 
     def __post_init__(self) -> None:

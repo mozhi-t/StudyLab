@@ -81,6 +81,7 @@ def ensure_sample_exam() -> None:
         "exam_password": "",
         "show_score_immediately": 1,
         "show_correct_answer": 1,
+        "disallow_reentry_after_submit": 1,
     }
     JsonStore(question_file, metadata | {"subjects": subjects}).save(metadata | {"subjects": subjects})
     JsonStore(answer_file, metadata | {"subjects": answers}).save(metadata | {"subjects": answers})

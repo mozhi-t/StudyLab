@@ -59,6 +59,7 @@ class MainWindow(MSFluentWindow):
 
         self.home_page.navigate_requested.connect(self.switch_to_page)
         self.local_bank_page.open_bank_requested.connect(self.open_choice_answer)
+        self.exam_page.favorite_changed.connect(self.favorite_page.reload)
 
         self._register_pages()
 
