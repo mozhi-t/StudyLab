@@ -1,3 +1,6 @@
 PyQt6
 PyQt6-Fluent-Widgets
 requests
+fastapi
+uvicorn[standard]
+websockets

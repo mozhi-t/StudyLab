@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtCore import QPoint, QThread, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PrimaryPushButton, ScrollArea, StateToolTip, SubtitleLabel
 
@@ -160,6 +160,7 @@ class LocalBankPage(QWidget):
             return
         tooltip = StateToolTip("正在检查题库...", "请稍后", self)
         tooltip.show()
+        self._move_tooltip_top_right(tooltip)
         self.refresh_thread = IndexRefreshThread(self.question_index_manager)
         self.refresh_thread.completed.connect(lambda result: self._finish_refresh(tooltip, True, result))
         self.refresh_thread.failed.connect(lambda detail: self._finish_refresh(tooltip, False, detail))
@@ -179,9 +180,15 @@ class LocalBankPage(QWidget):
     def _finish_refresh(self, tooltip: StateToolTip, success: bool, payload):
         tooltip.setContent("刷新成功" if success else str(payload))
         tooltip.setState(success)
+        self._move_tooltip_top_right(tooltip)
         if success:
             self.current_page = 1
             self.reload()
+
+    def _move_tooltip_top_right(self, tooltip: StateToolTip) -> None:
+        tooltip.adjustSize()
+        margin = 20
+        tooltip.move(QPoint(max(self.width() - tooltip.width() - margin, margin), margin))
 
     def _clear_cards(self):
         for card in self.cards:

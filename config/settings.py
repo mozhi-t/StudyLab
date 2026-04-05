@@ -15,6 +15,8 @@ WRONG_DIR = BASE_DIR / "wrong"
 WRONG_INDEX_FILE = WRONG_DIR / "index.json"
 FAVORITE_DIR = BASE_DIR / "favorite"
 FAVORITE_INDEX_FILE = FAVORITE_DIR / "index.json"
+EXAM_DIR = BASE_DIR / "exam"
+LAN_EXAM_DIR = EXAM_DIR / "LAN"
 
 SETTINGS_DIR = BASE_DIR / "config"
 APP_SETTINGS_FILE = SETTINGS_DIR / "app_settings.json"

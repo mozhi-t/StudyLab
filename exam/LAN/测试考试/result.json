@@ -1,0 +1,245 @@
+{
+  "type": "submit_result",
+  "success": true,
+  "exam_name": "测试考试",
+  "message": "交卷成功",
+  "show_score_immediately": 1,
+  "show_correct_answer": 1,
+  "score": 30,
+  "total_score": 45,
+  "details": {
+    "math": {
+      "choice_questions": [
+        {
+          "id": 1,
+          "question": "下列哪个数是质数？",
+          "options": {
+            "A": "15",
+            "B": "17",
+            "C": "21",
+            "D": "25"
+          },
+          "score": 3,
+          "selected": "B",
+          "correct_answer": "B",
+          "explanation": "质数是指大于1且只能被1和自身整除的自然数。17只能被1和17整除，是质数。",
+          "is_correct": true
+        },
+        {
+          "id": 2,
+          "question": "一个三角形的三个内角分别是60度、60度、60度，这个三角形是？",
+          "options": {
+            "A": "直角三角形",
+            "B": "等腰三角形",
+            "C": "等边三角形",
+            "D": "钝角三角形"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "C",
+          "explanation": "三个内角都是60度的三角形是等边三角形，三条边相等。",
+          "is_correct": true
+        },
+        {
+          "id": 3,
+          "question": "若x的平方等于16，则x的值为？",
+          "options": {
+            "A": "4",
+            "B": "-4",
+            "C": "正负4",
+            "D": "8"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "C",
+          "explanation": "x的平方等于16，则x = 正负根号16 = 正负4，即x = 4或x = -4。",
+          "is_correct": true
+        },
+        {
+          "id": 4,
+          "question": "圆的面积公式是？",
+          "options": {
+            "A": "S = πr",
+            "B": "S = 2πr",
+            "C": "S = πr的平方",
+            "D": "S = πd"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "C",
+          "explanation": "圆的面积公式为S = πr的平方，其中r为半径。S = 2πr是圆的周长公式。",
+          "is_correct": true
+        },
+        {
+          "id": 5,
+          "question": "下列运算正确的是？",
+          "options": {
+            "A": "a的平方乘a的立方等于a的6次方",
+            "B": "a的平方乘a的立方等于a的5次方",
+            "C": "a的平方加a的立方等于a的5次方",
+            "D": "a的平方乘a的立方等于2a的5次方"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "B",
+          "explanation": "同底数幂相乘，底数不变，指数相加：a的平方乘a的立方 = a的(2+3)次方 = a的5次方。",
+          "is_correct": false
+        }
+      ]
+    },
+    "computer_basic": {
+      "choice_questions": [
+        {
+          "id": 1,
+          "question": "计算机中，1KB等于多少字节？",
+          "options": {
+            "A": "100字节",
+            "B": "1000字节",
+            "C": "1024字节",
+            "D": "1048字节"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "C",
+          "explanation": "在计算机中，1KB = 1024字节（2的10次方字节），这是二进制计数方式。",
+          "is_correct": true
+        },
+        {
+          "id": 2,
+          "question": "下列哪个不是操作系统？",
+          "options": {
+            "A": "Windows",
+            "B": "Linux",
+            "C": "Photoshop",
+            "D": "macOS"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "C",
+          "explanation": "Photoshop是Adobe公司开发的图像处理软件，不是操作系统。Windows、Linux、macOS都是操作系统。",
+          "is_correct": true
+        },
+        {
+          "id": 3,
+          "question": "CPU的中文名称是？",
+          "options": {
+            "A": "存储器",
+            "B": "中央处理器",
+            "C": "输入设备",
+            "D": "输出设备"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "B",
+          "explanation": "CPU（Central Processing Unit）中文名称为中央处理器，是计算机的核心部件。",
+          "is_correct": false
+        },
+        {
+          "id": 4,
+          "question": "二进制数1010转换为十进制数是？",
+          "options": {
+            "A": "8",
+            "B": "10",
+            "C": "12",
+            "D": "14"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "B",
+          "explanation": "二进制1010 = 1×2³ + 0×2² + 1×2¹ + 0×2⁰ = 8 + 0 + 2 + 0 = 10。",
+          "is_correct": false
+        },
+        {
+          "id": 5,
+          "question": "下列存储设备中，存取速度最快的是？",
+          "options": {
+            "A": "硬盘",
+            "B": "内存",
+            "C": "Cache（缓存）",
+            "D": "U盘"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "C",
+          "explanation": "存取速度：Cache > 内存 > 硬盘 > U盘。Cache是高速缓存，用于缓解CPU与内存之间的速度差异。",
+          "is_correct": true
+        },
+        {
+          "id": 6,
+          "question": "IP地址192.168.1.1属于哪类地址？",
+          "options": {
+            "A": "A类",
+            "B": "B类",
+            "C": "C类",
+            "D": "D类"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "C",
+          "explanation": "C类地址范围是192.0.0.0~223.255.255.255，192.168.1.1是常见的C类私有地址。",
+          "is_correct": true
+        },
+        {
+          "id": 7,
+          "question": "下列哪个快捷键用于复制选中的内容？",
+          "options": {
+            "A": "Ctrl + V",
+            "B": "Ctrl + C",
+            "C": "Ctrl + X",
+            "D": "Ctrl + Z"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "B",
+          "explanation": "Ctrl+C是复制，Ctrl+V是粘贴，Ctrl+X是剪切，Ctrl+Z是撤销。",
+          "is_correct": false
+        },
+        {
+          "id": 8,
+          "question": "计算机病毒是一种？",
+          "options": {
+            "A": "细菌",
+            "B": "程序",
+            "C": "硬件故障",
+            "D": "网络延迟"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "B",
+          "explanation": "计算机病毒是一种恶意程序，能够自我复制并传播，破坏计算机系统或窃取信息。",
+          "is_correct": false
+        },
+        {
+          "id": 9,
+          "question": "RAM的特点是？",
+          "options": {
+            "A": "断电后数据不丢失",
+            "B": "只能读不能写",
+            "C": "断电后数据丢失",
+            "D": "存储容量固定不变"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "C",
+          "explanation": "RAM（随机存取存储器）是易失性存储器，断电后其中的数据会丢失。",
+          "is_correct": true
+        },
+        {
+          "id": 10,
+          "question": "下列哪个是合法的电子邮件地址格式？",
+          "options": {
+            "A": "user@domain",
+            "B": "user.domain.com",
+            "C": "user@domain.com",
+            "D": "@user.domain.com"
+          },
+          "score": 3,
+          "selected": "C",
+          "correct_answer": "C",
+          "explanation": "合法的电子邮件地址格式为：用户名@域名.后缀，如user@domain.com。",
+          "is_correct": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "server_name": "Study Lab Exam Server",
+  "max_clients": 50,
+  "auth_mode": 1,
+  "listen_port": 9000
+}

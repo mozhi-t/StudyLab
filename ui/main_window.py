@@ -34,7 +34,7 @@ class MainWindow(MSFluentWindow):
         self.local_bank_page.setObjectName("local_bank_page")
         self.network_bank_page = NetworkBankPage(self)
         self.network_bank_page.setObjectName("network_bank_page")
-        self.exam_page = ExamPage(self)
+        self.exam_page = ExamPage(wrong_manager, favorite_manager, self)
         self.exam_page.setObjectName("exam_page")
         self.wrong_book_page = WrongBookPage(wrong_manager, self)
         self.wrong_book_page.setObjectName("wrong_book_page")

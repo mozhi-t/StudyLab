@@ -1,0 +1,9 @@
+{
+  "accounts": [
+    {
+      "username": "student1",
+      "password": "123456",
+      "display_name": "学生1"
+    }
+  ]
+}

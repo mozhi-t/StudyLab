@@ -7,6 +7,7 @@ from config.settings import (
     FAVORITE_DIR,
     FAVORITE_INDEX_FILE,
     FAVORITE_INDEX_TEMPLATE,
+    LAN_EXAM_DIR,
     QUESTION_BANK_DIR,
     QUESTION_BANK_INDEX_FILE,
     QUESTION_INDEX_TEMPLATE,
@@ -25,6 +26,7 @@ def bootstrap_app() -> None:
     QUESTION_BANK_DIR.mkdir(parents=True, exist_ok=True)
     WRONG_DIR.mkdir(parents=True, exist_ok=True)
     FAVORITE_DIR.mkdir(parents=True, exist_ok=True)
+    LAN_EXAM_DIR.mkdir(parents=True, exist_ok=True)
 
     for subject in SUBJECTS:
         (QUESTION_BANK_DIR / subject).mkdir(parents=True, exist_ok=True)

@@ -100,5 +100,175 @@
     "answer": "C",
     "explanation": "Excel公式以等号（=）开头，然后输入公式表达式。",
     "error_count": 2
+  },
+  {
+    "question_id": "lan_exam_computer_basic_测试考试_1",
+    "question_num": 1,
+    "bank_name": "测试考试",
+    "bank_question_id": 1,
+    "subject": "computer_basic",
+    "question": "计算机中，1KB等于多少字节？",
+    "options": {
+      "A": "100字节",
+      "B": "1000字节",
+      "C": "1024字节",
+      "D": "1048字节"
+    },
+    "answer": "C",
+    "explanation": "在计算机中，1KB = 1024字节（2的10次方字节），这是二进制计数方式。",
+    "error_count": 1
+  },
+  {
+    "question_id": "lan_exam_computer_basic_测试考试_2",
+    "question_num": 2,
+    "bank_name": "测试考试",
+    "bank_question_id": 2,
+    "subject": "computer_basic",
+    "question": "下列哪个不是操作系统？",
+    "options": {
+      "A": "Windows",
+      "B": "Linux",
+      "C": "Photoshop",
+      "D": "macOS"
+    },
+    "answer": "C",
+    "explanation": "Photoshop是Adobe公司开发的图像处理软件，不是操作系统。Windows、Linux、macOS都是操作系统。",
+    "error_count": 1
+  },
+  {
+    "question_id": "lan_exam_computer_basic_测试考试_3",
+    "question_num": 3,
+    "bank_name": "测试考试",
+    "bank_question_id": 3,
+    "subject": "computer_basic",
+    "question": "CPU的中文名称是？",
+    "options": {
+      "A": "存储器",
+      "B": "中央处理器",
+      "C": "输入设备",
+      "D": "输出设备"
+    },
+    "answer": "B",
+    "explanation": "CPU（Central Processing Unit）中文名称为中央处理器，是计算机的核心部件。",
+    "error_count": 2
+  },
+  {
+    "question_id": "lan_exam_computer_basic_测试考试_4",
+    "question_num": 4,
+    "bank_name": "测试考试",
+    "bank_question_id": 4,
+    "subject": "computer_basic",
+    "question": "二进制数1010转换为十进制数是？",
+    "options": {
+      "A": "8",
+      "B": "10",
+      "C": "12",
+      "D": "14"
+    },
+    "answer": "B",
+    "explanation": "二进制1010 = 1×2³ + 0×2² + 1×2¹ + 0×2⁰ = 8 + 0 + 2 + 0 = 10。",
+    "error_count": 2
+  },
+  {
+    "question_id": "lan_exam_computer_basic_测试考试_5",
+    "question_num": 5,
+    "bank_name": "测试考试",
+    "bank_question_id": 5,
+    "subject": "computer_basic",
+    "question": "下列存储设备中，存取速度最快的是？",
+    "options": {
+      "A": "硬盘",
+      "B": "内存",
+      "C": "Cache（缓存）",
+      "D": "U盘"
+    },
+    "answer": "C",
+    "explanation": "存取速度：Cache > 内存 > 硬盘 > U盘。Cache是高速缓存，用于缓解CPU与内存之间的速度差异。",
+    "error_count": 1
+  },
+  {
+    "question_id": "lan_exam_computer_basic_测试考试_6",
+    "question_num": 6,
+    "bank_name": "测试考试",
+    "bank_question_id": 6,
+    "subject": "computer_basic",
+    "question": "IP地址192.168.1.1属于哪类地址？",
+    "options": {
+      "A": "A类",
+      "B": "B类",
+      "C": "C类",
+      "D": "D类"
+    },
+    "answer": "C",
+    "explanation": "C类地址范围是192.0.0.0~223.255.255.255，192.168.1.1是常见的C类私有地址。",
+    "error_count": 1
+  },
+  {
+    "question_id": "lan_exam_computer_basic_测试考试_7",
+    "question_num": 7,
+    "bank_name": "测试考试",
+    "bank_question_id": 7,
+    "subject": "computer_basic",
+    "question": "下列哪个快捷键用于复制选中的内容？",
+    "options": {
+      "A": "Ctrl + V",
+      "B": "Ctrl + C",
+      "C": "Ctrl + X",
+      "D": "Ctrl + Z"
+    },
+    "answer": "B",
+    "explanation": "Ctrl+C是复制，Ctrl+V是粘贴，Ctrl+X是剪切，Ctrl+Z是撤销。",
+    "error_count": 2
+  },
+  {
+    "question_id": "lan_exam_computer_basic_测试考试_8",
+    "question_num": 8,
+    "bank_name": "测试考试",
+    "bank_question_id": 8,
+    "subject": "computer_basic",
+    "question": "计算机病毒是一种？",
+    "options": {
+      "A": "细菌",
+      "B": "程序",
+      "C": "硬件故障",
+      "D": "网络延迟"
+    },
+    "answer": "B",
+    "explanation": "计算机病毒是一种恶意程序，能够自我复制并传播，破坏计算机系统或窃取信息。",
+    "error_count": 2
+  },
+  {
+    "question_id": "lan_exam_computer_basic_测试考试_9",
+    "question_num": 9,
+    "bank_name": "测试考试",
+    "bank_question_id": 9,
+    "subject": "computer_basic",
+    "question": "RAM的特点是？",
+    "options": {
+      "A": "断电后数据不丢失",
+      "B": "只能读不能写",
+      "C": "断电后数据丢失",
+      "D": "存储容量固定不变"
+    },
+    "answer": "C",
+    "explanation": "RAM（随机存取存储器）是易失性存储器，断电后其中的数据会丢失。",
+    "error_count": 1
+  },
+  {
+    "question_id": "lan_exam_computer_basic_测试考试_10",
+    "question_num": 10,
+    "bank_name": "测试考试",
+    "bank_question_id": 10,
+    "subject": "computer_basic",
+    "question": "下列哪个是合法的电子邮件地址格式？",
+    "options": {
+      "A": "user@domain",
+      "B": "user.domain.com",
+      "C": "user@domain.com",
+      "D": "@user.domain.com"
+    },
+    "answer": "C",
+    "explanation": "合法的电子邮件地址格式为：用户名@域名.后缀，如user@domain.com。",
+    "error_count": 1
   }
 ]

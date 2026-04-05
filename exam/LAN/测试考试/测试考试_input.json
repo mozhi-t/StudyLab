@@ -1,0 +1,72 @@
+{
+  "subjects": {
+    "math": {
+      "choice_questions": [
+        {
+          "id": 1,
+          "selected": "B"
+        },
+        {
+          "id": 2,
+          "selected": "C"
+        },
+        {
+          "id": 3,
+          "selected": "C"
+        },
+        {
+          "id": 4,
+          "selected": "C"
+        },
+        {
+          "id": 5,
+          "selected": "C"
+        }
+      ]
+    },
+    "computer_basic": {
+      "choice_questions": [
+        {
+          "id": 1,
+          "selected": "C"
+        },
+        {
+          "id": 2,
+          "selected": "C"
+        },
+        {
+          "id": 3,
+          "selected": "C"
+        },
+        {
+          "id": 4,
+          "selected": "C"
+        },
+        {
+          "id": 5,
+          "selected": "C"
+        },
+        {
+          "id": 6,
+          "selected": "C"
+        },
+        {
+          "id": 7,
+          "selected": "C"
+        },
+        {
+          "id": 8,
+          "selected": "C"
+        },
+        {
+          "id": 9,
+          "selected": "C"
+        },
+        {
+          "id": 10,
+          "selected": "C"
+        }
+      ]
+    }
+  }
+}
