@@ -99,7 +99,7 @@
     },
     "answer": "B",
     "explanation": "质数是指大于1且只能被1和自身整除的自然数。17只能被1和17整除，是质数。",
-    "error_count": 16
+    "error_count": 19
   },
   {
     "question_id": "lan_exam_math_测试考试_2",
@@ -150,7 +150,7 @@
     },
     "answer": "B",
     "explanation": "同底数幂相乘，底数不变，指数相加：a的平方乘a的立方 = a的(2+3)次方 = a的5次方。",
-    "error_count": 17
+    "error_count": 20
   },
   {
     "question_id": "lan_exam_math_测试考试_3",
