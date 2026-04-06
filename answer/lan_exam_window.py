@@ -344,7 +344,7 @@ class LanExamWindow(AnswerWindow):
         remaining = self._remaining_seconds()
         minutes, seconds = divmod(remaining, 60)
         self.remaining_label.setText(f"剩余时间：{minutes:02d}:{seconds:02d}")
-        if remaining <= 0:
+        if remaining == 0:
             self.timer.stop()
             self.submit_exam()
 
