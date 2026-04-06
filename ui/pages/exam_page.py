@@ -316,7 +316,8 @@ class ExamPage(QWidget):
     def on_connection_failed(self, message: str) -> None:
         self.reset_connection_state()
         self.client_thread = None
-        self.finish_tip(message, False)
+        self.close_tip()
+        self.show_bar("连接失败", message, error=True)
 
     def reset_connection_state(self) -> None:
         self.client_id = ""
@@ -343,6 +344,14 @@ class ExamPage(QWidget):
             return
         self.state_tooltip.setContent(content)
         self.state_tooltip.setState(success)
+        if not success:
+            self.state_tooltip.close()
+            self.state_tooltip = None
+
+    def close_tip(self) -> None:
+        if self.state_tooltip and not sip.isdeleted(self.state_tooltip):
+            self.state_tooltip.close()
+        self.state_tooltip = None
 
     def show_bar(self, title: str, content: str, error: bool = False) -> None:
         if error:
