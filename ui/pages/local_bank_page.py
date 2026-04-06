@@ -1,28 +1,33 @@
 from __future__ import annotations
 
+from PyQt6 import sip
 from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PrimaryPushButton, SingleDirectionScrollArea, StateToolTip, SubtitleLabel
 
 from config.settings import SUBJECTS
 from core.datetime_utils import format_datetime
+from core.index_checker import GlobalIndexChecker
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.index_refresh_dialog import IndexRefreshDialog
+from ui.widgets.invalid_bank_time_dialog import InvalidBankTimeDialog
 from ui.widgets.question_card import QuestionCard, bank_card_title
 from ui.widgets.styled_card import StyledCardWidget
 
 
 class IndexRefreshThread(QThread):
-    completed = pyqtSignal(dict)
+    completed = pyqtSignal(object)
     failed = pyqtSignal(str)
 
     def __init__(self, manager):
         super().__init__()
         self.manager = manager
+        self.index_checker = GlobalIndexChecker()
 
     def run(self):
         try:
-            self.completed.emit(self.manager.refresh_index())
+            self.manager.refresh_index()
+            self.completed.emit({"invalid_times": self.index_checker.collect_invalid_question_bank_times()})
         except Exception as exc:
             self.failed.emit(str(exc))
 
@@ -38,6 +43,7 @@ class LocalBankPage(QWidget):
         self.page_size = 50
         self.cards: list[QuestionCard] = []
         self.refresh_thread: IndexRefreshThread | None = None
+        self.state_tooltip: StateToolTip | None = None
 
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
@@ -143,12 +149,10 @@ class LocalBankPage(QWidget):
         dialog = IndexRefreshDialog(self)
         if not dialog.exec():
             return
-        tooltip = StateToolTip("正在检查题库...", "请稍后", self)
-        tooltip.show()
-        self._move_tooltip_top_right(tooltip)
+        self.show_tip("正在检查题库...", "请稍后")
         self.refresh_thread = IndexRefreshThread(self.question_index_manager)
-        self.refresh_thread.completed.connect(lambda result: self._finish_refresh(tooltip, True, result))
-        self.refresh_thread.failed.connect(lambda detail: self._finish_refresh(tooltip, False, detail))
+        self.refresh_thread.completed.connect(self._finish_refresh)
+        self.refresh_thread.failed.connect(lambda detail: self.finish_tip(str(detail), False))
         self.refresh_thread.start()
 
     def delete_bank(self, subject: str, bank_name: str):
@@ -162,18 +166,30 @@ class LocalBankPage(QWidget):
         self.current_page = page
         self.reload()
 
-    def _finish_refresh(self, tooltip: StateToolTip, success: bool, payload):
-        tooltip.setContent("刷新成功" if success else str(payload))
-        tooltip.setState(success)
-        self._move_tooltip_top_right(tooltip)
+    def finish_tip(self, content: str, success: bool) -> None:
+        if not self.state_tooltip or sip.isdeleted(self.state_tooltip):
+            self.state_tooltip = None
+            return
+        self.state_tooltip.setContent(content)
+        self.state_tooltip.setState(success)
         if success:
             self.current_page = 1
             self.reload()
 
-    def _move_tooltip_top_right(self, tooltip: StateToolTip) -> None:
-        tooltip.adjustSize()
+    def show_tip(self, title: str, content: str) -> None:
+        if self.state_tooltip and not sip.isdeleted(self.state_tooltip):
+            self.state_tooltip.close()
+        self.state_tooltip = StateToolTip(title, content, self)
+        self.state_tooltip.show()
+        self.state_tooltip.adjustSize()
         margin = 20
-        tooltip.move(QPoint(max(self.width() - tooltip.width() - margin, margin), margin))
+        self.state_tooltip.move(QPoint(max(self.width() - self.state_tooltip.width() - margin, margin), margin))
+
+    def _finish_refresh(self, payload: dict) -> None:
+        self.finish_tip("刷新成功", True)
+        invalid_times = payload.get("invalid_times", [])
+        if invalid_times:
+            InvalidBankTimeDialog(invalid_times, self.window()).exec()
 
     def _clear_cards(self):
         for card in self.cards:

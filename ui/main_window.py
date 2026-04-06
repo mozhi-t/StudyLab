@@ -40,7 +40,7 @@ class MainWindow(MSFluentWindow):
         self.wrong_book_page.setObjectName("wrong_book_page")
         self.favorite_page = FavoritePage(favorite_manager, self)
         self.favorite_page.setObjectName("favorite_page")
-        self.settings_page = SettingsPage(self)
+        self.settings_page = SettingsPage(question_index_manager, wrong_manager, favorite_manager, self)
         self.settings_page.setObjectName("settings_page")
         self.about_page = AboutPage(self)
         self.about_page.setObjectName("about_page")

@@ -1,14 +1,17 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt
+from PyQt6 import sip
+from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QKeySequence
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, InfoBar, InfoBarPosition, LineEdit, PushButton, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel, isDarkTheme
+from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, InfoBar, InfoBarPosition, LineEdit, MessageBox, PushButton, SingleDirectionScrollArea, StateToolTip, StrongBodyLabel, SubtitleLabel, isDarkTheme
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
+from core.index_checker import GlobalIndexChecker
 from core.json_store import JsonStore
 from ui.styles.title_style import apply_page_title_style
+from ui.widgets.invalid_bank_time_dialog import InvalidBankTimeDialog
 from ui.widgets.styled_card import StyledCardWidget
 
 
@@ -73,12 +76,33 @@ class ShortcutEdit(LineEdit):
         event.accept()
 
 
+class IndexCheckThread(QThread):
+    completed = pyqtSignal(object)
+    failed = pyqtSignal(str)
+
+    def __init__(self, checker: GlobalIndexChecker):
+        super().__init__()
+        self.checker = checker
+
+    def run(self):
+        try:
+            self.completed.emit(self.checker.check_and_repair())
+        except Exception as exc:
+            self.failed.emit(str(exc))
+
+
 class SettingsPage(QWidget):
-    def __init__(self, parent: QWidget | None = None):
+    def __init__(self, question_index_manager=None, wrong_manager=None, favorite_manager=None, parent: QWidget | None = None):
         super().__init__(parent)
         self.store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
         self.settings = APP_SETTINGS_TEMPLATE | self.store.load()
         self.settings["answer_shortcuts"] = APP_SETTINGS_TEMPLATE["answer_shortcuts"] | self.settings.get("answer_shortcuts", {})
+        self.question_index_manager = question_index_manager
+        self.wrong_manager = wrong_manager
+        self.favorite_manager = favorite_manager
+        self.index_checker = GlobalIndexChecker()
+        self.index_check_thread: IndexCheckThread | None = None
+        self.state_tooltip: StateToolTip | None = None
 
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
@@ -221,6 +245,26 @@ class SettingsPage(QWidget):
                 self.content,
             )
         )
+        self.advanced_title = SubtitleLabel("高级", self.content)
+        advanced_font = QFont(self.advanced_title.font())
+        advanced_font.setPointSize(16)
+        advanced_font.setWeight(QFont.Weight.DemiBold)
+        self.advanced_title.setFont(advanced_font)
+        layout.addSpacing(18)
+        layout.addWidget(self.advanced_title)
+        layout.addSpacing(18)
+
+        self.index_check_button = PushButton("检查索引", self.content)
+        self.index_check_button.clicked.connect(self.show_index_check_dialog)
+        layout.addWidget(
+            PreferenceCard(
+                FluentIcon.SYNC,
+                "全局索引检查",
+                "检查并尝试修复题库、错题本、收藏夹的索引文件，仅当数据出现问题时使用",
+                self.index_check_button,
+                self.content,
+            )
+        )
         layout.addStretch(1)
 
     def update_settings(self):
@@ -246,5 +290,70 @@ class SettingsPage(QWidget):
         self.update_color(default_color)
         self.show_message("主题色已重置", "重置主题色成功")
 
+    def show_index_check_dialog(self) -> None:
+        if self.index_check_thread and self.index_check_thread.isRunning():
+            return
+        dialog = MessageBox(
+            "是否要进行索引检查",
+            "该功能会检查并尝试修复所有索引文件的内容缺失或格式缺失问题，您可能等待较长时间",
+            self.window(),
+        )
+        dialog.yesButton.setText("确定")
+        dialog.cancelButton.setText("取消")
+        if dialog.exec():
+            self.start_index_check()
+
+    def start_index_check(self) -> None:
+        self.show_tip("正在检查索引...", "请稍后")
+        self.index_check_thread = IndexCheckThread(self.index_checker)
+        self.index_check_thread.completed.connect(self.finish_index_check)
+        self.index_check_thread.failed.connect(self.fail_index_check)
+        self.index_check_thread.start()
+
+    def finish_index_check(self, payload: dict) -> None:
+        self.index_check_thread = None
+        issue_count = int(payload.get("issue_count", 0))
+        self.finish_tip(f"检查完成，{'未发现问题' if issue_count == 0 else f'发现 {issue_count} 个问题'}", True)
+        self._refresh_index_pages()
+        invalid_times = payload.get("invalid_times", [])
+        if invalid_times:
+            InvalidBankTimeDialog(invalid_times, self.window()).exec()
+
+    def fail_index_check(self, message: str) -> None:
+        self.index_check_thread = None
+        self.finish_tip(message, False)
+
+    def _refresh_index_pages(self) -> None:
+        window = self.window()
+        for page_name in ("local_bank_page", "wrong_book_page", "favorite_page"):
+            page = getattr(window, page_name, None)
+            reload_method = getattr(page, "reload", None)
+            if callable(reload_method):
+                reload_method()
+
     def show_message(self, title: str, content: str) -> None:
         InfoBar.success(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=2500, parent=self)
+
+    def show_error_message(self, title: str, content: str) -> None:
+        InfoBar.error(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=3000, parent=self)
+
+    def show_tip(self, title: str, content: str) -> None:
+        if self.state_tooltip and not sip.isdeleted(self.state_tooltip):
+            self.state_tooltip.close()
+        self.state_tooltip = StateToolTip(title, content, self)
+        self.state_tooltip.show()
+        self.state_tooltip.adjustSize()
+        margin = 20
+        self.state_tooltip.move(QPoint(max(self.width() - self.state_tooltip.width() - margin, margin), margin))
+
+    def finish_tip(self, content: str, success: bool) -> None:
+        if not self.state_tooltip or sip.isdeleted(self.state_tooltip):
+            self.state_tooltip = None
+            if not success:
+                self.show_error_message("索引检查失败", content)
+            return
+        self.state_tooltip.setContent(content)
+        self.state_tooltip.setState(success)
+        if not success:
+            self.state_tooltip.close()
+            self.state_tooltip = None
