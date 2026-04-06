@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QWidget
-from qfluentwidgets import FluentIcon, InfoBar, InfoBarPosition, MSFluentWindow
+from qfluentwidgets import FluentIcon, InfoBar, InfoBarPosition, MessageBox, MSFluentWindow
 
 try:
     from .dialogs import ExamMetadataDialog, ExamScoresDialog
@@ -35,6 +35,7 @@ class ExamServerWindow(MSFluentWindow):
         self.server_thread: ServerThread | None = None
         self.host_ip = get_local_ip()
         self.review_windows: list[ServerExamReviewWindow] = []
+        self.pending_enable_exam: str | None = None
 
         self.setWindowTitle("StudyLab - 考试服务端")
         self.resize(1100, 720)
@@ -96,6 +97,28 @@ class ExamServerWindow(MSFluentWindow):
 
     def toggle_server(self) -> None:
         if self._is_server_running():
+            enabled_exams = self._enabled_exam_names()
+            if enabled_exams:
+                dialog = MessageBox(
+                    "有未关闭的考试",
+                    "当前还有以下考试处于启用状态：\n\n"
+                    + "\n".join(enabled_exams)
+                    + "\n\n是否自动关闭这些考试并停止服务？",
+                    self,
+                )
+                dialog.yesButton.setText("确定")
+                dialog.cancelButton.setText("取消")
+                if not dialog.exec():
+                    return
+                for exam_name in enabled_exams:
+                    self.service.disable_exam(exam_name)
+                self.refresh_pages()
+            else:
+                dialog = MessageBox("确认停止服务", "确认现在停止对外考试服务吗？", self)
+                dialog.yesButton.setText("确定")
+                dialog.cancelButton.setText("取消")
+                if not dialog.exec():
+                    return
             self.stop_server()
             return
         port = int(self.store.load_config().get("listen_port", 8765))
@@ -118,9 +141,15 @@ class ExamServerWindow(MSFluentWindow):
         self.home_page.set_service_state(f"{self.host_ip}:{port}", True)
         log_event(self.logger, 20, "服务已启动", 主机地址=self.host_ip, 端口=port)
         self.refresh_logs()
-        self.show_message("服务启动中", f"监听地址：{self.host_ip}:{port}", self.home_page)
+        message_parent = self.exam_list_page if self.pending_enable_exam else self.home_page
+        self.show_message("服务已启动", f"监听地址：{self.host_ip}:{port}", message_parent)
+        if self.pending_enable_exam:
+            exam_name = self.pending_enable_exam
+            self.pending_enable_exam = None
+            self.enable_exam(exam_name)
 
     def _on_server_failed(self, text: str) -> None:
+        self.pending_enable_exam = None
         log_event(self.logger, 40, "服务启动失败", 详情=text)
         self.refresh_logs()
         self.show_message("服务启动失败", text, self.home_page, error=True)
@@ -137,6 +166,22 @@ class ExamServerWindow(MSFluentWindow):
         return bool(self.server_thread and self.server_thread.isRunning())
 
     def enable_exam(self, exam_name: str) -> None:
+        if exam_name in self.service.enabled_exams:
+            dialog = MessageBox("确认结束考试", f"确认结束考试“{exam_name}”吗？", self)
+            dialog.yesButton.setText("确定")
+            dialog.cancelButton.setText("取消")
+            if not dialog.exec():
+                return
+        if exam_name not in self.service.enabled_exams and not self._is_server_running():
+            dialog = MessageBox("服务没有启动", "服务没有启动，是否自动启动服务并启用该考试？", self)
+            dialog.yesButton.setText("确定")
+            dialog.cancelButton.setText("取消")
+            if not dialog.exec():
+                return
+            self.pending_enable_exam = exam_name
+            port = int(self.store.load_config().get("listen_port", 8765))
+            self.start_server(port)
+            return
         success, message, enabled = self.service.toggle_exam(exam_name)
         log_event(self.logger, 20, "考试状态切换", 考试名称=exam_name, 已启用=enabled, 是否成功=success, 消息=message)
         self.refresh_logs()
@@ -215,3 +260,6 @@ class ExamServerWindow(MSFluentWindow):
             InfoBar.error(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=2500, parent=parent)
         else:
             InfoBar.success(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=2500, parent=parent)
+
+    def _enabled_exam_names(self) -> list[str]:
+        return sorted(self.service.enabled_exams)

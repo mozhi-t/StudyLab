@@ -153,6 +153,7 @@ class ExamPage(QWidget):
     def toggle_connection(self) -> None:
         if self.client_thread and self.client_thread.isRunning():
             self.show_tip("正在断开连接...", "请稍后")
+            self._set_connection_ui(False)
             self.client_thread.send_message({"type": "disconnect", "client_id": self.client_id, "username": self.username})
             return
         address = self.address_input.text().strip()
@@ -242,8 +243,7 @@ class ExamPage(QWidget):
 
     def finish_connection(self, username: str) -> None:
         self.username = username
-        self.address_input.setEnabled(False)
-        self.connect_button.setText("断开")
+        self._set_connection_ui(True)
         self.finish_tip("连接成功", True)
         self.render_exam_list()
 
@@ -325,10 +325,13 @@ class ExamPage(QWidget):
         self.username = ""
         self.auth_mode = 0
         self.enabled_exams = []
-        self.address_input.setEnabled(True)
-        self.connect_button.setText("连接")
+        self._set_connection_ui(False)
         self.close_loading_dialog()
         self.render_exam_list()
+
+    def _set_connection_ui(self, connected: bool) -> None:
+        self.address_input.setEnabled(not connected)
+        self.connect_button.setText("断开" if connected else "连接")
 
     def show_tip(self, title: str, content: str) -> None:
         if self.state_tooltip and not sip.isdeleted(self.state_tooltip):

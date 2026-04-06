@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import json
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 from datetime import datetime
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -35,16 +35,19 @@ class ExamRealtimeService:
         self.heartbeat_task: asyncio.Task | None = None
         self.record_writer_task: asyncio.Task | None = None
         self.exam_locks: dict[str, asyncio.Lock] = {}
-        self.record_write_queue: asyncio.Queue[dict] = asyncio.Queue()
+        self.record_write_queue: asyncio.Queue[dict] | None = None
         self.submitted_clients: dict[str, set[str]] = {}
 
     async def on_startup(self) -> None:
         self.loop = asyncio.get_running_loop()
+        self.exam_locks = {}
+        self.record_write_queue = asyncio.Queue()
         self.heartbeat_task = asyncio.create_task(self._heartbeat_loop())
         self.record_writer_task = asyncio.create_task(self._record_writer_loop())
         log_event(self.logger, 20, "实时服务已启动")
 
     async def on_shutdown(self) -> None:
+        await self.disconnect_all_clients("服务已关闭")
         if self.heartbeat_task:
             self.heartbeat_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -53,6 +56,10 @@ class ExamRealtimeService:
             self.record_writer_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await self.record_writer_task
+        self.heartbeat_task = None
+        self.record_writer_task = None
+        self.record_write_queue = None
+        self.loop = None
         log_event(self.logger, 20, "实时服务已停止")
 
     async def websocket_endpoint(self, websocket: WebSocket) -> None:
@@ -276,6 +283,9 @@ class ExamRealtimeService:
             显示答案=result["show_correct_answer"],
         )
         connection = self.client_state.get(client_id, {})
+        if not self.record_write_queue:
+            log_event(self.logger, 30, "交卷写盘任务入队失败", 客户端ID=client_id, 考试名称=exam_name, 原因="写盘队列未初始化")
+            return
         await self.record_write_queue.put(
             {
                 "exam_name": exam_name,
@@ -306,6 +316,25 @@ class ExamRealtimeService:
         self.store.remove_connection(client_id)
         log_event(self.logger, 20, "客户端已移除", 客户端ID=client_id)
 
+    async def disconnect_all_clients(self, message: str = "服务已关闭") -> None:
+        clients = list(self.active_clients.items())
+        if not clients and not self.client_state:
+            self.store.save_connections({"connections": []})
+            return
+
+        log_event(self.logger, 20, "开始断开所有客户端", 连接数量=len(clients), 原因=message)
+        for client_id, websocket in clients:
+            with contextlib.suppress(Exception):
+                await websocket.send_json({"type": "disconnect_result", "success": True, "message": message})
+            with contextlib.suppress(Exception):
+                await websocket.close()
+            await self.unregister_client(client_id)
+
+        self.active_clients.clear()
+        self.client_state.clear()
+        self.store.save_connections({"connections": []})
+        log_event(self.logger, 20, "所有客户端已断开", 原因=message)
+
     def get_enabled_exam_summaries(self) -> list[dict]:
         exams = []
         for item in self.store.list_exams():
@@ -334,7 +363,7 @@ class ExamRealtimeService:
             log_event(self.logger, 30, "启用考试失败", 考试名称=exam_name, 原因="考试时间已过期")
             return False, "考试时间已过期"
         self.enabled_exams.add(exam_name)
-        self.schedule(self.broadcast_enabled_exams())
+        self.schedule(self.broadcast_enabled_exams)
         log_event(self.logger, 20, "考试已启用", 考试名称=exam_name)
         return True, "考试已启用"
 
@@ -348,7 +377,7 @@ class ExamRealtimeService:
     def disable_exam(self, exam_name: str) -> None:
         if exam_name in self.enabled_exams:
             self.enabled_exams.remove(exam_name)
-            self.schedule(self.broadcast_enabled_exams())
+            self.schedule(self.broadcast_enabled_exams)
             log_event(self.logger, 20, "考试已结束", 考试名称=exam_name)
 
     async def broadcast_enabled_exams(self) -> None:
@@ -366,9 +395,10 @@ class ExamRealtimeService:
         for client_id in stale_clients:
             await self.unregister_client(client_id)
 
-    def schedule(self, awaitable: Awaitable | None) -> None:
-        if awaitable and self.loop:
-            asyncio.run_coroutine_threadsafe(awaitable, self.loop)
+    def schedule(self, awaitable_factory: Callable[[], Awaitable] | None) -> None:
+        if not awaitable_factory or not self.loop or self.loop.is_closed():
+            return
+        asyncio.run_coroutine_threadsafe(awaitable_factory(), self.loop)
 
     def _exam_lock(self, exam_name: str) -> asyncio.Lock:
         if exam_name not in self.exam_locks:
@@ -396,13 +426,16 @@ class ExamRealtimeService:
 
     async def _record_writer_loop(self) -> None:
         while True:
+            if not self.record_write_queue:
+                return
             item = await self.record_write_queue.get()
             try:
                 await self._persist_submission(item)
             except Exception:
                 self.logger.exception("事件=后台交卷写盘失败 考试名称=%s 客户端ID=%s", item.get("exam_name", ""), item.get("client_id", ""))
             finally:
-                self.record_write_queue.task_done()
+                if self.record_write_queue:
+                    self.record_write_queue.task_done()
 
     async def _heartbeat_loop(self) -> None:
         while True:
