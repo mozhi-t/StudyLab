@@ -7,6 +7,7 @@ from qfluentwidgets import FluentIcon, InfoBar, InfoBarPosition, MSFluentWindow
 try:
     from .dialogs import ExamMetadataDialog, ExamScoresDialog
     from .pages import ServerExamListPage, ServerHomePage, ServerLogPage, ServerSettingsPage
+    from .review_window import ServerExamReviewWindow
     from ..core.logger import get_exam_logger, log_event
     from ..core.paths import LOG_DIR
     from ..core.utils import get_local_ip
@@ -16,6 +17,7 @@ try:
 except ImportError:
     from ui.dialogs import ExamMetadataDialog, ExamScoresDialog
     from ui.pages import ServerExamListPage, ServerHomePage, ServerLogPage, ServerSettingsPage
+    from ui.review_window import ServerExamReviewWindow
     from core.logger import get_exam_logger, log_event
     from core.paths import LOG_DIR
     from core.utils import get_local_ip
@@ -32,6 +34,7 @@ class ExamServerWindow(MSFluentWindow):
         self.service = ExamRealtimeService(self.store)
         self.server_thread: ServerThread | None = None
         self.host_ip = get_local_ip()
+        self.review_windows: list[ServerExamReviewWindow] = []
 
         self.setWindowTitle("StudyLab - 考试服务端")
         self.resize(1100, 720)
@@ -157,7 +160,30 @@ class ExamServerWindow(MSFluentWindow):
     def view_scores(self, exam_name: str) -> None:
         records = self.store.list_submitted_scores(exam_name)
         dialog = ExamScoresDialog(exam_name, records, self)
+        dialog.detail_requested.connect(lambda record, target_exam=exam_name: self.view_score_detail(target_exam, record))
         dialog.exec()
+
+    def view_score_detail(self, exam_name: str, record: dict) -> None:
+        username = record.get("username") or "未命名用户"
+        try:
+            result_payload = self.store.build_submission_result(exam_name, record)
+        except FileNotFoundError as exc:
+            self.show_message("查看详情失败", str(exc), self.exam_list_page, error=True)
+            return
+        except Exception as exc:
+            self.show_message("查看详情失败", str(exc), self.exam_list_page, error=True)
+            return
+
+        window = ServerExamReviewWindow(exam_name, username, result_payload, self)
+        window.window_closed.connect(lambda target=window: self._forget_review_window(target))
+        self.review_windows.append(window)
+        window.show()
+        window.raise_()
+        window.activateWindow()
+
+    def _forget_review_window(self, window: ServerExamReviewWindow) -> None:
+        if window in self.review_windows:
+            self.review_windows.remove(window)
 
     def delete_exam(self, exam_name: str) -> None:
         self.service.disable_exam(exam_name)

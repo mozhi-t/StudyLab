@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CheckBox, LineEdit, MessageBoxBase, PasswordLineEdit, SingleDirectionScrollArea, SubtitleLabel
+from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, CheckBox, LineEdit, MessageBoxBase, PasswordLineEdit, PushButton, SingleDirectionScrollArea, SubtitleLabel
 
 from .common import StyledCardWidget
 
@@ -81,6 +81,8 @@ class ExamMetadataDialog(MessageBoxBase):
 
 
 class ExamScoresDialog(MessageBoxBase):
+    detail_requested = pyqtSignal(dict)
+
     def __init__(self, exam_name: str, records: list[dict], parent=None):
         super().__init__(parent)
         self.widget.setMinimumWidth(560)
@@ -101,14 +103,22 @@ class ExamScoresDialog(MessageBoxBase):
         if records:
             for item in records:
                 card = StyledCardWidget(self.content_widget)
-                layout = QVBoxLayout(card)
+                layout = QHBoxLayout(card)
                 layout.setContentsMargins(14, 12, 14, 12)
-                layout.setSpacing(4)
-                layout.addWidget(BodyLabel(f"用户：{item.get('username') or '未命名用户'}", card))
-                layout.addWidget(BodyLabel(f"分数：{item.get('score', 0)}", card))
-                layout.addWidget(BodyLabel(f"设备：{item.get('device_name') or '未知设备'}", card))
-                layout.addWidget(BodyLabel(f"识别ID：{item.get('client_id', '')}", card))
-                layout.addWidget(BodyLabel(f"交卷时间：{item.get('submitted_at') or '未知'}", card))
+                layout.setSpacing(12)
+
+                info_layout = QVBoxLayout()
+                info_layout.setSpacing(4)
+                info_layout.addWidget(BodyLabel(f"用户：{item.get('username') or '未命名用户'}", card))
+                info_layout.addWidget(BodyLabel(f"分数：{item.get('score', 0)}", card))
+                info_layout.addWidget(BodyLabel(f"设备：{item.get('device_name') or '未知设备'}", card))
+                info_layout.addWidget(BodyLabel(f"识别ID：{item.get('client_id', '')}", card))
+                info_layout.addWidget(BodyLabel(f"交卷时间：{item.get('submitted_at') or '未知'}", card))
+                layout.addLayout(info_layout, 1)
+
+                detail_button = PushButton("查看详情", card)
+                detail_button.clicked.connect(lambda checked=False, record=item: self.detail_requested.emit(record))
+                layout.addWidget(detail_button, 0, Qt.AlignmentFlag.AlignVCenter)
                 content.addWidget(card)
         else:
             content.addWidget(BodyLabel("当前还没有用户交卷。", self.content_widget))

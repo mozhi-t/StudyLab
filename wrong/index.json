@@ -54,7 +54,7 @@
       "question_id": "lan_exam_math_测试考试_1",
       "subject": "math",
       "question_content": "下列哪个数是质数？",
-      "error_count": 8
+      "error_count": 9
     },
     {
       "question_id": "lan_exam_math_测试考试_2",
@@ -66,7 +66,7 @@
       "question_id": "lan_exam_math_测试考试_4",
       "subject": "math",
       "question_content": "圆的面积公式是？",
-      "error_count": 7
+      "error_count": 8
     },
     {
       "question_id": "lan_exam_math_测试考试_5",
@@ -78,7 +78,7 @@
       "question_id": "lan_exam_math_测试考试_3",
       "subject": "math",
       "question_content": "若x的平方等于16，则x的值为？",
-      "error_count": 6
+      "error_count": 7
     }
   ],
   "english": [],
@@ -123,13 +123,13 @@
       "question_id": "lan_exam_computer_basic_测试考试_1",
       "subject": "computer_basic",
       "question_content": "计算机中，1KB等于多少字节？",
-      "error_count": 8
+      "error_count": 9
     },
     {
       "question_id": "lan_exam_computer_basic_测试考试_2",
       "subject": "computer_basic",
       "question_content": "下列哪个不是操作系统？",
-      "error_count": 8
+      "error_count": 9
     },
     {
       "question_id": "lan_exam_computer_basic_测试考试_3",
@@ -147,13 +147,13 @@
       "question_id": "lan_exam_computer_basic_测试考试_5",
       "subject": "computer_basic",
       "question_content": "下列存储设备中，存取速度最快的是？",
-      "error_count": 8
+      "error_count": 9
     },
     {
       "question_id": "lan_exam_computer_basic_测试考试_6",
       "subject": "computer_basic",
       "question_content": "IP地址192.168.1.1属于哪类地址？",
-      "error_count": 8
+      "error_count": 9
     },
     {
       "question_id": "lan_exam_computer_basic_测试考试_7",
@@ -171,13 +171,13 @@
       "question_id": "lan_exam_computer_basic_测试考试_9",
       "subject": "computer_basic",
       "question_content": "RAM的特点是？",
-      "error_count": 7
+      "error_count": 8
     },
     {
       "question_id": "lan_exam_computer_basic_测试考试_10",
       "subject": "computer_basic",
       "question_content": "下列哪个是合法的电子邮件地址格式？",
-      "error_count": 8
+      "error_count": 9
     }
   ],
   "python": [],

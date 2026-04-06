@@ -157,6 +157,30 @@ class ExamServerStore:
         JsonStore(target, payload).save(payload)
         return target
 
+    def submission_payload_path(self, exam_name: str, username: str, client_id: str, device_name: str) -> Path:
+        filename = (
+            f"{safe_filename_part(username)}_"
+            f"{safe_filename_part(client_id)}_"
+            f"{safe_filename_part(device_name)}_submission.json"
+        )
+        return self.exam_submission_dir(exam_name) / filename
+
+    def load_submission_payload(self, exam_name: str, record: dict) -> dict:
+        target = self.submission_payload_path(
+            exam_name,
+            str(record.get("username", "")),
+            str(record.get("client_id", "")),
+            str(record.get("device_name", "")),
+        )
+        if not target.exists():
+            candidates = sorted(
+                self.exam_submission_dir(exam_name).glob(f"*_{safe_filename_part(str(record.get('client_id', '')), 'unknown')}_*_submission.json")
+            )
+            if not candidates:
+                raise FileNotFoundError(f"未找到交卷数据文件: {target.name}")
+            target = candidates[0]
+        return JsonStore(target, {}).load()
+
     def list_submitted_scores(self, exam_name: str) -> list[dict]:
         records = self.exam_user_store(exam_name).load().get("records", [])
         submitted = [item for item in records if item.get("submission_state") == "submitted"]
@@ -213,3 +237,9 @@ class ExamServerStore:
             "details": details,
             "submitted_at": datetime.now().replace(microsecond=0).isoformat(),
         }
+
+    def build_submission_result(self, exam_name: str, record: dict) -> dict:
+        payload = self.load_submission_payload(exam_name, record)
+        result = self.score_exam(exam_name, payload)
+        result["submitted_at"] = record.get("submitted_at", result["submitted_at"])
+        return result
