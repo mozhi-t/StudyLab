@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from config.settings import PAGE_SIZE, QUESTION_BANK_DIR, QUESTION_BANK_INDEX_FILE, QUESTION_INDEX_TEMPLATE, SUBJECTS
+from core.datetime_utils import format_datetime, parse_datetime
 from core.errors import raise_app_error
 from core.json_store import JsonStore
 from models.question_bank import BankMeta, QuestionBank
@@ -34,7 +35,7 @@ class QuestionIndexManager:
         keyword_lower = keyword.strip().lower()
         if keyword_lower:
             items = [item for item in items if keyword_lower in item.name.lower()]
-        items.sort(key=lambda item: item.create_time, reverse=True)
+        items.sort(key=lambda item: parse_datetime(item.create_time) or datetime.min, reverse=True)
         start = max(page - 1, 0) * page_size
         end = start + page_size
         return items[start:end], len(items)
@@ -50,7 +51,7 @@ class QuestionIndexManager:
                         BankMeta(
                             name=bank.name,
                             subject=bank.subject,
-                            create_time=bank.create_time,
+                            create_time=format_datetime(bank.create_time),
                         )
                     )
             self.save_index(new_index)
@@ -81,12 +82,14 @@ class QuestionIndexManager:
         JsonStore(file_path, payload, "E006", "E007", "E009").save(payload)
         index = self.load_index()
         index[bank.subject] = [item for item in index[bank.subject] if item.name != bank.name]
-        index[bank.subject].append(BankMeta(name=bank.name, subject=bank.subject, create_time=bank.create_time))
+        index[bank.subject].append(BankMeta(name=bank.name, subject=bank.subject, create_time=format_datetime(bank.create_time)))
         self.save_index(index)
 
     def _read_bank(self, file_path: Path) -> QuestionBank:
         raw = JsonStore(file_path, {}, "E006", "E007", "E009").load()
         try:
+            if "create_time" in raw:
+                raw["create_time"] = format_datetime(raw.get("create_time"))
             return QuestionBank(**raw)
         except TypeError as exc:
             raise_app_error("E007", str(exc))

@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PrimaryPushButton, SingleDirectionScrollArea, StateToolTip, SubtitleLabel
 
 from config.settings import SUBJECTS
+from core.datetime_utils import format_datetime
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.index_refresh_dialog import IndexRefreshDialog
 from ui.widgets.question_card import QuestionCard, bank_card_title
@@ -125,7 +126,7 @@ class LocalBankPage(QWidget):
         for item in items:
             card = QuestionCard(
                 title=bank_card_title(item.subject, item.name),
-                right_meta=f"创建时间：{item.create_time}",
+                right_meta=f"创建时间：{format_datetime(item.create_time)}",
                 action_text="删除",
                 action_icon=FluentIcon.DELETE,
                 parent=self.content,

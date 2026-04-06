@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import date, datetime
+from datetime import date
 
 from config.settings import USER_FILE, USER_TEMPLATE
+from core.datetime_utils import format_date, parse_date
 from core.json_store import JsonStore
 from models.user import User
 
@@ -22,7 +23,7 @@ class UserDataManager:
     def record_study_session(self, answered_count: int, study_date: date | None = None) -> User:
         user = self.load_user()
         today = study_date or date.today()
-        last = datetime.fromisoformat(user.last_study_date).date() if user.last_study_date else None
+        last = parse_date(user.last_study_date)
 
         user.total_questions += answered_count
         if last != today:
@@ -32,7 +33,7 @@ class UserDataManager:
             else:
                 user.continuous_days = 1
             user.max_continuous_days = max(user.max_continuous_days, user.continuous_days)
-            user.last_study_date = today.isoformat()
+            user.last_study_date = format_date(today)
 
         self.save_user(user)
         return user

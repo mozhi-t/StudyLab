@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import shutil
-from datetime import datetime
 from pathlib import Path
 
 try:
+    from ..core.datetime_utils import format_datetime, now_text, parse_datetime
     from ..core.defaults import ACCOUNTS_TEMPLATE, CONNECTION_TEMPLATE, SERVER_CONFIG_TEMPLATE
     from ..core.json_store import JsonStore
     from ..core.paths import ACCOUNTS_FILE, CONFIG_FILE, CONNECTION_FILE, EXAM_BANK_DIR
     from ..core.utils import safe_filename_part
     from ..data.models import ExamAnswerSheet, ExamPaper
 except ImportError:
+    from core.datetime_utils import format_datetime, now_text, parse_datetime
     from core.defaults import ACCOUNTS_TEMPLATE, CONNECTION_TEMPLATE, SERVER_CONFIG_TEMPLATE
     from core.json_store import JsonStore
     from core.paths import ACCOUNTS_FILE, CONFIG_FILE, CONNECTION_FILE, EXAM_BANK_DIR
@@ -49,8 +50,8 @@ class ExamServerStore:
                 {
                     "exam_id": paper.exam_id,
                     "exam_name": paper.exam_name,
-                    "start_time": paper.start_time,
-                    "end_time": paper.end_time,
+                    "start_time": format_datetime(paper.start_time),
+                    "end_time": format_datetime(paper.end_time),
                     "duration_minutes": paper.duration_minutes,
                     "exam_password": paper.exam_password,
                     "show_score_immediately": paper.show_score_immediately,
@@ -60,7 +61,7 @@ class ExamServerStore:
                     "folder_name": exam_dir.name,
                 }
             )
-        exams.sort(key=lambda item: item["start_time"])
+        exams.sort(key=lambda item: parse_datetime(item["start_time"]) or item["start_time"])
         return exams
 
     def load_exam_paper(self, exam_name: str) -> dict:
@@ -187,7 +188,7 @@ class ExamServerStore:
         submitted.sort(
             key=lambda item: (
                 int(item.get("score") or 0),
-                item.get("submitted_at") or "",
+                format_datetime(item.get("submitted_at")) or "",
             ),
             reverse=True,
         )
@@ -235,11 +236,11 @@ class ExamServerStore:
             "show_score_immediately": paper.show_score_immediately,
             "show_correct_answer": paper.show_correct_answer,
             "details": details,
-            "submitted_at": datetime.now().replace(microsecond=0).isoformat(),
+            "submitted_at": now_text(),
         }
 
     def build_submission_result(self, exam_name: str, record: dict) -> dict:
         payload = self.load_submission_payload(exam_name, record)
         result = self.score_exam(exam_name, payload)
-        result["submitted_at"] = record.get("submitted_at", result["submitted_at"])
+        result["submitted_at"] = format_datetime(record.get("submitted_at"), result["submitted_at"])
         return result

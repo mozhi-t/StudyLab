@@ -9,10 +9,12 @@ from datetime import datetime
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 try:
+    from ..core.datetime_utils import parse_datetime
     from ..core.logger import get_exam_logger, log_event
     from ..core.utils import now_iso, random_client_id
     from .store import ExamServerStore
 except ImportError:
+    from core.datetime_utils import parse_datetime
     from core.logger import get_exam_logger, log_event
     from core.utils import now_iso, random_client_id
     from network.store import ExamServerStore
@@ -210,7 +212,8 @@ class ExamRealtimeService:
                 log_event(self.logger, 30, "获取试卷失败", 客户端ID=client_id, 考试名称=exam_name, 原因="已交卷且禁止重复进入")
                 await websocket.send_json({"type": "exam_request_result", "success": False, "message": "该考试已交卷，禁止重复进入"})
                 return
-        if datetime.now() > datetime.fromisoformat(paper["end_time"]):
+        end_time = parse_datetime(paper.get("end_time"))
+        if end_time and datetime.now() > end_time:
             log_event(self.logger, 30, "获取试卷失败", 客户端ID=client_id, 考试名称=exam_name, 原因="考试已结束")
             await websocket.send_json({"type": "exam_request_result", "success": False, "message": "考试已结束"})
             return
@@ -326,7 +329,8 @@ class ExamRealtimeService:
         except Exception:
             self.logger.exception("事件=启用考试失败 考试名称=%s 原因=考试文件读取失败", exam_name)
             return False, "考试文件不存在"
-        if datetime.now() > datetime.fromisoformat(paper["end_time"]):
+        end_time = parse_datetime(paper.get("end_time"))
+        if end_time and datetime.now() > end_time:
             log_event(self.logger, 30, "启用考试失败", 考试名称=exam_name, 原因="考试时间已过期")
             return False, "考试时间已过期"
         self.enabled_exams.add(exam_name)
@@ -415,7 +419,7 @@ class ExamRealtimeService:
                 state = self.client_state.get(client_id)
                 if not state:
                     continue
-                last = datetime.fromisoformat(state.get("last_heartbeat_at", now_iso()))
+                last = parse_datetime(state.get("last_heartbeat_at", now_iso())) or current
                 if (current - last).total_seconds() > 30:
                     log_event(self.logger, 30, "心跳超时", 客户端ID=client_id)
                     stale_clients.append(client_id)

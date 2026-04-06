@@ -4,6 +4,11 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CheckBox, LineEdit, MessageBoxBase, PasswordLineEdit, PushButton, SingleDirectionScrollArea, SubtitleLabel
 
+try:
+    from ..core.datetime_utils import format_datetime
+except ImportError:
+    from core.datetime_utils import format_datetime
+
 from .common import StyledCardWidget
 
 
@@ -58,8 +63,8 @@ class ExamMetadataDialog(MessageBoxBase):
 
         self.exam_id_edit.setText(str(exam.get("exam_id", "")))
         self.exam_name_edit.setText(str(exam.get("exam_name", "")))
-        self.start_time_edit.setText(str(exam.get("start_time", "")))
-        self.end_time_edit.setText(str(exam.get("end_time", "")))
+        self.start_time_edit.setText(format_datetime(str(exam.get("start_time", ""))))
+        self.end_time_edit.setText(format_datetime(str(exam.get("end_time", ""))))
         self.duration_edit.setText(str(exam.get("duration_minutes", "")))
         self.password_edit.setText(str(exam.get("exam_password", "")))
         self.score_checkbox.setChecked(bool(exam.get("show_score_immediately", 0)))
@@ -113,7 +118,7 @@ class ExamScoresDialog(MessageBoxBase):
                 info_layout.addWidget(BodyLabel(f"分数：{item.get('score', 0)}", card))
                 info_layout.addWidget(BodyLabel(f"设备：{item.get('device_name') or '未知设备'}", card))
                 info_layout.addWidget(BodyLabel(f"识别ID：{item.get('client_id', '')}", card))
-                info_layout.addWidget(BodyLabel(f"交卷时间：{item.get('submitted_at') or '未知'}", card))
+                info_layout.addWidget(BodyLabel(f"交卷时间：{format_datetime(item.get('submitted_at'), '未知')}", card))
                 layout.addLayout(info_layout, 1)
 
                 detail_button = PushButton("查看详情", card)

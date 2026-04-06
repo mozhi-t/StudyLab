@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import QFrame, QHBoxLayout, QStackedWidget, QVBoxLayout, QW
 from qfluentwidgets import BodyLabel, InfoBar, InfoBarPosition, Pivot, PrimaryPushButton, SingleDirectionScrollArea, StateToolTip, SubtitleLabel, LineEdit
 
 from answer.lan_exam_window import LanExamWindow
+from core.datetime_utils import format_datetime
 from core.lan_exam_client import LanExamClientThread
 from core.lan_exam_store import LanExamStore
 from ui.styles.title_style import apply_page_title_style
@@ -33,7 +34,7 @@ class LanExamCard(QuestionCard):
     def __init__(self, exam: dict, parent: QWidget | None = None):
         super().__init__(
             title=exam["exam_name"],
-            right_meta=f"开始时间：{exam['start_time']}  时长：{exam['duration_minutes']}分钟",
+            right_meta=f"开始时间：{format_datetime(exam['start_time'])}  时长：{exam['duration_minutes']}分钟",
             parent=parent,
         )
         self.enter_button = PrimaryPushButton("进入考试", self)

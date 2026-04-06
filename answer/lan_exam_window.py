@@ -11,6 +11,7 @@ from answer.answer_window import AnswerWindow
 from answer.choice_answer import OptionCard
 from answer.lan_exam_review_window import LanExamReviewWindow
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, SUBJECTS
+from core.datetime_utils import parse_datetime
 from core.json_store import JsonStore
 from core.lan_exam_store import LanExamStore
 from models.wrong_question import WrongQuestion
@@ -378,7 +379,8 @@ class LanExamWindow(AnswerWindow):
     def _remaining_seconds(self) -> int:
         duration_limit = self.paper.get("duration_minutes", 60) * 60
         elapsed = int((datetime.now() - self.started_at).total_seconds())
-        end_seconds = int((datetime.fromisoformat(self.paper["end_time"]) - datetime.now()).total_seconds())
+        end_time = parse_datetime(self.paper.get("end_time"))
+        end_seconds = int((end_time - datetime.now()).total_seconds()) if end_time else duration_limit
         return max(min(duration_limit - elapsed, end_seconds), 0)
 
     def _update_remaining(self) -> None:

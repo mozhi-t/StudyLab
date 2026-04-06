@@ -4,11 +4,11 @@ import random
 import re
 import socket
 import string
-from datetime import datetime
 
+from .datetime_utils import now_text
 
 def now_iso() -> str:
-    return datetime.now().replace(microsecond=0).isoformat()
+    return now_text()
 
 
 def random_client_id(length: int = 8) -> str:

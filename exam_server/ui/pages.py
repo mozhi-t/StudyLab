@@ -6,9 +6,11 @@ from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPlainTextEdit, QVBoxLayout, QW
 from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, InfoBar, InfoBarPosition, LineEdit, PrimaryPushButton, PushButton, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel
 
 try:
+    from ..core.datetime_utils import format_datetime
     from ..core.json_store import JsonStore
     from ..core.theme import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, apply_theme
 except ImportError:
+    from core.datetime_utils import format_datetime
     from core.json_store import JsonStore
     from core.theme import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, apply_theme
 from .common import PreferenceCard, StyledCardWidget, apply_page_title_style
@@ -103,7 +105,7 @@ class ExamActionCard(StyledCardWidget):
         layout.setSpacing(10)
         text_layout = QVBoxLayout()
         text_layout.addWidget(StrongBodyLabel(exam["exam_name"], self))
-        text_layout.addWidget(BodyLabel(f"开始时间：{exam['start_time']}", self))
+        text_layout.addWidget(BodyLabel(f"开始时间：{format_datetime(exam['start_time'])}", self))
         text_layout.addWidget(
             CaptionLabel(
                 f"设置摘要：禁止重复进入：{'是' if int(exam.get('disallow_reentry_after_submit', 1)) else '否'}",
