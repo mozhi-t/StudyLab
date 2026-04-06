@@ -3,7 +3,7 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor, QFont, QKeySequence
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, LineEdit, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel, isDarkTheme
+from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, InfoBar, InfoBarPosition, LineEdit, PushButton, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel, isDarkTheme
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
@@ -139,8 +139,16 @@ class SettingsPage(QWidget):
         self.mark_shortcut_edit.editingFinished.connect(self.update_settings)
 
         initial_color = QColor(self.settings.get("theme_color", APP_SETTINGS_TEMPLATE["theme_color"]))
+        self.theme_color_control = QWidget(self.content)
+        self.theme_color_layout = QHBoxLayout(self.theme_color_control)
+        self.theme_color_layout.setContentsMargins(0, 0, 0, 0)
+        self.theme_color_layout.setSpacing(8)
+        self.reset_theme_color_button = PushButton("重置", self.theme_color_control)
+        self.reset_theme_color_button.clicked.connect(self.reset_theme_color)
         self.color_button = ColorPickerButton(initial_color, "选择主题色", self.content)
         self.color_button.colorChanged.connect(self.update_color)
+        self.theme_color_layout.addWidget(self.reset_theme_color_button)
+        self.theme_color_layout.addWidget(self.color_button)
 
         layout.addWidget(
             PreferenceCard(
@@ -156,7 +164,7 @@ class SettingsPage(QWidget):
                 FluentIcon.PALETTE,
                 "主题色",
                 "调整您的应用的主题色",
-                self.color_button,
+                self.theme_color_control,
                 self.content,
             )
         )
@@ -231,3 +239,12 @@ class SettingsPage(QWidget):
         self.settings["theme_color"] = color.name()
         self.store.save(self.settings)
         apply_theme()
+
+    def reset_theme_color(self):
+        default_color = QColor(APP_SETTINGS_TEMPLATE["theme_color"])
+        self.color_button.setColor(default_color)
+        self.update_color(default_color)
+        self.show_message("主题色已重置", "重置主题色成功")
+
+    def show_message(self, title: str, content: str) -> None:
+        InfoBar.success(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=2500, parent=self)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPlainTextEdit, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, LineEdit, PrimaryPushButton, PushButton, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel
+from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, InfoBar, InfoBarPosition, LineEdit, PrimaryPushButton, PushButton, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel
 
 try:
     from ..core.json_store import JsonStore
@@ -304,6 +304,14 @@ class ServerSettingsPage(QWidget):
             self.content,
         )
         self.color_button.colorChanged.connect(self.update_color)
+        self.theme_color_control = QWidget(self.content)
+        self.theme_color_layout = QHBoxLayout(self.theme_color_control)
+        self.theme_color_layout.setContentsMargins(0, 0, 0, 0)
+        self.theme_color_layout.setSpacing(8)
+        self.reset_theme_color_button = PushButton("重置", self.theme_color_control)
+        self.reset_theme_color_button.clicked.connect(self.reset_theme_color)
+        self.theme_color_layout.addWidget(self.reset_theme_color_button)
+        self.theme_color_layout.addWidget(self.color_button)
 
         self.scale_combo = ComboBox(self.content)
         self.scale_combo.addItems(["跟随系统设置", "100%", "110%", "125%"])
@@ -332,7 +340,7 @@ class ServerSettingsPage(QWidget):
                 FluentIcon.PALETTE,
                 "主题色",
                 "调整您的应用的主题色",
-                self.color_button,
+                self.theme_color_control,
                 self.content,
             )
         )
@@ -383,6 +391,15 @@ class ServerSettingsPage(QWidget):
         self.app_settings["theme_color"] = color.name()
         self.app_settings_store.save(self.app_settings)
         apply_theme()
+
+    def reset_theme_color(self) -> None:
+        default_color = QColor(APP_SETTINGS_TEMPLATE["theme_color"])
+        self.color_button.setColor(default_color)
+        self.update_color(default_color)
+        self.show_message("主题色已重置", "重置主题色成功")
+
+    def show_message(self, title: str, content: str) -> None:
+        InfoBar.success(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=2500, parent=self)
 
 
 class ServerLogPage(QWidget):
