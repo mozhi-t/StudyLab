@@ -71,7 +71,7 @@ class ExamServerWindow(MSFluentWindow):
     def refresh_pages(self) -> None:
         config = self.store.load_config()
         self.settings_page.set_settings(config)
-        self.home_page.set_service_state(f"{self.host_ip}:{config.get('listen_port', 8765)}", self._is_server_running())
+        self.home_page.set_service_state(f"{self.host_ip}:{config.get('listen_port', 9000)}", self._is_server_running())
         exams = []
         for item in self.store.list_exams():
             exams.append(item | {"enabled": item["exam_name"] in self.service.enabled_exams})
@@ -121,7 +121,7 @@ class ExamServerWindow(MSFluentWindow):
                     return
             self.stop_server()
             return
-        port = int(self.store.load_config().get("listen_port", 8765))
+        port = int(self.store.load_config().get("listen_port", 9000))
         self.start_server(port)
 
     def start_server(self, port: int) -> None:
@@ -157,7 +157,7 @@ class ExamServerWindow(MSFluentWindow):
     def _on_server_stopped(self) -> None:
         self.server_thread = None
         config = self.store.load_config()
-        self.home_page.set_service_state(f"{self.host_ip}:{config.get('listen_port', 8765)}", False)
+        self.home_page.set_service_state(f"{self.host_ip}:{config.get('listen_port', 9000)}", False)
         log_event(self.logger, 20, "服务已停止")
         self.refresh_logs()
         self.show_message("服务已停止", "已停止对外提供考试服务", self.home_page)
@@ -179,7 +179,7 @@ class ExamServerWindow(MSFluentWindow):
             if not dialog.exec():
                 return
             self.pending_enable_exam = exam_name
-            port = int(self.store.load_config().get("listen_port", 8765))
+            port = int(self.store.load_config().get("listen_port", 9000))
             self.start_server(port)
             return
         success, message, enabled = self.service.toggle_exam(exam_name)

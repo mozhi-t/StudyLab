@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 APP_NAME = "StudyLab"
 APP_AUTHOR = "MoZhi"
 APP_VERSION = "Beta"
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+if getattr(sys, "frozen", False):
+    BASE_DIR = Path(sys.executable).resolve().parent
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 USER_FILE = DATA_DIR / "user.json"
 QUESTION_BANK_DIR = BASE_DIR / "question_bank"

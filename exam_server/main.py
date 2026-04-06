@@ -5,10 +5,16 @@ import sys
 from PyQt6.QtWidgets import QApplication
 
 if __package__ in (None, ""):
-    from core.bootstrap import ensure_server_files
-    from core.errors import AppError, install_exception_hook
-    from core.theme import apply_theme
-    from ui.window import ExamServerWindow
+    try:
+        from exam_server.core.bootstrap import ensure_server_files
+        from exam_server.core.errors import AppError, install_exception_hook
+        from exam_server.core.theme import apply_theme
+        from exam_server.ui.window import ExamServerWindow
+    except ImportError:
+        from core.bootstrap import ensure_server_files
+        from core.errors import AppError, install_exception_hook
+        from core.theme import apply_theme
+        from ui.window import ExamServerWindow
 else:
     from .core.bootstrap import ensure_server_files
     from .core.errors import AppError, install_exception_hook

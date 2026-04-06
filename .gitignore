@@ -1,3 +1,7 @@
 /.idea
 AGENTS.md
 /exam_server/logs
+/package/*
+/build
+/dist
+

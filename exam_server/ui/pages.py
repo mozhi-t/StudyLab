@@ -378,7 +378,7 @@ class ServerSettingsPage(QWidget):
                 "server_name": self.server_name_edit.text().strip() or "StudyLab Exam Server",
                 "max_clients": int(self.max_clients_edit.text().strip() or 30),
                 "auth_mode": self.auth_mode_values[self.auth_mode_combo.currentIndex()],
-                "listen_port": int(self.port_edit.text().strip() or 8765),
+                "listen_port": int(self.port_edit.text().strip() or 9000),
             }
         )
 

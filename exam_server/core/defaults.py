@@ -4,7 +4,7 @@ SERVER_CONFIG_TEMPLATE = {
     "server_name": "StudyLab Exam Server",
     "max_clients": 30,
     "auth_mode": 0,
-    "listen_port": 8765,
+    "listen_port": 9000,
 }
 
 ACCOUNTS_TEMPLATE = {

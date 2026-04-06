@@ -113,7 +113,7 @@ class ExamPage(QWidget):
         connect_layout.setContentsMargins(12, 12, 12, 12)
         connect_layout.setSpacing(10)
         self.address_input = LineEdit(self.connect_card)
-        self.address_input.setPlaceholderText("输入局域网考试地址，如 192.168.1.10:8765")
+        self.address_input.setPlaceholderText("输入局域网考试地址，如 192.168.1.10:9000")
         self.connect_button = PrimaryPushButton("连接", self.connect_card)
         self.connect_button.clicked.connect(self.toggle_connection)
         connect_layout.addWidget(self.address_input, 1)
