@@ -37,7 +37,7 @@ class FavoritePage(QWidget):
         self.subject_combo = ComboBox(self)
         self.subject_combo.addItem("全部科目", "")
         for key, label in SUBJECTS.items():
-            self.subject_combo.addItem(label, key)
+            self.subject_combo.addItem(label, userData=key)
         self.subject_combo.currentIndexChanged.connect(self._reset_then_reload)
         self.search_edit = LineEdit(self)
         self.search_edit.setPlaceholderText("搜索收藏题目")

@@ -64,7 +64,7 @@ class LocalBankPage(QWidget):
         self.subject_combo = ComboBox(self)
         self.subject_combo.addItem("全部科目", "")
         for key, label in SUBJECTS.items():
-            self.subject_combo.addItem(label, key)
+            self.subject_combo.addItem(label, userData=key)
         self.subject_combo.currentIndexChanged.connect(self._reset_then_reload)
         filter_row.addWidget(self.subject_combo)
 
