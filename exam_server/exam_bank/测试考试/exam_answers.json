@@ -3,7 +3,7 @@
   "exam_name": "测试考试",
   "start_time": "2026-04-05T08:00:00",
   "end_time": "2026-12-31T23:59:00",
-  "duration_minutes": 60,
+  "duration_minutes": 1,
   "exam_password": "123",
   "show_score_immediately": 1,
   "show_correct_answer": 1,

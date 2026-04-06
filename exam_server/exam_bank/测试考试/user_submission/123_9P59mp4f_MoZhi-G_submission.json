@@ -1,6 +1,6 @@
 {
   "type": "submit_exam",
-  "client_id": "jaARiVgD",
+  "client_id": "9P59mp4f",
   "device_name": "MoZhi-G",
   "exam_id": "demo_exam_001",
   "exam_name": "测试考试",
@@ -17,15 +17,15 @@
         },
         {
           "id": 3,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 4,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 5,
-          "selected": "B"
+          "selected": "C"
         }
       ]
     },
@@ -33,43 +33,43 @@
       "choice_questions": [
         {
           "id": 1,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 2,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 3,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 4,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 5,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 6,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 7,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 8,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 9,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 10,
-          "selected": "B"
+          "selected": "C"
         }
       ]
     }

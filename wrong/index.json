@@ -54,7 +54,7 @@
       "question_id": "lan_exam_math_测试考试_1",
       "subject": "math",
       "question_content": "下列哪个数是质数？",
-      "error_count": 9
+      "error_count": 12
     },
     {
       "question_id": "lan_exam_math_测试考试_2",
@@ -72,7 +72,7 @@
       "question_id": "lan_exam_math_测试考试_5",
       "subject": "math",
       "question_content": "下列运算正确的是？",
-      "error_count": 10
+      "error_count": 13
     },
     {
       "question_id": "lan_exam_math_测试考试_3",
@@ -135,13 +135,13 @@
       "question_id": "lan_exam_computer_basic_测试考试_3",
       "subject": "computer_basic",
       "question_content": "CPU的中文名称是？",
-      "error_count": 10
+      "error_count": 13
     },
     {
       "question_id": "lan_exam_computer_basic_测试考试_4",
       "subject": "computer_basic",
       "question_content": "二进制数1010转换为十进制数是？",
-      "error_count": 10
+      "error_count": 13
     },
     {
       "question_id": "lan_exam_computer_basic_测试考试_5",
@@ -159,13 +159,13 @@
       "question_id": "lan_exam_computer_basic_测试考试_7",
       "subject": "computer_basic",
       "question_content": "下列哪个快捷键用于复制选中的内容？",
-      "error_count": 10
+      "error_count": 13
     },
     {
       "question_id": "lan_exam_computer_basic_测试考试_8",
       "subject": "computer_basic",
       "question_content": "计算机病毒是一种？",
-      "error_count": 11
+      "error_count": 14
     },
     {
       "question_id": "lan_exam_computer_basic_测试考试_9",

@@ -3,9 +3,9 @@ from __future__ import annotations
 from datetime import datetime
 
 from PyQt6.QtCore import QTimer, Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QKeySequence, QShortcut
+from PyQt6.QtGui import QCloseEvent, QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
-from qfluentwidgets import Pivot, PrimaryPushButton, PushButton, StrongBodyLabel
+from qfluentwidgets import BodyLabel, MessageBox, Pivot, PrimaryPushButton, PushButton, StrongBodyLabel
 
 from answer.answer_window import AnswerWindow
 from answer.choice_answer import OptionCard
@@ -104,6 +104,7 @@ class LanExamWindow(AnswerWindow):
         self.started_at = datetime.now()
         self.result_payload: dict | None = None
         self.wrongs_recorded = False
+        self.auto_submitted_due_time = False
 
         self.setWindowTitle(self.paper["exam_name"])
         self.setWindowFlag(Qt.WindowType.Window, True)
@@ -137,7 +138,7 @@ class LanExamWindow(AnswerWindow):
         self.title_label = StrongBodyLabel(self.paper["exam_name"], self.exam_page)
         self.remaining_label = StrongBodyLabel("", self.exam_page)
         self.submit_button = PrimaryPushButton("交卷", self.exam_page)
-        self.submit_button.clicked.connect(self.submit_exam)
+        self.submit_button.clicked.connect(self.confirm_submit)
         top.addWidget(self.back_button)
         top.addWidget(self.title_label, 1)
         top.addWidget(self.remaining_label)
@@ -189,6 +190,10 @@ class LanExamWindow(AnswerWindow):
         self.submit_status_label = StrongBodyLabel("正在交卷", self.submit_page)
         self.submit_status_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         root.addWidget(self.submit_status_label)
+        self.auto_submit_hint_label = BodyLabel("考试时间已到，已自动交卷", self.submit_page)
+        self.auto_submit_hint_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        self.auto_submit_hint_label.hide()
+        root.addWidget(self.auto_submit_hint_label)
         self.score_label = StrongBodyLabel("", self.submit_page)
         self.score_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.score_label.hide()
@@ -346,13 +351,26 @@ class LanExamWindow(AnswerWindow):
         self.remaining_label.setText(f"剩余时间：{minutes:02d}:{seconds:02d}")
         if remaining == 0:
             self.timer.stop()
-            self.submit_exam()
+            self.submit_exam(auto_submitted_due_time=True)
 
-    def submit_exam(self) -> None:
+    def confirm_submit(self) -> None:
         if self.stack.currentWidget() is self.submit_page:
             return
+        dialog = MessageBox("确认交卷", "确认现在交卷吗？交卷后将无法继续作答。", self)
+        dialog.yesButton.setText("确认交卷")
+        dialog.cancelButton.setText("取消")
+        if dialog.exec():
+            self.submit_exam()
+
+    def submit_exam(self, auto_submitted_due_time: bool = False) -> None:
+        if self.stack.currentWidget() is self.submit_page:
+            return
+        self.auto_submitted_due_time = auto_submitted_due_time
         self.timer.stop()
         self.stack.setCurrentWidget(self.submit_page)
+        self.auto_submit_hint_label.setVisible(self.auto_submitted_due_time)
+        self.score_label.hide()
+        self.detail_button.hide()
         self.submit_requested.emit(
             {
                 "exam_id": self.paper["exam_id"],
@@ -409,3 +427,14 @@ class LanExamWindow(AnswerWindow):
                     )
                 )
         self.wrongs_recorded = True
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if self.stack.currentWidget() is self.exam_page:
+            dialog = MessageBox("确认退出", "当前正在考试，关闭窗口将自动交卷，是否继续退出？", self)
+            dialog.yesButton.setText("确认退出")
+            dialog.cancelButton.setText("继续考试")
+            if dialog.exec():
+                self.submit_exam()
+            event.ignore()
+            return
+        super().closeEvent(event)

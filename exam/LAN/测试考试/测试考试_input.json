@@ -12,15 +12,15 @@
         },
         {
           "id": 3,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 4,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 5,
-          "selected": "B"
+          "selected": "C"
         }
       ]
     },
@@ -28,43 +28,43 @@
       "choice_questions": [
         {
           "id": 1,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 2,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 3,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 4,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 5,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 6,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 7,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 8,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 9,
-          "selected": "B"
+          "selected": "C"
         },
         {
           "id": 10,
-          "selected": "B"
+          "selected": "C"
         }
       ]
     }
