@@ -8,9 +8,14 @@ from datetime import datetime
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
-from exam_server.logger import get_exam_logger, log_event
-from exam_server.store import ExamServerStore
-from exam_server.utils import now_iso, random_client_id
+try:
+    from ..core.logger import get_exam_logger, log_event
+    from ..core.utils import now_iso, random_client_id
+    from .store import ExamServerStore
+except ImportError:
+    from core.logger import get_exam_logger, log_event
+    from core.utils import now_iso, random_client_id
+    from network.store import ExamServerStore
 
 
 class ExamRealtimeService:

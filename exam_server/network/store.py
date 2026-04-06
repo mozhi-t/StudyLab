@@ -4,11 +4,18 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from core.json_store import JsonStore
-from exam_server.defaults import ACCOUNTS_TEMPLATE, CONNECTION_TEMPLATE, SERVER_CONFIG_TEMPLATE
-from exam_server.paths import ACCOUNTS_FILE, CONFIG_FILE, CONNECTION_FILE, EXAM_BANK_DIR
-from exam_server.utils import safe_filename_part
-from models.lan_exam import ExamAnswerSheet, ExamPaper
+try:
+    from ..core.defaults import ACCOUNTS_TEMPLATE, CONNECTION_TEMPLATE, SERVER_CONFIG_TEMPLATE
+    from ..core.json_store import JsonStore
+    from ..core.paths import ACCOUNTS_FILE, CONFIG_FILE, CONNECTION_FILE, EXAM_BANK_DIR
+    from ..core.utils import safe_filename_part
+    from ..data.models import ExamAnswerSheet, ExamPaper
+except ImportError:
+    from core.defaults import ACCOUNTS_TEMPLATE, CONNECTION_TEMPLATE, SERVER_CONFIG_TEMPLATE
+    from core.json_store import JsonStore
+    from core.paths import ACCOUNTS_FILE, CONFIG_FILE, CONNECTION_FILE, EXAM_BANK_DIR
+    from core.utils import safe_filename_part
+    from data.models import ExamAnswerSheet, ExamPaper
 
 
 class ExamServerStore:
@@ -153,7 +160,13 @@ class ExamServerStore:
     def list_submitted_scores(self, exam_name: str) -> list[dict]:
         records = self.exam_user_store(exam_name).load().get("records", [])
         submitted = [item for item in records if item.get("submission_state") == "submitted"]
-        submitted.sort(key=lambda item: item.get("submitted_at") or "", reverse=True)
+        submitted.sort(
+            key=lambda item: (
+                int(item.get("score") or 0),
+                item.get("submitted_at") or "",
+            ),
+            reverse=True,
+        )
         return submitted
 
     def score_exam(self, exam_name: str, answers_payload: dict) -> dict:

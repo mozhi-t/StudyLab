@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CheckBox, LineEdit, MessageBoxBase, PasswordLineEdit, SingleDirectionScrollArea, SubtitleLabel
 
-from ui.widgets.styled_card import StyledCardWidget
+from .common import StyledCardWidget
 
 
 class ExamMetadataDialog(MessageBoxBase):

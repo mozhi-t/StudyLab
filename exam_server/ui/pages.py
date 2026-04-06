@@ -1,13 +1,27 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QColor, QFont
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPlainTextEdit, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ComboBox, FluentIcon, LineEdit, PrimaryPushButton, PushButton, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel
+from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, LineEdit, PrimaryPushButton, PushButton, SingleDirectionScrollArea, StrongBodyLabel, SubtitleLabel
 
-from ui.pages.settings_page import PreferenceCard
-from ui.styles.title_style import apply_page_title_style
-from ui.widgets.styled_card import StyledCardWidget
+try:
+    from ..core.json_store import JsonStore
+    from ..core.theme import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, apply_theme
+except ImportError:
+    from core.json_store import JsonStore
+    from core.theme import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, apply_theme
+from .common import PreferenceCard, StyledCardWidget, apply_page_title_style
+
+
+def configure_scroll_area(scroll_area: SingleDirectionScrollArea, content: QWidget, object_name: str) -> None:
+    scroll_area.setWidgetResizable(True)
+    scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+    scroll_area.enableTransparentBackground()
+    scroll_area.setStyleSheet("SingleDirectionScrollArea{background: transparent; border: none;}")
+    content.setObjectName(object_name)
+    content.setStyleSheet(f"QWidget#{object_name}{{background: transparent; border: none;}}")
+    scroll_area.setWidget(content)
 
 
 class ServerHomePage(QWidget):
@@ -45,17 +59,12 @@ class ServerHomePage(QWidget):
         list_layout = QVBoxLayout(self.list_card)
         list_layout.setContentsMargins(12, 12, 12, 12)
         self.scroll = SingleDirectionScrollArea(self.list_card, Qt.Orientation.Vertical)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.scroll_content = QWidget(self.scroll)
-        self.scroll_content.setObjectName("serverHomeConnectionsContent")
+        configure_scroll_area(self.scroll, self.scroll_content, "serverHomeConnectionsContent")
         self.scroll_layout = QVBoxLayout(self.scroll_content)
         self.scroll_layout.setContentsMargins(0, 0, 0, 0)
         self.scroll_layout.setSpacing(8)
         self.scroll_layout.addStretch(1)
-        self.scroll.setWidget(self.scroll_content)
-        self.scroll.enableTransparentBackground()
-        self.scroll_content.setStyleSheet("QWidget#serverHomeConnectionsContent{background: transparent; border: none;}")
         list_layout.addWidget(self.scroll)
         root.addWidget(self.list_card, 1)
         self.cards: list[QWidget] = []
@@ -147,17 +156,12 @@ class ServerExamListPage(QWidget):
         list_layout = QVBoxLayout(self.list_card)
         list_layout.setContentsMargins(12, 12, 12, 12)
         self.scroll = SingleDirectionScrollArea(self.list_card, Qt.Orientation.Vertical)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.content = QWidget(self.scroll)
-        self.content.setObjectName("serverExamListContent")
+        configure_scroll_area(self.scroll, self.content, "serverExamListContent")
         self.content_layout = QVBoxLayout(self.content)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.setSpacing(8)
         self.content_layout.addStretch(1)
-        self.scroll.setWidget(self.content)
-        self.scroll.enableTransparentBackground()
-        self.content.setStyleSheet("QWidget#serverExamListContent{background: transparent; border: none;}")
         list_layout.addWidget(self.scroll)
         root.addWidget(self.list_card, 1)
 
@@ -191,20 +195,18 @@ class ServerSettingsPage(QWidget):
     def __init__(self, host_ip: str, parent: QWidget | None = None):
         super().__init__(parent)
         self.host_ip = host_ip
+        self.app_settings_store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
+        self.app_settings = APP_SETTINGS_TEMPLATE | self.app_settings_store.load()
+
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
         root.setSpacing(0)
 
         self.scroll = SingleDirectionScrollArea(self, Qt.Orientation.Vertical)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setFrameShape(QFrame.Shape.NoFrame)
-        self.scroll.enableTransparentBackground()
         root.addWidget(self.scroll)
 
         self.content = QWidget(self.scroll)
-        self.content.setObjectName("serverSettingsContent")
-        self.content.setStyleSheet("QWidget#serverSettingsContent{background: transparent; border: none;}")
-        self.scroll.setWidget(self.content)
+        configure_scroll_area(self.scroll, self.content, "serverSettingsContent")
 
         content_layout = QVBoxLayout(self.content)
         content_layout.setContentsMargins(0, 0, 0, 0)
@@ -280,6 +282,78 @@ class ServerSettingsPage(QWidget):
                 self.content,
             )
         )
+        content_layout.addSpacing(18)
+
+        self.personal_title = SubtitleLabel("个性化", self.content)
+        personal_font = QFont(self.personal_title.font())
+        personal_font.setPointSize(16)
+        personal_font.setWeight(QFont.Weight.DemiBold)
+        self.personal_title.setFont(personal_font)
+        content_layout.addWidget(self.personal_title)
+        content_layout.addSpacing(18)
+
+        self.theme_combo = ComboBox(self.content)
+        self.theme_combo.addItems(["Light", "Dark", "Auto"])
+        self.theme_combo.setCurrentText(self.app_settings.get("theme", APP_SETTINGS_TEMPLATE["theme"]))
+        self.theme_combo.setFixedWidth(170)
+        self.theme_combo.currentTextChanged.connect(self.update_personalization)
+
+        self.color_button = ColorPickerButton(
+            QColor(self.app_settings.get("theme_color", APP_SETTINGS_TEMPLATE["theme_color"])),
+            "选择主题色",
+            self.content,
+        )
+        self.color_button.colorChanged.connect(self.update_color)
+
+        self.scale_combo = ComboBox(self.content)
+        self.scale_combo.addItems(["跟随系统设置", "100%", "110%", "125%"])
+        self.scale_combo.setCurrentText(self.app_settings.get("ui_scale", APP_SETTINGS_TEMPLATE["ui_scale"]))
+        self.scale_combo.setFixedWidth(170)
+        self.scale_combo.currentTextChanged.connect(self.update_personalization)
+
+        self.language_combo = ComboBox(self.content)
+        self.language_combo.addItems(["跟随系统设置", "zh_CN", "en_US"])
+        language = self.app_settings.get("language", APP_SETTINGS_TEMPLATE["language"])
+        self.language_combo.setCurrentText(language if language in ["跟随系统设置", "zh_CN", "en_US"] else APP_SETTINGS_TEMPLATE["language"])
+        self.language_combo.setFixedWidth(170)
+        self.language_combo.currentTextChanged.connect(self.update_personalization)
+
+        content_layout.addWidget(
+            PreferenceCard(
+                FluentIcon.BRUSH,
+                "应用主题",
+                "调整您的应用的外观",
+                self.theme_combo,
+                self.content,
+            )
+        )
+        content_layout.addWidget(
+            PreferenceCard(
+                FluentIcon.PALETTE,
+                "主题色",
+                "调整您的应用的主题色",
+                self.color_button,
+                self.content,
+            )
+        )
+        content_layout.addWidget(
+            PreferenceCard(
+                FluentIcon.FONT_SIZE,
+                "界面缩放",
+                "调整少部件和字体的大小",
+                self.scale_combo,
+                self.content,
+            )
+        )
+        content_layout.addWidget(
+            PreferenceCard(
+                FluentIcon.LANGUAGE,
+                "语言",
+                "选择界面所使用的语言",
+                self.language_combo,
+                self.content,
+            )
+        )
         content_layout.addStretch(1)
 
     def set_settings(self, config: dict) -> None:
@@ -297,6 +371,18 @@ class ServerSettingsPage(QWidget):
                 "listen_port": int(self.port_edit.text().strip() or 8765),
             }
         )
+
+    def update_personalization(self) -> None:
+        self.app_settings["theme"] = self.theme_combo.currentText()
+        self.app_settings["ui_scale"] = self.scale_combo.currentText()
+        self.app_settings["language"] = self.language_combo.currentText()
+        self.app_settings_store.save(self.app_settings)
+        apply_theme()
+
+    def update_color(self, color) -> None:
+        self.app_settings["theme_color"] = color.name()
+        self.app_settings_store.save(self.app_settings)
+        apply_theme()
 
 
 class ServerLogPage(QWidget):

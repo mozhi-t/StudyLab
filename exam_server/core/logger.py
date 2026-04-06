@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from exam_server.paths import LOG_DIR
+from .paths import LOG_DIR
 
 
 def get_exam_logger() -> logging.Logger:

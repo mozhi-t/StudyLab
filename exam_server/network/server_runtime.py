@@ -3,7 +3,10 @@ from __future__ import annotations
 import uvicorn
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from exam_server.service import ExamRealtimeService
+try:
+    from .service import ExamRealtimeService
+except ImportError:
+    from network.service import ExamRealtimeService
 
 
 class ServerThread(QThread):

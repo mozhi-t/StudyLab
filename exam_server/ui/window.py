@@ -4,14 +4,24 @@ from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QWidget
 from qfluentwidgets import FluentIcon, InfoBar, InfoBarPosition, MSFluentWindow
 
-from exam_server.dialogs import ExamMetadataDialog, ExamScoresDialog
-from exam_server.logger import get_exam_logger, log_event
-from exam_server.paths import LOG_DIR
-from exam_server.server_runtime import ServerThread
-from exam_server.service import ExamRealtimeService
-from exam_server.store import ExamServerStore
-from exam_server.ui_pages import ServerExamListPage, ServerHomePage, ServerLogPage, ServerSettingsPage
-from exam_server.utils import get_local_ip
+try:
+    from .dialogs import ExamMetadataDialog, ExamScoresDialog
+    from .pages import ServerExamListPage, ServerHomePage, ServerLogPage, ServerSettingsPage
+    from ..core.logger import get_exam_logger, log_event
+    from ..core.paths import LOG_DIR
+    from ..core.utils import get_local_ip
+    from ..network.server_runtime import ServerThread
+    from ..network.service import ExamRealtimeService
+    from ..network.store import ExamServerStore
+except ImportError:
+    from ui.dialogs import ExamMetadataDialog, ExamScoresDialog
+    from ui.pages import ServerExamListPage, ServerHomePage, ServerLogPage, ServerSettingsPage
+    from core.logger import get_exam_logger, log_event
+    from core.paths import LOG_DIR
+    from core.utils import get_local_ip
+    from network.server_runtime import ServerThread
+    from network.service import ExamRealtimeService
+    from network.store import ExamServerStore
 
 
 class ExamServerWindow(MSFluentWindow):
