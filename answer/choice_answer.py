@@ -12,6 +12,7 @@ from qfluentwidgets import (
     StrongBodyLabel,
     TeachingTip,
     TeachingTipTailPosition,
+    isDarkTheme,
 )
 
 from answer.answer_window import AnswerWindow
@@ -74,7 +75,7 @@ class OptionCard(StyledCardWidget):
         elif self._state == "wrong":
             self.text_label.setStyleSheet("color: rgb(198, 52, 52); font-weight: 600;")
         else:
-            self.text_label.setStyleSheet("")
+            self.text_label.setStyleSheet("color: white;" if isDarkTheme() else "")
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton and self.button.isEnabled():
@@ -100,6 +101,7 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.setWindowTitle(question_bank.name)
         self.setWindowFlag(Qt.WindowType.Window, True)
         self.resize(1040, 660)
+        self.setObjectName("choiceAnswerWindow")
 
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 14, 16, 16)
@@ -131,7 +133,9 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.divider.setStyleSheet("background-color: rgba(128, 128, 128, 0.35);")
         body.addWidget(self.divider)
 
-        right = QVBoxLayout()
+        self.content_card = StyledCardWidget(self, radius=16, light_border_alpha=34)
+        right = QVBoxLayout(self.content_card)
+        right.setContentsMargins(20, 18, 20, 18)
         right.setSpacing(10)
 
         self.question_label = StrongBodyLabel("", self)
@@ -159,7 +163,7 @@ class ChoiceAnswerWindow(AnswerWindow):
         right.addWidget(self.answer_label)
         right.addWidget(self.explanation_label)
         right.addStretch(1)
-        body.addLayout(right, 1)
+        body.addWidget(self.content_card, 1)
         root.addLayout(body, 1)
 
         nav = QHBoxLayout()
@@ -178,7 +182,18 @@ class ChoiceAnswerWindow(AnswerWindow):
         root.addLayout(nav)
 
         self._init_shortcuts()
+        self._apply_window_style()
         self.render_question()
+
+    def _apply_window_style(self) -> None:
+        background = "#202020" if isDarkTheme() else "#f3f3f3"
+        self.setStyleSheet(f"QWidget#choiceAnswerWindow{{background-color: {background};}}")
+        text_color = "white" if isDarkTheme() else ""
+        secondary_color = "rgba(255, 255, 255, 0.88)" if isDarkTheme() else ""
+        self.title_label.setStyleSheet(f"color: {text_color};" if text_color else "")
+        self.question_label.setStyleSheet(f"color: {text_color};" if text_color else "")
+        self.answer_label.setStyleSheet(f"color: {text_color};" if text_color else "")
+        self.explanation_label.setStyleSheet(f"color: {secondary_color};" if secondary_color else "")
 
     @property
     def current_question(self) -> QuestionItem:

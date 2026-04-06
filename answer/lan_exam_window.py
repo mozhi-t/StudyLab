@@ -5,7 +5,7 @@ from datetime import datetime
 from PyQt6.QtCore import QTimer, Qt, pyqtSignal
 from PyQt6.QtGui import QCloseEvent, QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, MessageBox, Pivot, PrimaryPushButton, PushButton, StrongBodyLabel
+from qfluentwidgets import BodyLabel, MessageBox, Pivot, PrimaryPushButton, PushButton, StrongBodyLabel, isDarkTheme
 
 from answer.answer_window import AnswerWindow
 from answer.choice_answer import OptionCard
@@ -15,6 +15,7 @@ from core.json_store import JsonStore
 from core.lan_exam_store import LanExamStore
 from models.wrong_question import WrongQuestion
 from ui.widgets.answer_card import AnswerCard
+from ui.widgets.styled_card import StyledCardWidget
 
 
 class SubjectExamPage(QWidget):
@@ -44,7 +45,9 @@ class SubjectExamPage(QWidget):
         self.divider.setStyleSheet("background-color: rgba(128, 128, 128, 0.35);")
         body.addWidget(self.divider)
 
-        right = QVBoxLayout()
+        self.content_card = StyledCardWidget(self, radius=16, light_border_alpha=34)
+        right = QVBoxLayout(self.content_card)
+        right.setContentsMargins(20, 18, 20, 18)
         right.setSpacing(10)
         self.question_label = StrongBodyLabel("", self)
         font = QFont(self.question_label.font())
@@ -63,8 +66,9 @@ class SubjectExamPage(QWidget):
             self.option_cards[key] = option_card
             right.addWidget(option_card)
         right.addStretch(1)
-        body.addLayout(right, 1)
+        body.addWidget(self.content_card, 1)
         root.addLayout(body, 1)
+        self._apply_text_styles()
 
     def render_question(self, question_index: int, selected: str) -> None:
         question = self.questions[question_index]
@@ -78,6 +82,9 @@ class SubjectExamPage(QWidget):
             option_card.set_checked(selected == key)
             option_card.set_enabled(True)
             option_card.set_state("default")
+
+    def _apply_text_styles(self) -> None:
+        self.question_label.setStyleSheet("color: white;" if isDarkTheme() else "")
 
 
 class LanExamWindow(AnswerWindow):
@@ -109,6 +116,8 @@ class LanExamWindow(AnswerWindow):
         self.setWindowTitle(self.paper["exam_name"])
         self.setWindowFlag(Qt.WindowType.Window, True)
         self.resize(1040, 660)
+        self.setObjectName("lanExamWindow")
+        self._apply_window_style()
 
         self.stack = QStackedWidget(self)
         root = QVBoxLayout(self)
@@ -125,6 +134,7 @@ class LanExamWindow(AnswerWindow):
         self._init_shortcuts()
         self.render_current()
         self._init_timer()
+        self._apply_text_styles()
 
     def _init_exam_page(self) -> None:
         root = QVBoxLayout(self.exam_page)
@@ -203,7 +213,19 @@ class LanExamWindow(AnswerWindow):
         self.detail_button.hide()
         root.addWidget(self.detail_button, 0, Qt.AlignmentFlag.AlignHCenter)
         root.addStretch(1)
-        self.submit_page.setStyleSheet("background-color: white;")
+
+    def _apply_window_style(self) -> None:
+        background = "#202020" if isDarkTheme() else "#f3f3f3"
+        self.setStyleSheet(f"QWidget#lanExamWindow{{background-color: {background};}}")
+
+    def _apply_text_styles(self) -> None:
+        text_color = "white" if isDarkTheme() else ""
+        secondary_color = "rgba(255, 255, 255, 0.88)" if isDarkTheme() else ""
+        self.title_label.setStyleSheet(f"color: {text_color};" if text_color else "")
+        self.remaining_label.setStyleSheet(f"color: {text_color};" if text_color else "")
+        self.submit_status_label.setStyleSheet(f"color: {text_color};" if text_color else "")
+        self.score_label.setStyleSheet(f"color: {text_color};" if text_color else "")
+        self.auto_submit_hint_label.setStyleSheet(f"color: {secondary_color};" if secondary_color else "")
 
     def _init_shortcuts(self) -> None:
         shortcuts = APP_SETTINGS_TEMPLATE["answer_shortcuts"] | self.settings.get("answer_shortcuts", {})

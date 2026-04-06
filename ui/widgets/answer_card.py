@@ -3,7 +3,7 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont
 from PyQt6.QtWidgets import QGridLayout, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel
+from qfluentwidgets import BodyLabel, isDarkTheme
 
 from ui.widgets.styled_card import StyledCardWidget
 
@@ -75,6 +75,8 @@ class QuestionStatusCard(StyledCardWidget):
     def _apply_text_color(self) -> None:
         if self._state in {"correct", "wrong", "pending", "marked"}:
             self.label.setStyleSheet("color: white;")
+        elif isDarkTheme():
+            self.label.setStyleSheet("color: white;")
         else:
             self.label.setStyleSheet("")
 
@@ -92,6 +94,8 @@ class AnswerCard(QWidget):
 
         self.summary_card = StyledCardWidget(self, radius=12, light_border_alpha=34)
         self.summary_label = BodyLabel("已做题数：0/0", self.summary_card)
+        if isDarkTheme():
+            self.summary_label.setStyleSheet("color: white;")
         summary_layout = QHBoxLayout(self.summary_card)
         summary_layout.setContentsMargins(14, 10, 14, 10)
         summary_layout.addWidget(self.summary_label, 0, Qt.AlignmentFlag.AlignLeft)

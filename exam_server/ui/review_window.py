@@ -3,7 +3,7 @@ from __future__ import annotations
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QCloseEvent, QFont, QPainter
 from PyQt6.QtWidgets import QButtonGroup, QGridLayout, QHBoxLayout, QSizePolicy, QStackedWidget, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, Pivot, PrimaryPushButton, PushButton, RadioButton, StrongBodyLabel
+from qfluentwidgets import BodyLabel, Pivot, PrimaryPushButton, PushButton, RadioButton, StrongBodyLabel, isDarkTheme
 
 try:
     from .common import StyledCardWidget
@@ -78,7 +78,7 @@ class OptionCard(StyledCardWidget):
         elif self._state == "wrong":
             self.text_label.setStyleSheet("color: rgb(198, 52, 52); font-weight: 600;")
         else:
-            self.text_label.setStyleSheet("")
+            self.text_label.setStyleSheet("color: white;" if isDarkTheme() else "")
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton and self.button.isEnabled():
@@ -148,6 +148,8 @@ class QuestionStatusCard(StyledCardWidget):
     def _apply_text_color(self) -> None:
         if self._state in {"correct", "wrong"}:
             self.label.setStyleSheet("color: white;")
+        elif isDarkTheme():
+            self.label.setStyleSheet("color: white;")
         else:
             self.label.setStyleSheet("")
 
@@ -165,6 +167,8 @@ class AnswerCard(QWidget):
 
         self.summary_card = StyledCardWidget(self, radius=12, light_border_alpha=34)
         self.summary_label = BodyLabel("已做题数：0/0", self.summary_card)
+        if isDarkTheme():
+            self.summary_label.setStyleSheet("color: white;")
         summary_layout = QHBoxLayout(self.summary_card)
         summary_layout.setContentsMargins(14, 10, 14, 10)
         summary_layout.addWidget(self.summary_label, 0, Qt.AlignmentFlag.AlignLeft)
@@ -228,7 +232,9 @@ class SubjectReviewPage(QWidget):
         self.divider.setStyleSheet("background-color: rgba(128, 128, 128, 0.35);")
         body.addWidget(self.divider)
 
-        right = QVBoxLayout()
+        self.content_card = StyledCardWidget(self, radius=16, light_border_alpha=34)
+        right = QVBoxLayout(self.content_card)
+        right.setContentsMargins(20, 18, 20, 18)
         right.setSpacing(10)
         self.question_label = StrongBodyLabel("", self)
         font = QFont(self.question_label.font())
@@ -253,8 +259,9 @@ class SubjectReviewPage(QWidget):
         right.addWidget(self.answer_label)
         right.addWidget(self.explanation_label)
         right.addStretch(1)
-        body.addLayout(right, 1)
+        body.addWidget(self.content_card, 1)
         root.addLayout(body, 1)
+        self._apply_text_styles()
 
     def render_question(self, question_index: int) -> None:
         item = self.questions[question_index]
@@ -270,6 +277,13 @@ class SubjectReviewPage(QWidget):
                 option_card.set_state("default")
         self.answer_label.setText(f"正确答案：{item['correct_answer']}    他的答案：{item.get('selected') or '未作答'}")
         self.explanation_label.setText(f"解析：{item['explanation']}")
+
+    def _apply_text_styles(self) -> None:
+        text_color = "white" if isDarkTheme() else ""
+        secondary_color = "rgba(255, 255, 255, 0.88)" if isDarkTheme() else ""
+        self.question_label.setStyleSheet(f"color: {text_color};" if text_color else "")
+        self.answer_label.setStyleSheet(f"color: {text_color};" if text_color else "")
+        self.explanation_label.setStyleSheet(f"color: {secondary_color};" if secondary_color else "")
 
 
 class ServerExamReviewWindow(AnswerWindow):
@@ -288,6 +302,7 @@ class ServerExamReviewWindow(AnswerWindow):
         self.setWindowTitle(f"{exam_name}-{self.username}的做题详情")
         self.setWindowFlag(Qt.WindowType.Window, True)
         self.resize(1040, 660)
+        self.setObjectName("serverExamReviewWindow")
 
         root = QVBoxLayout(self)
         root.setContentsMargins(16, 14, 16, 16)
@@ -333,9 +348,15 @@ class ServerExamReviewWindow(AnswerWindow):
         nav.addStretch(1)
         root.addLayout(nav)
 
+        self._apply_window_style()
         if self.current_subject:
             self.pivot.setCurrentItem(self.current_subject)
         self.render_current()
+
+    def _apply_window_style(self) -> None:
+        background = "#202020" if isDarkTheme() else "#f3f3f3"
+        self.setStyleSheet(f"QWidget#serverExamReviewWindow{{background-color: {background};}}")
+        self.title_label.setStyleSheet("color: white;" if isDarkTheme() else "")
 
     def _switch_subject(self, subject_key: str) -> None:
         if not subject_key:

@@ -99,7 +99,7 @@
     },
     "answer": "B",
     "explanation": "质数是指大于1且只能被1和自身整除的自然数。17只能被1和17整除，是质数。",
-    "error_count": 12
+    "error_count": 16
   },
   {
     "question_id": "lan_exam_math_测试考试_2",
@@ -116,7 +116,7 @@
     },
     "answer": "C",
     "explanation": "三个内角都是60度的三角形是等边三角形，三条边相等。",
-    "error_count": 8
+    "error_count": 9
   },
   {
     "question_id": "lan_exam_math_测试考试_4",
@@ -133,7 +133,7 @@
     },
     "answer": "C",
     "explanation": "圆的面积公式为S = πr的平方，其中r为半径。S = 2πr是圆的周长公式。",
-    "error_count": 8
+    "error_count": 9
   },
   {
     "question_id": "lan_exam_math_测试考试_5",
@@ -150,7 +150,7 @@
     },
     "answer": "B",
     "explanation": "同底数幂相乘，底数不变，指数相加：a的平方乘a的立方 = a的(2+3)次方 = a的5次方。",
-    "error_count": 13
+    "error_count": 17
   },
   {
     "question_id": "lan_exam_math_测试考试_3",
@@ -167,6 +167,6 @@
     },
     "answer": "C",
     "explanation": "x的平方等于16，则x = 正负根号16 = 正负4，即x = 4或x = -4。",
-    "error_count": 7
+    "error_count": 8
   }
 ]
