@@ -25,7 +25,7 @@ class MainWindow(MSFluentWindow):
         self.favorite_manager = favorite_manager
         self.answer_window = None
 
-        self.setWindowTitle("Study Lab")
+        self.setWindowTitle("StudyLab")
         self.resize(1040, 680)
 
         self.home_page = HomePage(self)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 SERVER_CONFIG_TEMPLATE = {
-    "server_name": "Study Lab Exam Server",
+    "server_name": "StudyLab Exam Server",
     "max_clients": 30,
     "auth_mode": 0,
     "listen_port": 8765,

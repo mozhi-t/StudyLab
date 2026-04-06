@@ -35,7 +35,7 @@ class ServerHomePage(QWidget):
 
         title_row = QHBoxLayout()
         title_row.setContentsMargins(0, 0, 0, 0)
-        self.title_label = SubtitleLabel("Study Lab - 考试服务端", self)
+        self.title_label = SubtitleLabel("StudyLab - 考试服务端", self)
         apply_page_title_style(self.title_label)
         title_row.addWidget(self.title_label)
         title_row.addStretch(1)
@@ -365,7 +365,7 @@ class ServerSettingsPage(QWidget):
     def _emit_settings_changed(self) -> None:
         self.settings_changed.emit(
             {
-                "server_name": self.server_name_edit.text().strip() or "Study Lab Exam Server",
+                "server_name": self.server_name_edit.text().strip() or "StudyLab Exam Server",
                 "max_clients": int(self.max_clients_edit.text().strip() or 30),
                 "auth_mode": self.auth_mode_values[self.auth_mode_combo.currentIndex()],
                 "listen_port": int(self.port_edit.text().strip() or 8765),

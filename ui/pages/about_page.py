@@ -17,7 +17,7 @@ class AboutPage(QWidget):
         layout.addWidget(self.page_title)
         layout.addStretch(1)
         for label in [
-            SubtitleLabel("Study Lab", self),
+            SubtitleLabel("StudyLab", self),
             BodyLabel("MoZhi", self),
             CaptionLabel("Beta 开发版本", self),
         ]:

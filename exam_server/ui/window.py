@@ -33,7 +33,7 @@ class ExamServerWindow(MSFluentWindow):
         self.server_thread: ServerThread | None = None
         self.host_ip = get_local_ip()
 
-        self.setWindowTitle("Study Lab - 考试服务端")
+        self.setWindowTitle("StudyLab - 考试服务端")
         self.resize(1100, 720)
 
         self.home_page = ServerHomePage(self)

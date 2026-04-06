@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-APP_NAME = "Study Lab"
+APP_NAME = "StudyLab"
 APP_AUTHOR = "MoZhi"
 APP_VERSION = "Beta"
 
@@ -32,7 +32,7 @@ SUBJECTS = {
 
 PAGE_SIZE = 50
 DEFAULT_THEME = "Auto"
-DEFAULT_THEME_COLOR = "#009faa"
+DEFAULT_THEME_COLOR = "#0f52aa"
 DEFAULT_LANGUAGE = "zh_CN"
 
 USER_TEMPLATE = {
