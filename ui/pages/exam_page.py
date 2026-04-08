@@ -62,6 +62,7 @@ class ExamPage(QWidget):
         self.lan_exam_window: LanExamWindow | None = None
         self.store = LanExamStore()
         self.state_tooltip: StateToolTip | None = None
+        self.connection_state = "disconnected"
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -109,25 +110,25 @@ class ExamPage(QWidget):
         layout.setSpacing(12)
 
         self.connect_card = StyledCardWidget(page)
-        connect_layout = QHBoxLayout(self.connect_card)
+        connect_layout = QVBoxLayout(self.connect_card)
         connect_layout.setContentsMargins(12, 12, 12, 12)
         connect_layout.setSpacing(10)
+        address_layout = QHBoxLayout()
+        address_layout.setContentsMargins(0, 0, 0, 0)
+        address_layout.setSpacing(10)
         self.address_input = LineEdit(self.connect_card)
         self.address_input.setPlaceholderText("输入局域网考试地址，如 192.168.1.10:9000")
         self.connect_button = PrimaryPushButton("连接", self.connect_card)
         self.connect_button.clicked.connect(self.toggle_connection)
-        connect_layout.addWidget(self.address_input, 1)
-        connect_layout.addWidget(self.connect_button)
-        layout.addWidget(self.connect_card)
-
-        self.search_card = StyledCardWidget(page)
-        search_layout = QVBoxLayout(self.search_card)
-        search_layout.setContentsMargins(12, 12, 12, 12)
-        self.search_edit = LineEdit(self.search_card)
-        self.search_edit.setPlaceholderText("搜索已启用考试")
+        address_layout.addWidget(self.address_input, 1)
+        address_layout.addWidget(self.connect_button)
+        connect_layout.addLayout(address_layout)
+        self.search_edit = LineEdit(self.connect_card)
+        self.search_edit.setPlaceholderText("搜索已启用的考试")
         self.search_edit.textChanged.connect(self.render_exam_list)
-        search_layout.addWidget(self.search_edit)
-        layout.addWidget(self.search_card)
+        self.search_edit.setEnabled(False)
+        connect_layout.addWidget(self.search_edit)
+        layout.addWidget(self.connect_card)
 
         self.content_card = StyledCardWidget(page)
         content_layout = QVBoxLayout(self.content_card)
@@ -140,9 +141,9 @@ class ExamPage(QWidget):
         self.content_layout = QVBoxLayout(self.content)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.setSpacing(8)
-        self.placeholder_label = BodyLabel("局域网考试连接结果将在这里显示", self.content)
-        self.content_layout.addWidget(self.placeholder_label)
-        self.content_layout.addStretch(1)
+        self.placeholder_label = BodyLabel("当前服务端还未开启任何考试", self.content)
+        self.placeholder_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.placeholder_label.hide()
         self.scroll.setWidget(self.content)
         self.scroll.enableTransparentBackground()
         self.content.setStyleSheet("QWidget#lanExamListContent{background: transparent; border: none;}")
@@ -151,9 +152,11 @@ class ExamPage(QWidget):
         return page
 
     def toggle_connection(self) -> None:
-        if self.client_thread and self.client_thread.isRunning():
+        if self.connection_state in {"connecting", "disconnecting"}:
+            return
+        if self.connection_state == "connected":
             self.show_tip("正在断开连接...", "请稍后")
-            self._set_connection_ui(False)
+            self._set_connection_state("disconnecting")
             self.client_thread.send_message({"type": "disconnect", "client_id": self.client_id, "username": self.username})
             return
         address = self.address_input.text().strip()
@@ -161,6 +164,7 @@ class ExamPage(QWidget):
             self.show_bar("连接失败", "请输入服务端地址", error=True)
             return
         self.show_tip("正在尝试连接到服务端", "请稍后")
+        self._set_connection_state("connecting")
         self.client_thread = LanExamClientThread(f"ws://{address}/ws")
         self.client_thread.connected.connect(self.on_socket_connected)
         self.client_thread.message_received.connect(self.handle_message)
@@ -171,13 +175,7 @@ class ExamPage(QWidget):
     def on_socket_connected(self) -> None:
         if not self.client_thread:
             return
-        self.client_thread.send_message(
-            {
-                "type": "hello",
-                "device_name": self.device_name,
-                "ip_address": self.ip_address,
-            }
-        )
+        self.client_thread.send_message({"type": "hello", "device_name": self.device_name, "ip_address": self.ip_address})
 
     def handle_message(self, payload: dict) -> None:
         message_type = payload.get("type")
@@ -188,6 +186,8 @@ class ExamPage(QWidget):
         elif message_type == "disconnect_result":
             self.reset_connection_state()
             self.finish_tip("断开成功", True)
+            if self.client_thread:
+                self.client_thread.close_connection()
         elif message_type == "heartbeat":
             if self.client_thread:
                 self.client_thread.send_message({"type": "heartbeat_ack", "client_id": self.client_id})
@@ -223,16 +223,15 @@ class ExamPage(QWidget):
         username, password = dialog.credentials()
         self.username = username
         if self.client_thread:
-            self.client_thread.send_message(
-                {
-                    "type": "auth_submit",
-                    "client_id": self.client_id,
-                    "device_name": self.device_name,
-                    "ip_address": self.ip_address,
-                    "username": username,
-                    "password": password,
-                }
-            )
+            payload = {
+                "type": "auth_submit",
+                "client_id": self.client_id,
+                "device_name": self.device_name,
+                "ip_address": self.ip_address,
+                "username": username,
+                "password": password,
+            }
+            self.client_thread.send_message(payload)
 
     def handle_auth_result(self, payload: dict) -> None:
         if not payload.get("success"):
@@ -243,23 +242,37 @@ class ExamPage(QWidget):
 
     def finish_connection(self, username: str) -> None:
         self.username = username
-        self._set_connection_ui(True)
+        self._set_connection_state("connected")
         self.finish_tip("连接成功", True)
         self.render_exam_list()
 
     def render_exam_list(self) -> None:
         keyword = self.search_edit.text().strip().lower() if hasattr(self, "search_edit") else ""
-        for card in self.cards:
-            card.deleteLater()
+        while self.content_layout.count():
+            item = self.content_layout.takeAt(0)
+            widget = item.widget()
+            if widget and widget is not self.placeholder_label:
+                widget.deleteLater()
         self.cards.clear()
-        self.placeholder_label.setVisible(not self.enabled_exams)
+        visible_exams: list[dict] = []
         for exam in self.enabled_exams:
             if keyword and keyword not in exam["exam_name"].lower():
                 continue
+            visible_exams.append(exam)
+        show_empty_state = self.connection_state == "connected" and not self.enabled_exams and not visible_exams
+        if show_empty_state:
+            self.placeholder_label.show()
+            self.content_layout.addStretch(1)
+            self.content_layout.addWidget(self.placeholder_label)
+            self.content_layout.addStretch(1)
+            return
+        self.placeholder_label.hide()
+        for exam in visible_exams:
             card = LanExamCard(exam, self.content)
             card.enter_button.clicked.connect(lambda checked=False, data=exam: self.enter_exam(data))
-            self.content_layout.insertWidget(self.content_layout.count() - 1, card)
+            self.content_layout.addWidget(card)
             self.cards.append(card)
+        self.content_layout.addStretch(1)
 
     def enter_exam(self, exam: dict) -> None:
         exam_password = ""
@@ -273,15 +286,14 @@ class ExamPage(QWidget):
         self.loading_dialog = LoadingMessageDialog("正在获取试题数据...", self)
         self.loading_dialog.show()
         if self.client_thread:
-            self.client_thread.send_message(
-                {
-                    "type": "request_exam",
-                    "client_id": self.client_id,
-                    "exam_id": exam["exam_id"],
-                    "exam_name": exam["exam_name"],
-                    "exam_password": exam_password,
-                }
-            )
+            payload = {
+                "type": "request_exam",
+                "client_id": self.client_id,
+                "exam_id": exam["exam_id"],
+                "exam_name": exam["exam_name"],
+                "exam_password": exam_password,
+            }
+            self.client_thread.send_message(payload)
 
     def handle_exam_ready(self, exam_name: str) -> None:
         self.close_loading_dialog()
@@ -298,20 +310,20 @@ class ExamPage(QWidget):
     def submit_exam(self, payload: dict) -> None:
         if not self.client_thread:
             return
-        self.client_thread.send_message(
-            {
-                "type": "submit_exam",
-                "client_id": self.client_id,
-                "device_name": self.device_name,
-                "exam_id": payload["exam_id"],
-                "exam_name": payload["exam_name"],
-                "subjects": payload["subjects"],
-            }
-        )
+        message = {
+            "type": "submit_exam",
+            "client_id": self.client_id,
+            "device_name": self.device_name,
+            "exam_id": payload["exam_id"],
+            "exam_name": payload["exam_name"],
+            "subjects": payload["subjects"],
+        }
+        self.client_thread.send_message(message)
 
     def on_disconnected(self, message: str) -> None:
+        was_disconnecting = self.connection_state == "disconnecting"
         self.reset_connection_state()
-        self.finish_tip(message, True)
+        self.finish_tip("断开成功" if was_disconnecting else message, True)
         self.client_thread = None
 
     def on_connection_failed(self, message: str) -> None:
@@ -325,13 +337,18 @@ class ExamPage(QWidget):
         self.username = ""
         self.auth_mode = 0
         self.enabled_exams = []
-        self._set_connection_ui(False)
+        self._set_connection_state("disconnected")
         self.close_loading_dialog()
         self.render_exam_list()
 
-    def _set_connection_ui(self, connected: bool) -> None:
-        self.address_input.setEnabled(not connected)
-        self.connect_button.setText("断开" if connected else "连接")
+    def _set_connection_state(self, state: str) -> None:
+        self.connection_state = state
+        is_connected = state in {"connected", "disconnecting"}
+        is_busy = state in {"connecting", "disconnecting"}
+        self.address_input.setEnabled(not is_connected and not is_busy)
+        self.search_edit.setEnabled(state == "connected")
+        self.connect_button.setEnabled(not is_busy)
+        self.connect_button.setText("断开" if is_connected else "连接")
 
     def show_tip(self, title: str, content: str) -> None:
         if self.state_tooltip and not sip.isdeleted(self.state_tooltip):
