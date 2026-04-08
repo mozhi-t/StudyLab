@@ -15,7 +15,7 @@ SUBJECTS = {
     "chinese": "语文",
     "math": "数学",
     "english": "英语",
-    "computer_basic": "机基",
+    "computer_basic": "计算机基础",
     "python": "Python",
     "mysql": "MySQL",
 }

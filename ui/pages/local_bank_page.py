@@ -11,7 +11,7 @@ from core.index_checker import GlobalIndexChecker
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.index_refresh_dialog import IndexRefreshDialog
 from ui.widgets.invalid_bank_time_dialog import InvalidBankTimeDialog
-from ui.widgets.question_card import QuestionCard, bank_card_title
+from ui.widgets.question_card import QuestionCard
 from ui.widgets.styled_card import StyledCardWidget
 
 
@@ -131,7 +131,7 @@ class LocalBankPage(QWidget):
         self._clear_cards()
         for item in items:
             card = QuestionCard(
-                title=bank_card_title(item.subject, item.name),
+                title=self._format_bank_title(item.subject, item.name),
                 right_meta=f"创建时间：{format_datetime(item.create_time)}",
                 action_text="删除",
                 action_icon=FluentIcon.DELETE,
@@ -205,3 +205,6 @@ class LocalBankPage(QWidget):
         self.pager.setPageNumber(max_page)
         self.pager.setCurrentIndex(max(self.current_page - 1, 0))
         self.pager.blockSignals(False)
+
+    def _format_bank_title(self, subject: str, bank_name: str) -> str:
+        return f"[{SUBJECTS.get(subject, subject)}] {bank_name}"
