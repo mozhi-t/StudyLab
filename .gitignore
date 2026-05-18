@@ -4,4 +4,4 @@ AGENTS.md
 /package/*
 /build
 /dist
-
+/.claude

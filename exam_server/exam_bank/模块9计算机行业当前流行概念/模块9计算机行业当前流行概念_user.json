@@ -1,0 +1,16 @@
+{
+  "records": [
+    {
+      "client_id": "DdLEOAIl",
+      "device_name": "MoZhi-G",
+      "ip_address": "198.18.0.1",
+      "username": "",
+      "joined_at": "2026-04-09 02:03:53",
+      "submitted_at": "2026-04-09 02:05:06",
+      "submission_state": "submitted",
+      "score": 33,
+      "score_visible": true,
+      "answer_visible": true
+    }
+  ]
+}
