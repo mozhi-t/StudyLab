@@ -1,8 +1,8 @@
 {
-  "theme": "Auto",
+  "theme": "Light",
   "theme_color": "#0f52aa",
   "language": "zh_CN",
-  "ui_scale": "跟随系统设置",
+  "ui_scale": "100%",
   "answer_shortcuts": {
     "prev_question": "1",
     "next_question": "2",

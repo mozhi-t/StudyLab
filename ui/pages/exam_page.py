@@ -376,7 +376,7 @@ class ExamPage(QWidget):
 
     def show_bar(self, title: str, content: str, error: bool = False) -> None:
         if error:
-            InfoBar.error(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=2500, parent=self)
+            InfoBar.error(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=3000, parent=self)
         else:
             InfoBar.success(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=2500, parent=self)
 

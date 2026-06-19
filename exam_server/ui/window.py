@@ -257,7 +257,7 @@ class ExamServerWindow(MSFluentWindow):
 
     def show_message(self, title: str, content: str, parent: QWidget, error: bool = False) -> None:
         if error:
-            InfoBar.error(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=2500, parent=parent)
+            InfoBar.error(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=3000, parent=parent)
         else:
             InfoBar.success(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=2500, parent=parent)
 

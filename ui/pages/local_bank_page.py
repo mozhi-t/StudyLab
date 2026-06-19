@@ -3,7 +3,7 @@ from __future__ import annotations
 from PyQt6 import sip
 from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PrimaryPushButton, SingleDirectionScrollArea, StateToolTip, SubtitleLabel
+from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PipsScrollButtonDisplayMode, PrimaryPushButton, SingleDirectionScrollArea, StateToolTip, SubtitleLabel
 
 from config.settings import SUBJECTS
 from core.datetime_utils import format_datetime
@@ -102,6 +102,8 @@ class LocalBankPage(QWidget):
 
         pager = QHBoxLayout()
         self.pager = PipsPager(self)
+        self.pager.setPreviousButtonDisplayMode(PipsScrollButtonDisplayMode.ALWAYS)
+        self.pager.setNextButtonDisplayMode(PipsScrollButtonDisplayMode.ALWAYS)
         self.pager.currentIndexChanged.connect(self.on_page_changed)
         pager.addStretch(1)
         pager.addWidget(self.pager)
@@ -175,6 +177,9 @@ class LocalBankPage(QWidget):
         if success:
             self.current_page = 1
             self.reload()
+        else:
+            self.state_tooltip.close()
+            self.state_tooltip = None
 
     def show_tip(self, title: str, content: str) -> None:
         if self.state_tooltip and not sip.isdeleted(self.state_tooltip):

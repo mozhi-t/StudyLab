@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import sys
+
 from PyQt6 import sip
 from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QKeySequence
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, InfoBar, InfoBarPosition, LineEdit, MessageBox, PushButton, SingleDirectionScrollArea, StateToolTip, StrongBodyLabel, SubtitleLabel, isDarkTheme
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
@@ -151,7 +153,7 @@ class SettingsPage(QWidget):
         self.scale_combo = ComboBox(self.content)
         self.scale_combo.addItems(["跟随系统设置", "100%", "110%", "125%"])
         self.scale_combo.setCurrentText(self.settings.get("ui_scale", "跟随系统设置"))
-        self.scale_combo.currentTextChanged.connect(self.update_settings)
+        self.scale_combo.currentTextChanged.connect(self.update_scale)
         self.scale_combo.setFixedWidth(170)
 
         shortcuts = self.settings["answer_shortcuts"]
@@ -270,7 +272,6 @@ class SettingsPage(QWidget):
     def update_settings(self):
         self.settings["theme"] = self.theme_combo.currentText()
         self.settings["language"] = self.language_combo.currentText()
-        self.settings["ui_scale"] = self.scale_combo.currentText()
         self.settings["answer_shortcuts"] = {
             "prev_question": self.prev_shortcut_edit.text().strip() or APP_SETTINGS_TEMPLATE["answer_shortcuts"]["prev_question"],
             "next_question": self.next_shortcut_edit.text().strip() or APP_SETTINGS_TEMPLATE["answer_shortcuts"]["next_question"],
@@ -278,6 +279,28 @@ class SettingsPage(QWidget):
         }
         self.store.save(self.settings)
         apply_theme()
+
+    def update_scale(self):
+        self.settings["ui_scale"] = self.scale_combo.currentText()
+        self.store.save(self.settings)
+        self._prompt_restart_for_scale()
+
+    def _prompt_restart_for_scale(self) -> None:
+        dialog = MessageBox(
+            "重启应用以生效",
+            "界面缩放设置将在重启应用后生效，是否立即重启？",
+            self.window(),
+        )
+        dialog.yesButton.setText("立即重启")
+        dialog.cancelButton.setText("稍后")
+        if dialog.exec():
+            self._restart_app()
+
+    def _restart_app(self) -> None:
+        from PyQt6.QtCore import QProcess
+
+        QProcess.startDetached(sys.executable, sys.argv)
+        QApplication.quit()
 
     def update_color(self, color):
         self.settings["theme_color"] = color.name()
