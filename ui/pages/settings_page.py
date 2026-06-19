@@ -6,7 +6,7 @@ from PyQt6 import sip
 from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QKeySequence
 from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, InfoBar, InfoBarPosition, LineEdit, MessageBox, PushButton, SingleDirectionScrollArea, StateToolTip, StrongBodyLabel, SubtitleLabel, isDarkTheme
+from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, InfoBar, InfoBarPosition, MessageBox, MessageBoxBase, PushButton, SingleDirectionScrollArea, StateToolTip, StrongBodyLabel, SubtitleLabel, isDarkTheme
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
@@ -51,31 +51,85 @@ class PreferenceCard(StyledCardWidget):
         layout.addWidget(PreferenceRow(icon, title, description, control, self))
 
 
-class ShortcutEdit(LineEdit):
-    def __init__(self, text: str = "", parent: QWidget | None = None):
+# Keys that are not a valid shortcut on their own: modifiers, lock keys, etc.
+_IGNORED_KEYS = {
+    Qt.Key.Key_Shift, Qt.Key.Key_Control, Qt.Key.Key_Alt, Qt.Key.Key_Meta,
+    Qt.Key.Key_AltGr, Qt.Key.Key_CapsLock, Qt.Key.Key_NumLock, Qt.Key.Key_ScrollLock,
+    Qt.Key.Key_Mode_switch,
+}
+
+
+class ShortcutCaptureDialog(MessageBoxBase):
+    """Dialog that captures a keyboard shortcut from the next pressed key."""
+
+    def __init__(self, current: str, parent: QWidget | None = None):
         super().__init__(parent)
-        self.setClearButtonEnabled(False)
-        self.setText(text)
-        self.setFixedWidth(170)
+        self._captured = current
+
+        self.titleLabel = SubtitleLabel("请键入快捷键", self)
+        self.viewLayout.addWidget(self.titleLabel)
+
+        self.hint_label = BodyLabel(current or "按下任意键以设置快捷键", self)
+        self.hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.viewLayout.addWidget(self.hint_label)
+
+        self.yesButton.setText("确定")
+        self.cancelButton.setText("取消")
+        self.widget.setMinimumWidth(320)
+
+    @property
+    def captured(self) -> str:
+        return self._captured
 
     def keyPressEvent(self, event) -> None:
         key = event.key()
-        if key in (16777219, 16777223):  # Backspace / Delete
-            self.clear()
+        if key in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
+            self._captured = ""
+            self.hint_label.setText("按下任意键以设置快捷键")
             event.accept()
             return
 
-        if key in (
-            16777248, 16777249, 16777250, 16777251,
-            16777252, 16777253, 16777254, 16777255,
-        ):
+        if key in _IGNORED_KEYS or key == Qt.Key.Key_unknown:
             event.accept()
             return
 
         sequence = QKeySequence(event.keyCombination()).toString(QKeySequence.SequenceFormat.PortableText)
         if sequence:
-            self.setText(sequence)
+            self._captured = sequence
+            self.hint_label.setText(sequence)
         event.accept()
+
+
+class ShortcutButton(PushButton):
+    """A button whose label reflects the current shortcut; clicking opens a capture dialog."""
+
+    changed = pyqtSignal(str)
+
+    def __init__(self, value: str = "", parent: QWidget | None = None):
+        super().__init__(parent)
+        self._value = value
+        self.setFixedWidth(90)
+        self.clicked.connect(self._on_clicked)
+        self._refresh_label()
+
+    @property
+    def value(self) -> str:
+        return self._value
+
+    @value.setter
+    def value(self, value: str) -> None:
+        self._value = value
+        self._refresh_label()
+
+    def _on_clicked(self) -> None:
+        dialog = ShortcutCaptureDialog(self._value, self.window())
+        if dialog.exec() and dialog.captured and dialog.captured != self._value:
+            self._value = dialog.captured
+            self._refresh_label()
+            self.changed.emit(self._value)
+
+    def _refresh_label(self) -> None:
+        self.setText(self._value or "未设置")
 
 
 class IndexCheckThread(QThread):
@@ -157,12 +211,15 @@ class SettingsPage(QWidget):
         self.scale_combo.setFixedWidth(170)
 
         shortcuts = self.settings["answer_shortcuts"]
-        self.prev_shortcut_edit = ShortcutEdit(shortcuts.get("prev_question", "1"), self.content)
-        self.prev_shortcut_edit.editingFinished.connect(self.update_settings)
-        self.next_shortcut_edit = ShortcutEdit(shortcuts.get("next_question", "2"), self.content)
-        self.next_shortcut_edit.editingFinished.connect(self.update_settings)
-        self.mark_shortcut_edit = ShortcutEdit(shortcuts.get("mark_question", "3"), self.content)
-        self.mark_shortcut_edit.editingFinished.connect(self.update_settings)
+        self.prev_shortcut_button = ShortcutButton(shortcuts.get("prev_question", "1"), self.content)
+        self.prev_shortcut_button.changed.connect(lambda v: self.save_shortcut("prev_question", "上一题快捷键", v))
+        self.prev_shortcut_control = self._wrap_shortcut_control(self.prev_shortcut_button, "prev_question")
+        self.next_shortcut_button = ShortcutButton(shortcuts.get("next_question", "2"), self.content)
+        self.next_shortcut_button.changed.connect(lambda v: self.save_shortcut("next_question", "下一题快捷键", v))
+        self.next_shortcut_control = self._wrap_shortcut_control(self.next_shortcut_button, "next_question")
+        self.mark_shortcut_button = ShortcutButton(shortcuts.get("mark_question", "3"), self.content)
+        self.mark_shortcut_button.changed.connect(lambda v: self.save_shortcut("mark_question", "标记题目快捷键", v))
+        self.mark_shortcut_control = self._wrap_shortcut_control(self.mark_shortcut_button, "mark_question")
 
         initial_color = QColor(self.settings.get("theme_color", APP_SETTINGS_TEMPLATE["theme_color"]))
         self.theme_color_control = QWidget(self.content)
@@ -225,7 +282,7 @@ class SettingsPage(QWidget):
                 FluentIcon.LEFT_ARROW,
                 "上一题快捷键",
                 "答题界面中触发上一题操作",
-                self.prev_shortcut_edit,
+                self.prev_shortcut_control,
                 self.content,
             )
         )
@@ -234,7 +291,7 @@ class SettingsPage(QWidget):
                 FluentIcon.RIGHT_ARROW,
                 "下一题快捷键",
                 "答题界面中触发下一题操作",
-                self.next_shortcut_edit,
+                self.next_shortcut_control,
                 self.content,
             )
         )
@@ -243,7 +300,7 @@ class SettingsPage(QWidget):
                 FluentIcon.TAG,
                 "标记题目快捷键",
                 "考试界面中标记或取消标记当前题目",
-                self.mark_shortcut_edit,
+                self.mark_shortcut_control,
                 self.content,
             )
         )
@@ -272,13 +329,78 @@ class SettingsPage(QWidget):
     def update_settings(self):
         self.settings["theme"] = self.theme_combo.currentText()
         self.settings["language"] = self.language_combo.currentText()
-        self.settings["answer_shortcuts"] = {
-            "prev_question": self.prev_shortcut_edit.text().strip() or APP_SETTINGS_TEMPLATE["answer_shortcuts"]["prev_question"],
-            "next_question": self.next_shortcut_edit.text().strip() or APP_SETTINGS_TEMPLATE["answer_shortcuts"]["next_question"],
-            "mark_question": self.mark_shortcut_edit.text().strip() or APP_SETTINGS_TEMPLATE["answer_shortcuts"]["mark_question"],
-        }
         self.store.save(self.settings)
         apply_theme()
+
+    def save_shortcut(self, key: str, label: str, value: str) -> None:
+        self._persist_shortcut(
+            key, value,
+            success_message=(None, f"{label}已设置为 {value}"),
+        )
+
+    def reset_shortcut(self, key: str, label: str) -> None:
+        default_value = APP_SETTINGS_TEMPLATE["answer_shortcuts"][key]
+        button_map = {
+            "prev_question": self.prev_shortcut_button,
+            "next_question": self.next_shortcut_button,
+            "mark_question": self.mark_shortcut_button,
+        }
+        button_map[key].value = default_value
+        self._persist_shortcut(
+            key, default_value,
+            success_message=("已重置", ""),
+            failure_title="重置失败",
+        )
+
+    def _persist_shortcut(
+        self,
+        key: str,
+        value: str,
+        success_message: tuple[str | None, str | None] = (None, None),
+        failure_title: str = "快捷键冲突",
+    ) -> None:
+        button_map = {
+            "prev_question": self.prev_shortcut_button,
+            "next_question": self.next_shortcut_button,
+            "mark_question": self.mark_shortcut_button,
+        }
+        label_map = {
+            "prev_question": "上一题快捷键",
+            "next_question": "下一题快捷键",
+            "mark_question": "标记题目快捷键",
+        }
+        for other_key, other_button in button_map.items():
+            if other_key == key:
+                continue
+            if other_button.value == value:
+                self.show_error_message(
+                    failure_title,
+                    f"该快捷键已被「{label_map[other_key]}」占用",
+                )
+                button_map[key].value = self.settings["answer_shortcuts"].get(key, APP_SETTINGS_TEMPLATE["answer_shortcuts"][key])
+                return
+
+        self.settings["answer_shortcuts"][key] = value
+        self.store.save(self.settings)
+        title, content = success_message
+        if title:
+            self.show_message(title, content or "")
+
+    def _wrap_shortcut_control(self, button: ShortcutButton, key: str) -> QWidget:
+        label_map = {
+            "prev_question": "上一题快捷键",
+            "next_question": "下一题快捷键",
+            "mark_question": "标记题目快捷键",
+        }
+        control = QWidget(self.content)
+        layout = QHBoxLayout(control)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        reset_button = PushButton("重置", control)
+        reset_button.clicked.connect(lambda: self.reset_shortcut(key, label_map[key]))
+        layout.addWidget(reset_button)
+        layout.addWidget(button)
+        return control
 
     def update_scale(self):
         self.settings["ui_scale"] = self.scale_combo.currentText()
@@ -311,7 +433,7 @@ class SettingsPage(QWidget):
         default_color = QColor(APP_SETTINGS_TEMPLATE["theme_color"])
         self.color_button.setColor(default_color)
         self.update_color(default_color)
-        self.show_message("主题色已重置", "重置主题色成功")
+        self.show_message("主题色已重置", "")
 
     def show_index_check_dialog(self) -> None:
         if self.index_check_thread and self.index_check_thread.isRunning():

@@ -4,9 +4,9 @@
   "language": "zh_CN",
   "ui_scale": "100%",
   "answer_shortcuts": {
-    "prev_question": "1",
+    "prev_question": "4",
     "next_question": "2",
-    "mark_question": "3"
+    "mark_question": "1"
   },
   "mica_enabled": false
 }
