@@ -58,6 +58,12 @@ APP_SETTINGS_TEMPLATE = {
         "next_question": "2",
         "mark_question": "3",
     },
+    "eye_care": {
+        "enabled": True,
+        "interval_minutes": 20,
+        "reminder_mode": "dialog",
+        "first_shown": False,
+    },
 }
 
 
