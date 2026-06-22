@@ -6,7 +6,7 @@ from PyQt6 import sip
 from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QKeySequence
 from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, InfoBar, InfoBarPosition, MessageBox, MessageBoxBase, PushButton, SingleDirectionScrollArea, StateToolTip, StrongBodyLabel, SubtitleLabel, isDarkTheme
+from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, InfoBar, InfoBarPosition, MessageBox, MessageBoxBase, PushButton, SingleDirectionScrollArea, SpinBox, StateToolTip, StrongBodyLabel, SubtitleLabel, SwitchButton, isDarkTheme
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
@@ -14,6 +14,7 @@ from core.index_checker import GlobalIndexChecker
 from core.json_store import JsonStore
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.invalid_bank_time_dialog import InvalidBankTimeDialog
+from ui.widgets.eye_care_dialog import CustomIntervalDialog
 from ui.widgets.styled_card import StyledCardWidget
 
 
@@ -148,11 +149,14 @@ class IndexCheckThread(QThread):
 
 
 class SettingsPage(QWidget):
+    eye_care_changed = pyqtSignal()
+
     def __init__(self, question_index_manager=None, wrong_manager=None, favorite_manager=None, parent: QWidget | None = None):
         super().__init__(parent)
         self.store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
         self.settings = APP_SETTINGS_TEMPLATE | self.store.load()
         self.settings["answer_shortcuts"] = APP_SETTINGS_TEMPLATE["answer_shortcuts"] | self.settings.get("answer_shortcuts", {})
+        self.settings["eye_care"] = APP_SETTINGS_TEMPLATE["eye_care"] | self.settings.get("eye_care", {})
         self.question_index_manager = question_index_manager
         self.wrong_manager = wrong_manager
         self.favorite_manager = favorite_manager
@@ -304,6 +308,65 @@ class SettingsPage(QWidget):
                 self.content,
             )
         )
+        # ===== 休息提醒 =====
+        eye_care = self.settings["eye_care"]
+
+        self.eye_care_switch = SwitchButton(self.content)
+        self.eye_care_switch.setChecked(bool(eye_care.get("enabled", True)))
+        self.eye_care_switch.checkedChanged.connect(self._on_eye_care_enabled_changed)
+
+        self.eye_care_interval_combo = ComboBox(self.content)
+        self._eye_care_presets = ["20", "30", "40", "50", "60"]
+        self.eye_care_interval_combo.addItems([f"{m} 分钟" for m in self._eye_care_presets])
+        self.eye_care_interval_combo.addItem("自定义...")
+        self._refresh_eye_care_interval_text(int(eye_care.get("interval_minutes", 20)))
+        self.eye_care_interval_combo.setFixedWidth(170)
+        self.eye_care_interval_combo.currentIndexChanged.connect(self._on_eye_care_interval_changed)
+
+        self.eye_care_mode_combo = ComboBox(self.content)
+        self.eye_care_mode_combo.addItem("弹窗", userData="dialog")
+        self.eye_care_mode_combo.addItem("顶部通知", userData="infobar")
+        mode_index = 0 if eye_care.get("reminder_mode", "dialog") == "dialog" else 1
+        self.eye_care_mode_combo.setCurrentIndex(mode_index)
+        self.eye_care_mode_combo.setFixedWidth(170)
+        self.eye_care_mode_combo.currentIndexChanged.connect(self._on_eye_care_mode_changed)
+
+        self.eye_care_title = SubtitleLabel("休息提醒", self.content)
+        eye_care_font = QFont(self.eye_care_title.font())
+        eye_care_font.setPointSize(16)
+        eye_care_font.setWeight(QFont.Weight.DemiBold)
+        self.eye_care_title.setFont(eye_care_font)
+        layout.addSpacing(18)
+        layout.addWidget(self.eye_care_title)
+        layout.addSpacing(18)
+        layout.addWidget(
+            PreferenceCard(
+                FluentIcon.CAFE,
+                "休息提醒",
+                "间隔提醒您远眺放松眼睛",
+                self.eye_care_switch,
+                self.content,
+            )
+        )
+        layout.addWidget(
+            PreferenceCard(
+                FluentIcon.DATE_TIME,
+                "提醒间隔",
+                "设置多久提醒一次",
+                self.eye_care_interval_combo,
+                self.content,
+            )
+        )
+        layout.addWidget(
+            PreferenceCard(
+                FluentIcon.MESSAGE,
+                "提醒方式",
+                "选择提醒以何种形式出现",
+                self.eye_care_mode_combo,
+                self.content,
+            )
+        )
+
         self.advanced_title = SubtitleLabel("高级", self.content)
         advanced_font = QFont(self.advanced_title.font())
         advanced_font.setPointSize(16)
@@ -325,6 +388,51 @@ class SettingsPage(QWidget):
             )
         )
         layout.addStretch(1)
+
+    def _refresh_eye_care_interval_text(self, minutes: int) -> None:
+        """根据存储的分钟数，把间隔 ComboBox 的显示文本对到正确项；不在预设里则保持"自定义..."。"""
+        combo = self.eye_care_interval_combo
+        combo.blockSignals(True)
+        if str(minutes) in self._eye_care_presets:
+            combo.setCurrentText(f"{minutes} 分钟")
+        else:
+            combo.setCurrentText("自定义...")
+        combo.blockSignals(False)
+
+    def _on_eye_care_enabled_changed(self, checked: bool) -> None:
+        self.settings["eye_care"]["enabled"] = bool(checked)
+        self.store.save(self.settings)
+        self.eye_care_changed.emit()
+
+    def _on_eye_care_interval_changed(self, index: int) -> None:
+        combo = self.eye_care_interval_combo
+        if combo.itemText(index) == "自定义...":
+            current = int(self.settings["eye_care"].get("interval_minutes", 20))
+            dialog = CustomIntervalDialog(current, self.window())
+            if dialog.exec():
+                minutes = dialog.value
+                self.settings["eye_care"]["interval_minutes"] = minutes
+                self.store.save(self.settings)
+                self._refresh_eye_care_interval_text(minutes)
+                self.eye_care_changed.emit()
+            else:
+                # 用户取消，恢复到上次保存的显示
+                self._refresh_eye_care_interval_text(int(self.settings["eye_care"].get("interval_minutes", 20)))
+        else:
+            # 形如 "20 分钟"
+            text = combo.itemText(index)
+            try:
+                minutes = int(text.split()[0])
+            except (ValueError, IndexError):
+                minutes = 20
+            self.settings["eye_care"]["interval_minutes"] = minutes
+            self.store.save(self.settings)
+            self.eye_care_changed.emit()
+
+    def _on_eye_care_mode_changed(self, _index: int) -> None:
+        self.settings["eye_care"]["reminder_mode"] = self.eye_care_mode_combo.currentData()
+        self.store.save(self.settings)
+        self.eye_care_changed.emit()
 
     def update_settings(self):
         self.settings["theme"] = self.theme_combo.currentText()
