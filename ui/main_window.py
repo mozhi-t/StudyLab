@@ -5,7 +5,10 @@ from PyQt6.QtWidgets import QWidget
 from qfluentwidgets import FluentIcon, MSFluentWindow
 
 from answer.choice_answer import ChoiceAnswerWindow
+from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from core.errors import raise_app_error
+from core.eye_care import EyeCareReminder
+from core.json_store import JsonStore
 from ui.pages.about_page import AboutPage
 from ui.pages.exam_page import ExamPage
 from ui.pages.favorite_page import FavoritePage
@@ -60,6 +63,12 @@ class MainWindow(MSFluentWindow):
         self.home_page.navigate_requested.connect(self.switch_to_page)
         self.local_bank_page.open_bank_requested.connect(self.open_choice_answer)
         self.exam_page.favorite_changed.connect(self.favorite_page.reload)
+
+        self.eye_care_reminder = EyeCareReminder(
+            self,
+            JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE),
+        )
+        self.settings_page.eye_care_changed.connect(self.eye_care_reminder.reload_config)
 
         self._register_pages()
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QObject, QTimer
+from PyQt6.QtWidgets import QWidget
 from qfluentwidgets import InfoBar, InfoBarPosition
 
 from config.settings import APP_SETTINGS_TEMPLATE
@@ -50,9 +51,10 @@ class EyeCareReminder(QObject):
     def _on_timeout(self) -> None:
         first_shown = self._read_first_shown()
         next_delay = self._interval_minutes
+        parent = self._reminder_parent()
 
         if self._mode == "dialog":
-            dialog = EyeCareDialog(show_hint=not first_shown, parent=self._window)
+            dialog = EyeCareDialog(show_hint=not first_shown, parent=parent)
             if dialog.exec():  # yesButton = 稍后再提醒
                 next_delay = self.SNOOZE_MINUTES
         else:
@@ -65,7 +67,7 @@ class EyeCareReminder(QObject):
                 isClosable=True,
                 position=InfoBarPosition.TOP_RIGHT,
                 duration=self.INFOBAR_DURATION_MS,
-                parent=self._window,
+                parent=parent,
             )
 
         if not first_shown:
@@ -73,6 +75,17 @@ class EyeCareReminder(QObject):
 
         if self._enabled:  # 用户可能在弹窗期间关掉了开关
             self._timer.start(next_delay * 60 * 1000)
+
+    def _reminder_parent(self) -> QWidget:
+        answer_window = getattr(self._window, "answer_window", None)
+        if answer_window and answer_window.isVisible():
+            return answer_window
+        stacked_widget = getattr(self._window, "stackedWidget", None)
+        if stacked_widget:
+            current_page = stacked_widget.currentWidget()
+            if current_page:
+                return current_page
+        return self._window
 
     def _read_first_shown(self) -> bool:
         data = self._store.load()

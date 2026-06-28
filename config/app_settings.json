@@ -6,7 +6,13 @@
   "answer_shortcuts": {
     "prev_question": "4",
     "next_question": "2",
-    "mark_question": "1"
+    "mark_question": "3"
+  },
+  "eye_care": {
+    "enabled": true,
+    "interval_minutes": 1,
+    "reminder_mode": "dialog",
+    "first_shown": true
   },
   "mica_enabled": false
 }

@@ -1,18 +1,21 @@
 from __future__ import annotations
 
+from PyQt6.QtCore import QTimer
 from PyQt6.QtWidgets import QVBoxLayout
 from qfluentwidgets import BodyLabel, CaptionLabel, MessageBoxBase, SpinBox, SubtitleLabel, isDarkTheme
 
 
 class EyeCareDialog(MessageBoxBase):
-    """到点弹出的休息提醒框。
 
-    yesButton = 稍后再提醒（5 分钟）→ exec() 返回 True
-    cancelButton = 知道了，关闭     → exec() 返回 False
-    """
+    AUTO_CLOSE_SECONDS = 10
 
     def __init__(self, show_hint: bool, parent=None):
         super().__init__(parent)
+        self._remaining_seconds = self.AUTO_CLOSE_SECONDS
+        self._auto_close_timer = QTimer(self)
+        self._auto_close_timer.setInterval(1000)
+        self._auto_close_timer.timeout.connect(self._update_auto_close_countdown)
+
         self.titleLabel = SubtitleLabel("刷题很久了", self)
         self.viewLayout.addWidget(self.titleLabel)
 
@@ -30,8 +33,20 @@ class EyeCareDialog(MessageBoxBase):
             self.viewLayout.addLayout(hint_layout)
 
         self.yesButton.setText("稍后再提醒（5 分钟）")
-        self.cancelButton.setText("知道了，关闭")
+        self._refresh_cancel_button_text()
         self.widget.setMinimumWidth(360)
+        self._auto_close_timer.start()
+
+    def _refresh_cancel_button_text(self) -> None:
+        self.cancelButton.setText(f"知道了，关闭 ({self._remaining_seconds})")
+
+    def _update_auto_close_countdown(self) -> None:
+        self._remaining_seconds -= 1
+        if self._remaining_seconds <= 0:
+            self._auto_close_timer.stop()
+            self.reject()
+            return
+        self._refresh_cancel_button_text()
 
 
 class CustomIntervalDialog(MessageBoxBase):
