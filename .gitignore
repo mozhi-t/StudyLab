@@ -1,9 +1,22 @@
+# IDE
 /.idea
-AGENTS.md
-/exam_server/logs
-/package/*
-/build
-/dist
+
+# Local agent files
 /.claude
 /skills
+AGENTS.md
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Build artifacts
+/build
+/dist
+/package/*
+
+# Runtime output
+/exam_server/logs
+
+# Generated docs
 /docs
