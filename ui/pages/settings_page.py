@@ -5,8 +5,9 @@ import sys
 from PyQt6 import sip
 from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QKeySequence
-from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QSpacerItem, QSizePolicy, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, CaptionLabel, ColorPickerButton, ComboBox, FluentIcon, IconWidget, InfoBar, InfoBarPosition, MessageBox, MessageBoxBase, PushButton, SingleDirectionScrollArea, SpinBox, StateToolTip, StrongBodyLabel, SubtitleLabel, SwitchButton, isDarkTheme
+from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, ColorPickerButton, ComboBox, ComboBoxSettingCard, ExpandGroupSettingCard, FluentIcon, InfoBar, InfoBarPosition, MessageBox, MessageBoxBase, OptionsConfigItem, OptionsValidator, PushButton, PushSettingCard, SettingCard, SingleDirectionScrollArea, StateToolTip, SubtitleLabel, SwitchButton, qconfig
+from qfluentwidgets.components.settings.expand_setting_card import GroupWidget
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
@@ -15,41 +16,6 @@ from core.json_store import JsonStore
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.invalid_bank_time_dialog import InvalidBankTimeDialog
 from ui.widgets.eye_care_dialog import CustomIntervalDialog
-from ui.widgets.styled_card import StyledCardWidget
-
-
-class PreferenceRow(QWidget):
-    def __init__(self, icon, title: str, description: str, control: QWidget, parent: QWidget | None = None):
-        super().__init__(parent)
-        root = QHBoxLayout(self)
-        root.setContentsMargins(0, 4, 0, 4)
-        root.setSpacing(0)
-
-        root.addSpacerItem(QSpacerItem(8, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum))
-
-        self.icon_widget = IconWidget(icon, self)
-        self.icon_widget.setFixedSize(20, 20)
-        root.addWidget(self.icon_widget)
-        root.addSpacerItem(QSpacerItem(28, 0, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum))
-
-        text_layout = QVBoxLayout()
-        text_layout.setSpacing(1)
-        title_label = StrongBodyLabel(title, self)
-        desc_label = CaptionLabel(description, self)
-        desc_label.setWordWrap(True)
-        desc_label.setStyleSheet(f"color: {'rgba(255, 255, 255, 0.62)' if isDarkTheme() else '#7a7a7a'};")
-        text_layout.addWidget(title_label)
-        text_layout.addWidget(desc_label)
-        root.addLayout(text_layout, 1)
-        root.addWidget(control)
-
-
-class PreferenceCard(StyledCardWidget):
-    def __init__(self, icon, title: str, description: str, control: QWidget, parent: QWidget | None = None):
-        super().__init__(parent, radius=10)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(14, 12, 16, 12)
-        layout.addWidget(PreferenceRow(icon, title, description, control, self))
 
 
 # Keys that are not a valid shortcut on their own: modifiers, lock keys, etc.
@@ -58,6 +24,39 @@ _IGNORED_KEYS = {
     Qt.Key.Key_AltGr, Qt.Key.Key_CapsLock, Qt.Key.Key_NumLock, Qt.Key.Key_ScrollLock,
     Qt.Key.Key_Mode_switch,
 }
+
+
+class LocalComboBoxSettingCard(ComboBoxSettingCard):
+    """ComboBoxSettingCard that leaves persistence to StudyLab's settings file."""
+
+    def setValue(self, value) -> None:
+        if value not in self.optionToText:
+            return
+
+        self.comboBox.setCurrentText(self.optionToText[value])
+        qconfig.set(self.configItem, value, save=False)
+
+    def _onCurrentIndexChanged(self, index: int) -> None:
+        qconfig.set(self.configItem, self.comboBox.itemData(index), save=False)
+
+
+class WheelTransparentGroupWidget(GroupWidget):
+    """Group row that lets page scroll areas handle wheel events."""
+
+    def wheelEvent(self, event) -> None:
+        event.ignore()
+
+
+class WheelTransparentExpandGroupSettingCard(ExpandGroupSettingCard):
+    """ExpandGroupSettingCard whose expanded content does not trap wheel events."""
+
+    def wheelEvent(self, event) -> None:
+        event.ignore()
+
+    def addGroup(self, icon, title: str, content: str, widget: QWidget, stretch=0) -> GroupWidget:
+        group = WheelTransparentGroupWidget(icon, title, content, widget, stretch)
+        self.addGroupWidget(group)
+        return group
 
 
 class ShortcutCaptureDialog(MessageBoxBase):
@@ -196,24 +195,6 @@ class SettingsPage(QWidget):
         layout.addWidget(self.title_label)
         layout.addSpacing(18)
 
-        self.theme_combo = ComboBox(self.content)
-        self.theme_combo.addItems(["Light", "Dark", "Auto"])
-        self.theme_combo.setCurrentText(self.settings.get("theme", "Auto"))
-        self.theme_combo.currentTextChanged.connect(self.update_settings)
-        self.theme_combo.setFixedWidth(170)
-
-        self.language_combo = ComboBox(self.content)
-        self.language_combo.addItems(["跟随系统设置", "zh_CN", "en_US"])
-        self.language_combo.setCurrentText(self.settings.get("language", "zh_CN"))
-        self.language_combo.currentTextChanged.connect(self.update_settings)
-        self.language_combo.setFixedWidth(170)
-
-        self.scale_combo = ComboBox(self.content)
-        self.scale_combo.addItems(["跟随系统设置", "100%", "110%", "125%"])
-        self.scale_combo.setCurrentText(self.settings.get("ui_scale", "跟随系统设置"))
-        self.scale_combo.currentTextChanged.connect(self.update_scale)
-        self.scale_combo.setFixedWidth(170)
-
         shortcuts = self.settings["answer_shortcuts"]
         self.prev_shortcut_button = ShortcutButton(shortcuts.get("prev_question", "1"), self.content)
         self.prev_shortcut_button.changed.connect(lambda v: self.save_shortcut("prev_question", "上一题快捷键", v))
@@ -224,6 +205,18 @@ class SettingsPage(QWidget):
         self.mark_shortcut_button = ShortcutButton(shortcuts.get("mark_question", "3"), self.content)
         self.mark_shortcut_button.changed.connect(lambda v: self.save_shortcut("mark_question", "标记题目快捷键", v))
         self.mark_shortcut_control = self._wrap_shortcut_control(self.mark_shortcut_button, "mark_question")
+
+        self.theme_card = self._create_combo_setting_card(
+            "theme",
+            self.settings.get("theme", "Auto"),
+            ["Light", "Dark", "Auto"],
+            FluentIcon.BRUSH,
+            "应用主题",
+            "调整您的应用的外观",
+        )
+        self.theme_combo = self.theme_card.comboBox
+        self.theme_combo.currentTextChanged.connect(self.update_settings)
+        layout.addWidget(self.theme_card)
 
         initial_color = QColor(self.settings.get("theme_color", APP_SETTINGS_TEMPLATE["theme_color"]))
         self.theme_color_control = QWidget(self.content)
@@ -236,43 +229,38 @@ class SettingsPage(QWidget):
         self.color_button.colorChanged.connect(self.update_color)
         self.theme_color_layout.addWidget(self.reset_theme_color_button)
         self.theme_color_layout.addWidget(self.color_button)
-
         layout.addWidget(
-            PreferenceCard(
-                FluentIcon.BRUSH,
-                "应用主题",
-                "调整您的应用的外观",
-                self.theme_combo,
-                self.content,
-            )
-        )
-        layout.addWidget(
-            PreferenceCard(
+            self._create_control_setting_card(
                 FluentIcon.PALETTE,
                 "主题色",
                 "调整您的应用的主题色",
                 self.theme_color_control,
-                self.content,
             )
         )
-        layout.addWidget(
-            PreferenceCard(
-                FluentIcon.FONT_SIZE,
-                "界面缩放",
-                "调整少部件和字体的大小",
-                self.scale_combo,
-                self.content,
-            )
+
+        self.scale_card = self._create_combo_setting_card(
+            "ui_scale",
+            self.settings.get("ui_scale", "跟随系统设置"),
+            ["跟随系统设置", "100%", "110%", "125%"],
+            FluentIcon.FONT_SIZE,
+            "界面缩放",
+            "调整少部件和字体的大小",
         )
-        layout.addWidget(
-            PreferenceCard(
-                FluentIcon.LANGUAGE,
-                "语言",
-                "选择界面所使用的语言",
-                self.language_combo,
-                self.content,
-            )
+        self.scale_combo = self.scale_card.comboBox
+        self.scale_combo.currentTextChanged.connect(self.update_scale)
+        layout.addWidget(self.scale_card)
+
+        self.language_card = self._create_combo_setting_card(
+            "language",
+            self.settings.get("language", "zh_CN"),
+            ["跟随系统设置", "zh_CN", "en_US"],
+            FluentIcon.LANGUAGE,
+            "语言",
+            "选择界面所使用的语言",
         )
+        self.language_combo = self.language_card.comboBox
+        self.language_combo.currentTextChanged.connect(self.update_settings)
+        layout.addWidget(self.language_card)
         self.shortcut_title = SubtitleLabel("快捷键", self.content)
         shortcut_font = QFont(self.shortcut_title.font())
         shortcut_font.setPointSize(16)
@@ -282,42 +270,46 @@ class SettingsPage(QWidget):
         layout.addWidget(self.shortcut_title)
         layout.addSpacing(18)
         layout.addWidget(
-            PreferenceCard(
+            self._create_control_setting_card(
                 FluentIcon.LEFT_ARROW,
                 "上一题快捷键",
                 "答题界面中触发上一题操作",
                 self.prev_shortcut_control,
-                self.content,
             )
         )
         layout.addWidget(
-            PreferenceCard(
+            self._create_control_setting_card(
                 FluentIcon.RIGHT_ARROW,
                 "下一题快捷键",
                 "答题界面中触发下一题操作",
                 self.next_shortcut_control,
-                self.content,
             )
         )
         layout.addWidget(
-            PreferenceCard(
+            self._create_control_setting_card(
                 FluentIcon.TAG,
                 "标记题目快捷键",
                 "考试界面中标记或取消标记当前题目",
                 self.mark_shortcut_control,
-                self.content,
             )
         )
         # ===== 休息提醒 =====
         eye_care = self.settings["eye_care"]
 
-        self.eye_care_switch = SwitchButton(self.content)
+        self.eye_care_group_card = WheelTransparentExpandGroupSettingCard(
+            FluentIcon.CAFE,
+            "休息提醒",
+            "间隔提醒您远眺放松眼睛",
+            parent=self.content,
+        )
+        self.eye_care_switch = SwitchButton(self.eye_care_group_card)
         self.eye_care_switch.setOnText("")
         self.eye_care_switch.setOffText("")
         self.eye_care_switch.setChecked(bool(eye_care.get("enabled", True)))
         self.eye_care_switch.checkedChanged.connect(self._on_eye_care_enabled_changed)
+        self.eye_care_group_card.addWidget(self.eye_care_switch)
 
-        self.eye_care_interval_combo = ComboBox(self.content)
+        self.eye_care_interval_combo = ComboBox(self.eye_care_group_card.view)
         self._eye_care_presets = ["20", "30", "40", "50", "60"]
         self.eye_care_interval_combo.addItems([f"{m} 分钟" for m in self._eye_care_presets])
         self.eye_care_interval_combo.addItem("自定义...")
@@ -325,13 +317,27 @@ class SettingsPage(QWidget):
         self.eye_care_interval_combo.setFixedWidth(170)
         self.eye_care_interval_combo.activated.connect(self._on_eye_care_interval_changed)
 
-        self.eye_care_mode_combo = ComboBox(self.content)
+        self.eye_care_mode_combo = ComboBox(self.eye_care_group_card.view)
         self.eye_care_mode_combo.addItem("弹窗", userData="dialog")
         self.eye_care_mode_combo.addItem("顶部通知", userData="infobar")
         mode_index = 0 if eye_care.get("reminder_mode", "dialog") == "dialog" else 1
         self.eye_care_mode_combo.setCurrentIndex(mode_index)
         self.eye_care_mode_combo.setFixedWidth(170)
         self.eye_care_mode_combo.currentIndexChanged.connect(self._on_eye_care_mode_changed)
+        self.eye_care_group_card.addGroup(
+            FluentIcon.DATE_TIME,
+            "提醒间隔",
+            "设置多久提醒一次",
+            self.eye_care_interval_combo,
+        )
+        self.eye_care_group_card.addGroup(
+            FluentIcon.MESSAGE,
+            "提醒方式",
+            "选择提醒以何种形式出现",
+            self.eye_care_mode_combo,
+        )
+        if self.eye_care_switch.isChecked():
+            self.eye_care_group_card.setExpand(True)
         self._refresh_eye_care_controls_enabled()
 
         self.eye_care_title = SubtitleLabel("休息提醒", self.content)
@@ -342,33 +348,7 @@ class SettingsPage(QWidget):
         layout.addSpacing(18)
         layout.addWidget(self.eye_care_title)
         layout.addSpacing(18)
-        layout.addWidget(
-            PreferenceCard(
-                FluentIcon.CAFE,
-                "休息提醒",
-                "间隔提醒您远眺放松眼睛",
-                self.eye_care_switch,
-                self.content,
-            )
-        )
-        layout.addWidget(
-            PreferenceCard(
-                FluentIcon.DATE_TIME,
-                "提醒间隔",
-                "设置多久提醒一次",
-                self.eye_care_interval_combo,
-                self.content,
-            )
-        )
-        layout.addWidget(
-            PreferenceCard(
-                FluentIcon.MESSAGE,
-                "提醒方式",
-                "选择提醒以何种形式出现",
-                self.eye_care_mode_combo,
-                self.content,
-            )
-        )
+        layout.addWidget(self.eye_care_group_card)
 
         self.advanced_title = SubtitleLabel("高级", self.content)
         advanced_font = QFont(self.advanced_title.font())
@@ -379,18 +359,41 @@ class SettingsPage(QWidget):
         layout.addWidget(self.advanced_title)
         layout.addSpacing(18)
 
-        self.index_check_button = PushButton("检查索引", self.content)
-        self.index_check_button.clicked.connect(self.show_index_check_dialog)
-        layout.addWidget(
-            PreferenceCard(
-                FluentIcon.SYNC,
-                "全局索引检查",
-                "检查并尝试修复题库、错题本、收藏夹的索引文件，仅当数据出现问题时使用",
-                self.index_check_button,
-                self.content,
-            )
+        self.index_check_card = PushSettingCard(
+            "检查索引",
+            FluentIcon.SYNC,
+            "全局索引检查",
+            "检查并尝试修复题库、错题本、收藏夹的索引文件，仅当数据出现问题时使用",
+            self.content,
         )
+        self.index_check_button = self.index_check_card.button
+        self.index_check_card.clicked.connect(self.show_index_check_dialog)
+        layout.addWidget(self.index_check_card)
         layout.addStretch(1)
+
+    def _create_combo_setting_card(
+        self,
+        name: str,
+        value: str,
+        options: list[str],
+        icon,
+        title: str,
+        content: str,
+        texts: list[str] | None = None,
+    ) -> ComboBoxSettingCard:
+        if value not in options:
+            value = options[0]
+        config_item = OptionsConfigItem("StudyLabSettings", name, value, OptionsValidator(options))
+        qconfig.set(config_item, value, save=False)
+        card = LocalComboBoxSettingCard(config_item, icon, title, content, texts or options, self.content)
+        card.comboBox.setFixedWidth(170)
+        return card
+
+    def _create_control_setting_card(self, icon, title: str, content: str, control: QWidget) -> SettingCard:
+        card = SettingCard(icon, title, content, self.content)
+        card.hBoxLayout.addWidget(control, 0, Qt.AlignmentFlag.AlignRight)
+        card.hBoxLayout.addSpacing(16)
+        return card
 
     def _refresh_eye_care_interval_text(self, minutes: int) -> None:
         """根据存储的分钟数，把间隔 ComboBox 的显示文本对到正确项。"""
@@ -408,6 +411,8 @@ class SettingsPage(QWidget):
     def _on_eye_care_enabled_changed(self, checked: bool) -> None:
         self.settings["eye_care"]["enabled"] = bool(checked)
         self.store.save(self.settings)
+        if checked:
+            self.eye_care_group_card.setExpand(True)
         self._refresh_eye_care_controls_enabled()
         self.eye_care_changed.emit()
 
@@ -447,7 +452,7 @@ class SettingsPage(QWidget):
         self.store.save(self.settings)
         self.eye_care_changed.emit()
 
-    def update_settings(self):
+    def update_settings(self, *_args):
         self.settings["theme"] = self.theme_combo.currentText()
         self.settings["language"] = self.language_combo.currentText()
         self.store.save(self.settings)
@@ -523,7 +528,7 @@ class SettingsPage(QWidget):
         layout.addWidget(button)
         return control
 
-    def update_scale(self):
+    def update_scale(self, *_args):
         self.settings["ui_scale"] = self.scale_combo.currentText()
         self.store.save(self.settings)
         self._prompt_restart_for_scale()
