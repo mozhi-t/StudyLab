@@ -289,7 +289,7 @@ class SettingsPage(QWidget):
             self._create_control_setting_card(
                 FluentIcon.TAG,
                 "标记题目快捷键",
-                "考试界面中标记或取消标记当前题目",
+                "答题界面中标记或取消标记当前题目",
                 self.mark_shortcut_control,
             )
         )
@@ -340,7 +340,7 @@ class SettingsPage(QWidget):
             self.eye_care_group_card.setExpand(True)
         self._refresh_eye_care_controls_enabled()
 
-        self.eye_care_title = SubtitleLabel("休息提醒", self.content)
+        self.eye_care_title = SubtitleLabel("学习", self.content)
         eye_care_font = QFont(self.eye_care_title.font())
         eye_care_font.setPointSize(16)
         eye_care_font.setWeight(QFont.Weight.DemiBold)

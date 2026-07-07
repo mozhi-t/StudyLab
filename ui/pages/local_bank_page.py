@@ -1,57 +1,54 @@
 from __future__ import annotations
 
-from PyQt6 import sip
-from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import ComboBox, FluentIcon, LineEdit, PipsPager, PipsScrollButtonDisplayMode, PrimaryPushButton, SingleDirectionScrollArea, StateToolTip, SubtitleLabel
+from qfluentwidgets import FluentIcon, LineEdit, PipsPager, PipsScrollButtonDisplayMode, Pivot, SingleDirectionScrollArea, SubtitleLabel
 
 from config.settings import SUBJECTS
 from core.datetime_utils import format_datetime
-from core.index_checker import GlobalIndexChecker
 from ui.styles.title_style import apply_page_title_style
-from ui.widgets.index_refresh_dialog import IndexRefreshDialog
-from ui.widgets.invalid_bank_time_dialog import InvalidBankTimeDialog
 from ui.widgets.question_card import QuestionCard
 from ui.widgets.styled_card import StyledCardWidget
-
-
-class IndexRefreshThread(QThread):
-    completed = pyqtSignal(object)
-    failed = pyqtSignal(str)
-
-    def __init__(self, manager):
-        super().__init__()
-        self.manager = manager
-        self.index_checker = GlobalIndexChecker()
-
-    def run(self):
-        try:
-            self.manager.refresh_index()
-            self.completed.emit({"invalid_times": self.index_checker.collect_invalid_question_bank_times()})
-        except Exception as exc:
-            self.failed.emit(str(exc))
 
 
 class LocalBankPage(QWidget):
     open_bank_requested = pyqtSignal(str, str)
 
+    SUBJECT_TABS = {
+        "chinese": "语文",
+        "math": "数学",
+        "english": "英语",
+        "computer_basic": "计算机基础",
+        "python": "Python",
+        "mysql": "MySQL",
+    }
+
     def __init__(self, question_index_manager, parent: QWidget | None = None):
         super().__init__(parent)
         self.question_index_manager = question_index_manager
+        self.current_subject = "chinese"
         self.current_page = 1
         self.total_count = 0
         self.page_size = 50
         self.cards: list[QuestionCard] = []
-        self.refresh_thread: IndexRefreshThread | None = None
-        self.state_tooltip: StateToolTip | None = None
 
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
         root.setSpacing(16)
 
-        self.page_title = SubtitleLabel("本地题库", self)
+        self.page_title = SubtitleLabel("刷题", self)
         apply_page_title_style(self.page_title)
         root.addWidget(self.page_title)
+
+        self.pivot = Pivot(self)
+        nav_layout = QHBoxLayout()
+        nav_layout.setContentsMargins(0, 0, 0, 0)
+        nav_layout.addWidget(self.pivot)
+        nav_layout.addStretch(1)
+        root.addLayout(nav_layout)
+        for subject, text in self.SUBJECT_TABS.items():
+            self.pivot.addItem(routeKey=subject, text=text, onClick=lambda: None)
+        self.pivot.setCurrentItem(self.current_subject)
 
         self.filter_card = StyledCardWidget(self)
         filter_layout = QVBoxLayout(self.filter_card)
@@ -64,21 +61,6 @@ class LocalBankPage(QWidget):
         self.search_edit.setPlaceholderText("搜索题库")
         self.search_edit.textChanged.connect(self._reset_then_reload)
         toolbar.addWidget(self.search_edit)
-
-        filter_row = QHBoxLayout()
-        filter_row.setContentsMargins(0, 0, 0, 0)
-        filter_row.setSpacing(8)
-        self.subject_combo = ComboBox(self)
-        self.subject_combo.addItem("全部科目", "")
-        for key, label in SUBJECTS.items():
-            self.subject_combo.addItem(label, userData=key)
-        self.subject_combo.currentIndexChanged.connect(self._reset_then_reload)
-        filter_row.addWidget(self.subject_combo)
-
-        self.refresh_button = PrimaryPushButton("刷新索引", self)
-        self.refresh_button.clicked.connect(self.refresh_index)
-        filter_row.addWidget(self.refresh_button)
-        toolbar.addLayout(filter_row)
         filter_layout.addWidget(toolbar_widget)
         root.addWidget(self.filter_card)
 
@@ -111,6 +93,7 @@ class LocalBankPage(QWidget):
         self.list_layout_root.addLayout(pager)
         root.addWidget(self.list_card, 1)
 
+        self.pivot.currentItemChanged.connect(self._on_subject_changed)
         self.reload()
 
     def _reset_then_reload(self):
@@ -118,10 +101,9 @@ class LocalBankPage(QWidget):
         self.reload()
 
     def reload(self):
-        subject = self.subject_combo.currentData()
         keyword = self.search_edit.text()
         items, total = self.question_index_manager.list_banks(
-            subject=subject or None,
+            subject=self.current_subject,
             keyword=keyword,
             page=self.current_page,
             page_size=self.page_size,
@@ -147,16 +129,6 @@ class LocalBankPage(QWidget):
         max_page = self._update_page_info()
         self._sync_pager(max_page)
 
-    def refresh_index(self):
-        dialog = IndexRefreshDialog(self)
-        if not dialog.exec():
-            return
-        self.show_tip("正在检查题库...", "请稍后")
-        self.refresh_thread = IndexRefreshThread(self.question_index_manager)
-        self.refresh_thread.completed.connect(self._finish_refresh)
-        self.refresh_thread.failed.connect(lambda detail: self.finish_tip(str(detail), False))
-        self.refresh_thread.start()
-
     def delete_bank(self, subject: str, bank_name: str):
         self.question_index_manager.remove_bank(subject, bank_name)
         self.reload()
@@ -168,33 +140,9 @@ class LocalBankPage(QWidget):
         self.current_page = page
         self.reload()
 
-    def finish_tip(self, content: str, success: bool) -> None:
-        if not self.state_tooltip or sip.isdeleted(self.state_tooltip):
-            self.state_tooltip = None
-            return
-        self.state_tooltip.setContent(content)
-        self.state_tooltip.setState(success)
-        if success:
-            self.current_page = 1
-            self.reload()
-        else:
-            self.state_tooltip.close()
-            self.state_tooltip = None
-
-    def show_tip(self, title: str, content: str) -> None:
-        if self.state_tooltip and not sip.isdeleted(self.state_tooltip):
-            self.state_tooltip.close()
-        self.state_tooltip = StateToolTip(title, content, self)
-        self.state_tooltip.show()
-        self.state_tooltip.adjustSize()
-        margin = 20
-        self.state_tooltip.move(QPoint(max(self.width() - self.state_tooltip.width() - margin, margin), margin))
-
-    def _finish_refresh(self, payload: dict) -> None:
-        self.finish_tip("刷新成功", True)
-        invalid_times = payload.get("invalid_times", [])
-        if invalid_times:
-            InvalidBankTimeDialog(invalid_times, self.window()).exec()
+    def _on_subject_changed(self, route_key: str) -> None:
+        self.current_subject = route_key
+        self._reset_then_reload()
 
     def _clear_cards(self):
         for card in self.cards:
