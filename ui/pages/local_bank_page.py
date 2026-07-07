@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import FluentIcon, LineEdit, PipsPager, PipsScrollButtonDisplayMode, Pivot, SingleDirectionScrollArea, SubtitleLabel
+from qfluentwidgets import FluentIcon, LineEdit, MessageBox, PipsPager, PipsScrollButtonDisplayMode, Pivot, SingleDirectionScrollArea, SubtitleLabel
 
-from config.settings import SUBJECTS
 from core.datetime_utils import format_datetime
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.question_card import QuestionCard
@@ -122,12 +121,26 @@ class LocalBankPage(QWidget):
                 parent=self.content,
             )
             if card.action_button:
-                card.action_button.clicked.connect(lambda checked=False, s=item.subject, n=item.name: self.delete_bank(s, n))
-            card.mouseDoubleClickEvent = lambda event, s=item.subject, n=item.name: self.open_bank_requested.emit(s, n)
+                card.action_button.clicked.connect(lambda checked=False, s=item.subject, n=item.name: self.confirm_delete_bank(s, n))
+            card.mouseDoubleClickEvent = lambda event, s=item.subject, n=item.name: self.confirm_open_bank(s, n)
             self.content_layout.insertWidget(self.content_layout.count() - 1, card)
             self.cards.append(card)
         max_page = self._update_page_info()
         self._sync_pager(max_page)
+
+    def confirm_open_bank(self, subject: str, bank_name: str) -> None:
+        dialog = MessageBox("进入题库", f"是否要进入[{bank_name}]题库", self)
+        dialog.yesButton.setText("进入")
+        dialog.cancelButton.setText("取消")
+        if dialog.exec():
+            self.open_bank_requested.emit(subject, bank_name)
+
+    def confirm_delete_bank(self, subject: str, bank_name: str) -> None:
+        dialog = MessageBox("删除题库", f"是否要删除[{bank_name}]题库", self)
+        dialog.yesButton.setText("删除")
+        dialog.cancelButton.setText("取消")
+        if dialog.exec():
+            self.delete_bank(subject, bank_name)
 
     def delete_bank(self, subject: str, bank_name: str):
         self.question_index_manager.remove_bank(subject, bank_name)
@@ -160,4 +173,4 @@ class LocalBankPage(QWidget):
         self.pager.blockSignals(False)
 
     def _format_bank_title(self, subject: str, bank_name: str) -> str:
-        return f"[{SUBJECTS.get(subject, subject)}] {bank_name}"
+        return bank_name
