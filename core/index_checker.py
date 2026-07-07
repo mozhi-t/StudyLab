@@ -4,8 +4,8 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from config.settings import FAVORITE_DIR, FAVORITE_INDEX_FILE, QUESTION_BANK_DIR, QUESTION_BANK_INDEX_FILE, SUBJECTS, WRONG_DIR, WRONG_INDEX_FILE
-from core.datetime_utils import format_datetime, parse_datetime
+from config.settings import FAVORITE_DIR, FAVORITE_INDEX_FILE, QUESTION_BANK_DIR, QUESTION_BANK_INDEX_NAME, SUBJECTS, WRONG_DIR, WRONG_INDEX_FILE, question_bank_index_file
+from core.datetime_utils import parse_datetime
 from core.json_store import JsonStore
 from models.favorite_question import FavoriteIndexItem, FavoriteQuestion
 from models.question_bank import BankMeta, QuestionBank
@@ -16,7 +16,7 @@ class GlobalIndexChecker:
     def check_and_repair(self) -> dict:
         issue_count = 0
         invalid_times: list[dict[str, str]] = []
-        issue_count += self._repair_index(QUESTION_BANK_INDEX_FILE, self._build_question_index(), key_field="name", required_fields=("name", "subject", "create_time"))
+        issue_count += self._repair_question_indexes(self._build_question_index())
         issue_count += self._sync_question_bank_times(invalid_times)
         issue_count += self._repair_index(
             WRONG_INDEX_FILE,
@@ -32,6 +32,8 @@ class GlobalIndexChecker:
         for subject in SUBJECTS:
             subject_dir = QUESTION_BANK_DIR / subject
             for file_path in sorted(subject_dir.glob("*.json")):
+                if file_path.name == QUESTION_BANK_INDEX_NAME:
+                    continue
                 raw = JsonStore(file_path, {}, "E006", "E007", "E009").load()
                 name = raw.get("name") or file_path.stem
                 create_time = raw.get("create_time")
@@ -44,6 +46,8 @@ class GlobalIndexChecker:
         for subject in SUBJECTS:
             subject_dir = QUESTION_BANK_DIR / subject
             for file_path in sorted(subject_dir.glob("*.json")):
+                if file_path.name == QUESTION_BANK_INDEX_NAME:
+                    continue
                 raw = JsonStore(file_path, {}, "E006", "E007", "E009").load()
                 bank = QuestionBank(**raw)
                 create_time = self._raw_bank_time(raw.get("create_time"))
@@ -96,6 +100,26 @@ class GlobalIndexChecker:
 
         return issues
 
+    def _repair_question_indexes(self, expected: dict[str, list[dict]]) -> int:
+        issues = 0
+        for subject in SUBJECTS:
+            path = question_bank_index_file(subject)
+            raw, format_broken = self._load_raw_index(path)
+            subject_issues = 1 if format_broken else 0
+            expected_items = expected[subject]
+
+            if not isinstance(raw, list):
+                raw = []
+                subject_issues += 1
+            else:
+                subject_issues += self._count_subject_issues(raw, expected_items, "name", ("name", "subject", "create_time"))
+
+            if raw != expected_items:
+                JsonStore(path, expected_items).save(expected_items)
+
+            issues += subject_issues
+        return issues
+
     def _count_subject_issues(self, subject_items: list, expected_items: list[dict], key_field: str, required_fields: tuple[str, ...]) -> int:
         issues = 0
         normalized_items: dict[str, dict] = {}
@@ -141,16 +165,13 @@ class GlobalIndexChecker:
         return normalized
 
     def _sync_question_bank_times(self, invalid_times: list[dict[str, str]]) -> int:
-        raw, _format_broken = self._load_raw_index(QUESTION_BANK_INDEX_FILE)
-        if not isinstance(raw, dict):
-            return 0
-
         issue_count = 0
-        changed = False
         for subject in SUBJECTS:
-            items = raw.get(subject)
+            path = question_bank_index_file(subject)
+            items, _format_broken = self._load_raw_index(path)
             if not isinstance(items, list):
                 continue
+            changed = False
             normalized_items: list[dict] = []
             for item in items:
                 if not isinstance(item, dict):
@@ -170,10 +191,9 @@ class GlobalIndexChecker:
                     issue_count += 1
                     changed = True
                 normalized_items.append(item)
-            raw[subject] = normalized_items
 
-        if changed:
-            JsonStore(QUESTION_BANK_INDEX_FILE, raw).save(raw)
+            if changed:
+                JsonStore(path, normalized_items).save(normalized_items)
         return issue_count
 
     def _load_bank_time(self, subject: str, name: str) -> str | None:

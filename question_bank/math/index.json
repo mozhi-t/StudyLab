@@ -1,0 +1,27 @@
+[
+  {
+    "name": "数学代数选择题库",
+    "subject": "math",
+    "create_time": "2026-04-04T10:00:00"
+  },
+  {
+    "name": "数学几何选择题库",
+    "subject": "math",
+    "create_time": "2026-04-04T10:00:00"
+  },
+  {
+    "name": "数学函数选择题库",
+    "subject": "math",
+    "create_time": "2026-04-04T10:00:00"
+  },
+  {
+    "name": "数学基础选择题库",
+    "subject": "math",
+    "create_time": "2026-04-04T10:00:00"
+  },
+  {
+    "name": "数学统计与概率选择题库",
+    "subject": "math",
+    "create_time": "2026-04-04T10:00:00"
+  }
+]

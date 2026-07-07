@@ -4,7 +4,7 @@ from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 
-from config.settings import PAGE_SIZE, QUESTION_BANK_DIR, QUESTION_BANK_INDEX_FILE, QUESTION_INDEX_TEMPLATE, SUBJECTS
+from config.settings import PAGE_SIZE, QUESTION_BANK_DIR, QUESTION_BANK_INDEX_NAME, QUESTION_INDEX_TEMPLATE, SUBJECTS, question_bank_index_file
 from core.datetime_utils import format_datetime, parse_datetime
 from core.errors import raise_app_error
 from core.json_store import JsonStore
@@ -12,26 +12,30 @@ from models.question_bank import BankMeta, QuestionBank
 
 
 class QuestionIndexManager:
-    def __init__(self):
-        self.store = JsonStore(QUESTION_BANK_INDEX_FILE, QUESTION_INDEX_TEMPLATE, "E003", "E004", "E009")
+    def _subject_store(self, subject: str) -> JsonStore:
+        return JsonStore(question_bank_index_file(subject), QUESTION_INDEX_TEMPLATE, "E003", "E004", "E009")
 
     def load_index(self) -> dict[str, list[BankMeta]]:
-        raw = self.store.load()
         return {
-            subject: [BankMeta(**item) for item in raw.get(subject, [])]
+            subject: [BankMeta(**item) for item in self._subject_store(subject).load()]
             for subject in SUBJECTS
         }
 
     def save_index(self, index: dict[str, list[BankMeta]]) -> None:
-        self.store.save({subject: [asdict(item) for item in items] for subject, items in index.items()})
+        for subject in SUBJECTS:
+            self.save_subject_index(subject, index.get(subject, []))
+
+    def load_subject_index(self, subject: str) -> list[BankMeta]:
+        return [BankMeta(**item) for item in self._subject_store(subject).load()]
+
+    def save_subject_index(self, subject: str, items: list[BankMeta]) -> None:
+        self._subject_store(subject).save([asdict(item) for item in items])
 
     def list_banks(self, subject: str | None = None, keyword: str = "", page: int = 1, page_size: int = PAGE_SIZE) -> tuple[list[BankMeta], int]:
-        index = self.load_index()
+        subjects = [subject] if subject else list(SUBJECTS)
         items = []
-        for current_subject, entries in index.items():
-            if subject and current_subject != subject:
-                continue
-            items.extend(entries)
+        for current_subject in subjects:
+            items.extend(self.load_subject_index(current_subject))
         keyword_lower = keyword.strip().lower()
         if keyword_lower:
             items = [item for item in items if keyword_lower in item.name.lower()]
@@ -46,6 +50,8 @@ class QuestionIndexManager:
             for subject in SUBJECTS:
                 subject_dir = QUESTION_BANK_DIR / subject
                 for file_path in sorted(subject_dir.glob("*.json")):
+                    if file_path.name == QUESTION_BANK_INDEX_NAME:
+                        continue
                     bank = self._read_bank(file_path)
                     new_index[subject].append(
                         BankMeta(
@@ -64,9 +70,8 @@ class QuestionIndexManager:
         try:
             if file_path.exists():
                 file_path.unlink()
-            index = self.load_index()
-            index[subject] = [item for item in index[subject] if item.name != bank_name]
-            self.save_index(index)
+            index = [item for item in self.load_subject_index(subject) if item.name != bank_name]
+            self.save_subject_index(subject, index)
         except OSError as exc:
             raise_app_error("E008", str(exc))
 
@@ -80,10 +85,9 @@ class QuestionIndexManager:
         bank = QuestionBank(**payload)
         file_path = QUESTION_BANK_DIR / bank.subject / f"{bank.name}.json"
         JsonStore(file_path, payload, "E006", "E007", "E009").save(payload)
-        index = self.load_index()
-        index[bank.subject] = [item for item in index[bank.subject] if item.name != bank.name]
-        index[bank.subject].append(BankMeta(name=bank.name, subject=bank.subject, create_time=format_datetime(bank.create_time)))
-        self.save_index(index)
+        index = [item for item in self.load_subject_index(bank.subject) if item.name != bank.name]
+        index.append(BankMeta(name=bank.name, subject=bank.subject, create_time=format_datetime(bank.create_time)))
+        self.save_subject_index(bank.subject, index)
 
     def _read_bank(self, file_path: Path) -> QuestionBank:
         raw = JsonStore(file_path, {}, "E006", "E007", "E009").load()
