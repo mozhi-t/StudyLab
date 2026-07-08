@@ -75,7 +75,7 @@ class MainWindow(MSFluentWindow):
     def _register_pages(self):
         self.addSubInterface(self.home_page, FluentIcon.HOME, "主页")
         self.addSubInterface(self.local_bank_page, FluentIcon.LIBRARY, "刷题")
-        self.addSubInterface(self.network_bank_page, FluentIcon.GLOBE, "网络题库")
+        self.addSubInterface(self.network_bank_page, FluentIcon.GLOBE, "题库")
         self.addSubInterface(self.exam_page, FluentIcon.EDUCATION, "考试")
         self.addSubInterface(self.wrong_book_page, FluentIcon.HISTORY, "错题本")
         self.addSubInterface(self.favorite_page, FluentIcon.HEART, "收藏夹")

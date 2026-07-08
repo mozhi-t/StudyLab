@@ -1,52 +1,56 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, LineEdit, PrimaryPushButton, SingleDirectionScrollArea, SubtitleLabel
+from PyQt6.QtWidgets import QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
+from qfluentwidgets import Pivot, SubtitleLabel
+
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.styled_card import StyledCardWidget
 
 
 class NetworkBankPage(QWidget):
+    PAGE_TABS = {
+        "question_manage": "题目管理",
+        "local_paper": "本地组卷",
+        "smart_paper": "智能组卷",
+    }
+
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
+        self.current_page = "question_manage"
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(16)
 
-        self.page_title = SubtitleLabel("网络题库", self)
+        self.page_title = SubtitleLabel("题库", self)
         apply_page_title_style(self.page_title)
         layout.addWidget(self.page_title)
 
-        self.connect_card = StyledCardWidget(self)
-        connect_root = QVBoxLayout(self.connect_card)
-        connect_root.setContentsMargins(12, 12, 12, 12)
-        connect_widget = QWidget(self.connect_card)
-        connect_layout = QHBoxLayout(connect_widget)
-        connect_layout.setContentsMargins(0, 0, 0, 0)
-        connect_layout.setSpacing(8)
-        self.url_edit = LineEdit(self)
-        self.url_edit.setPlaceholderText("输入题库地址")
-        self.connect_button = PrimaryPushButton("连接", self)
-        connect_layout.addWidget(self.url_edit)
-        connect_layout.addWidget(self.connect_button)
-        connect_root.addWidget(connect_widget)
-        layout.addWidget(self.connect_card)
+        self.pivot = Pivot(self)
+        nav_layout = QHBoxLayout()
+        nav_layout.setContentsMargins(0, 0, 0, 0)
+        nav_layout.addWidget(self.pivot)
+        nav_layout.addStretch(1)
+        layout.addLayout(nav_layout)
 
-        self.list_card = StyledCardWidget(self)
-        list_root = QVBoxLayout(self.list_card)
-        list_root.setContentsMargins(10, 10, 10, 10)
-        self.result_scroll = SingleDirectionScrollArea(self.list_card, Qt.Orientation.Vertical)
-        self.result_scroll.setWidgetResizable(True)
-        self.result_scroll.setFrameShape(QFrame.Shape.NoFrame)
-        self.result_container = QWidget(self.result_scroll)
-        self.result_container.setObjectName("networkBankResultContent")
-        result_layout = QVBoxLayout(self.result_container)
-        result_layout.setContentsMargins(0, 0, 0, 0)
-        result_layout.addWidget(BodyLabel("网络题库下载接口预留，待接入实际服务协议。", self))
-        result_layout.addStretch(1)
-        self.result_scroll.setWidget(self.result_container)
-        self.result_scroll.enableTransparentBackground()
-        self.result_container.setStyleSheet("QWidget#networkBankResultContent{background: transparent; border: none;}")
-        list_root.addWidget(self.result_scroll)
-        layout.addWidget(self.list_card, 1)
+        self.page_stack = QStackedWidget(self)
+        for route_key, text in self.PAGE_TABS.items():
+            self.pivot.addItem(routeKey=route_key, text=text, onClick=lambda: None)
+            self.page_stack.addWidget(self._create_blank_page(route_key))
+        self.pivot.setCurrentItem(self.current_page)
+
+        layout.addWidget(self.page_stack, 1)
+        self.pivot.currentItemChanged.connect(self._on_page_changed)
+
+    def _create_blank_page(self, route_key: str) -> QWidget:
+        card = StyledCardWidget(self)
+        card.setObjectName(f"{route_key}Page")
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(10, 10, 10, 10)
+        card_layout.addStretch(1)
+        return card
+
+    def _on_page_changed(self, route_key: str) -> None:
+        self.current_page = route_key
+        index = list(self.PAGE_TABS).index(route_key)
+        self.page_stack.setCurrentIndex(index)
