@@ -14,7 +14,7 @@ from ui.pages.exam_page import ExamPage
 from ui.pages.favorite_page import FavoritePage
 from ui.pages.home_page import HomePage
 from ui.pages.local_bank_page import LocalBankPage
-from ui.pages.network_bank_page import NetworkBankPage
+from ui.pages.question_bank_page import QuestionBankPage
 from ui.pages.settings_page import SettingsPage
 from ui.pages.wrong_book_page import WrongBookPage
 
@@ -35,8 +35,8 @@ class MainWindow(MSFluentWindow):
         self.home_page.setObjectName("home_page")
         self.local_bank_page = LocalBankPage(question_index_manager, self)
         self.local_bank_page.setObjectName("local_bank_page")
-        self.network_bank_page = NetworkBankPage(self)
-        self.network_bank_page.setObjectName("network_bank_page")
+        self.question_bank_page = QuestionBankPage(self)
+        self.question_bank_page.setObjectName("question_bank_page")
         self.exam_page = ExamPage(wrong_manager, favorite_manager, self)
         self.exam_page.setObjectName("exam_page")
         self.wrong_book_page = WrongBookPage(wrong_manager, self)
@@ -50,7 +50,7 @@ class MainWindow(MSFluentWindow):
         self.pages = [
             self.home_page,
             self.local_bank_page,
-            self.network_bank_page,
+            self.question_bank_page,
             self.exam_page,
             self.wrong_book_page,
             self.favorite_page,
@@ -75,7 +75,7 @@ class MainWindow(MSFluentWindow):
     def _register_pages(self):
         self.addSubInterface(self.home_page, FluentIcon.HOME, "主页")
         self.addSubInterface(self.local_bank_page, FluentIcon.LIBRARY, "刷题")
-        self.addSubInterface(self.network_bank_page, FluentIcon.GLOBE, "题库")
+        self.addSubInterface(self.question_bank_page, FluentIcon.DICTIONARY, "题库")
         self.addSubInterface(self.exam_page, FluentIcon.EDUCATION, "考试")
         self.addSubInterface(self.wrong_book_page, FluentIcon.HISTORY, "错题本")
         self.addSubInterface(self.favorite_page, FluentIcon.HEART, "收藏夹")
