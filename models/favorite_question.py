@@ -4,13 +4,6 @@ from dataclasses import dataclass
 
 
 @dataclass
-class FavoriteIndexItem:
-    question_id: str
-    subject: str
-    question_content: str
-
-
-@dataclass
 class FavoriteQuestion:
     question_id: str
     bank_name: str

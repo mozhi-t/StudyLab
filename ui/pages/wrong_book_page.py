@@ -43,7 +43,7 @@ class WrongBookPage(QWidget):
         self.search_edit.setPlaceholderText("搜索错题")
         self.search_edit.textChanged.connect(self._reset_then_reload)
         self.refresh_button = PrimaryPushButton("刷新", self)
-        self.refresh_button.clicked.connect(self.refresh_index)
+        self.refresh_button.clicked.connect(self.reload)
         top.addWidget(self.subject_combo)
         top.addWidget(self.search_edit, 1)
         top.addWidget(self.refresh_button)
@@ -91,10 +91,6 @@ class WrongBookPage(QWidget):
 
     def _reset_then_reload(self):
         self.current_page = 1
-        self.reload()
-
-    def refresh_index(self):
-        self.wrong_manager.refresh_index()
         self.reload()
 
     def reload(self):

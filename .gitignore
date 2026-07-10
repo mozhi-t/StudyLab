@@ -17,6 +17,10 @@ __pycache__/
 
 # Runtime output
 /exam_server/logs
+/data/*.db
+/data/*.db-wal
+/data/*.db-shm
+/data/*.db-journal
 
 # Generated docs
 /docs

@@ -12,13 +12,10 @@ if getattr(sys, "frozen", False):
 else:
     BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
+DATABASE_FILE = DATA_DIR / "studylab.db"
 USER_FILE = DATA_DIR / "user.json"
 QUESTION_BANK_DIR = BASE_DIR / "question_bank"
 QUESTION_BANK_INDEX_NAME = "index.json"
-WRONG_DIR = BASE_DIR / "wrong"
-WRONG_INDEX_FILE = WRONG_DIR / "index.json"
-FAVORITE_DIR = BASE_DIR / "favorite"
-FAVORITE_INDEX_FILE = FAVORITE_DIR / "index.json"
 EXAM_DIR = BASE_DIR / "exam"
 LAN_EXAM_DIR = EXAM_DIR / "LAN"
 
@@ -67,13 +64,7 @@ APP_SETTINGS_TEMPLATE = {
 }
 
 
-def empty_subject_map(default_factory):
-    return {subject: default_factory() for subject in SUBJECTS}
-
-
 QUESTION_INDEX_TEMPLATE = []
-WRONG_INDEX_TEMPLATE = empty_subject_map(list)
-FAVORITE_INDEX_TEMPLATE = empty_subject_map(list)
 
 
 def question_bank_index_file(subject: str) -> Path:

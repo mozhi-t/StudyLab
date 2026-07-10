@@ -16,15 +16,17 @@ from ui.main_window import MainWindow
 
 def main() -> int:
     install_exception_hook()
-    bootstrap_app()
+    database = bootstrap_app()
 
     apply_ui_scale()
     app = QApplication(sys.argv)
 
     user_manager = UserDataManager()
     question_index_manager = QuestionIndexManager()
-    wrong_manager = WrongManager()
-    favorite_manager = FavoriteManager()
+    wrong_manager = WrongManager(database)
+    favorite_manager = FavoriteManager(database)
+
+    app.aboutToQuit.connect(database.close)
 
     apply_theme()
 

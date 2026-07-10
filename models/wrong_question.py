@@ -4,14 +4,6 @@ from dataclasses import dataclass
 
 
 @dataclass
-class WrongIndexItem:
-    question_id: str
-    subject: str
-    question_content: str
-    error_count: int
-
-
-@dataclass
 class WrongQuestion:
     question_id: str
     question_num: int

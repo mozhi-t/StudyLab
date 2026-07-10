@@ -2,14 +2,11 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from pathlib import Path
 
-from config.settings import FAVORITE_DIR, FAVORITE_INDEX_FILE, QUESTION_BANK_DIR, QUESTION_BANK_INDEX_NAME, SUBJECTS, WRONG_DIR, WRONG_INDEX_FILE, question_bank_index_file
+from config.settings import QUESTION_BANK_DIR, QUESTION_BANK_INDEX_NAME, SUBJECTS, question_bank_index_file
 from core.datetime_utils import parse_datetime
 from core.json_store import JsonStore
-from models.favorite_question import FavoriteIndexItem, FavoriteQuestion
 from models.question_bank import BankMeta, QuestionBank
-from models.wrong_question import WrongIndexItem, WrongQuestion
 
 
 class GlobalIndexChecker:
@@ -18,13 +15,6 @@ class GlobalIndexChecker:
         invalid_times: list[dict[str, str]] = []
         issue_count += self._repair_question_indexes(self._build_question_index())
         issue_count += self._sync_question_bank_times(invalid_times)
-        issue_count += self._repair_index(
-            WRONG_INDEX_FILE,
-            self._build_wrong_index(),
-            key_field="question_id",
-            required_fields=("question_id", "subject", "question_content", "error_count"),
-        )
-        issue_count += self._repair_index(FAVORITE_INDEX_FILE, self._build_favorite_index(), key_field="question_id", required_fields=("question_id", "subject", "question_content"))
         return {"issue_count": issue_count, "invalid_times": invalid_times}
 
     def collect_invalid_question_bank_times(self) -> list[dict[str, str]]:
@@ -55,50 +45,6 @@ class GlobalIndexChecker:
                     create_time = str(bank.create_time)
                 result[subject].append(asdict(BankMeta(name=bank.name, subject=bank.subject, create_time=create_time)))
         return result
-
-    def _build_wrong_index(self) -> dict[str, list[dict]]:
-        result = {subject: [] for subject in SUBJECTS}
-        for subject in SUBJECTS:
-            store = JsonStore(WRONG_DIR / f"{subject}.json", [], "E010", "E011", "E012")
-            for item in store.load():
-                wrong = WrongQuestion(**item)
-                result[subject].append(
-                    asdict(WrongIndexItem(question_id=wrong.question_id, subject=wrong.subject, question_content=wrong.question[:40], error_count=wrong.error_count))
-                )
-        return result
-
-    def _build_favorite_index(self) -> dict[str, list[dict]]:
-        result = {subject: [] for subject in SUBJECTS}
-        for subject in SUBJECTS:
-            store = JsonStore(FAVORITE_DIR / f"{subject}.json", [], "E013", "E014", "E015")
-            for item in store.load():
-                favorite = FavoriteQuestion(**item)
-                result[subject].append(asdict(FavoriteIndexItem(question_id=favorite.question_id, subject=favorite.subject, question_content=favorite.question[:40])))
-        return result
-
-    def _repair_index(self, path: Path, expected: dict[str, list[dict]], *, key_field: str, required_fields: tuple[str, ...]) -> int:
-        raw, format_broken = self._load_raw_index(path)
-        issues = 1 if format_broken else 0
-
-        if not isinstance(raw, dict):
-            raw = {}
-            issues += 1
-
-        for subject in SUBJECTS:
-            subject_items = raw.get(subject)
-            expected_items = expected[subject]
-            if not isinstance(subject_items, list):
-                issues += 1
-                continue
-            issues += self._count_subject_issues(subject_items, expected_items, key_field, required_fields)
-
-        extra_subjects = [key for key in raw.keys() if key not in SUBJECTS]
-        issues += len(extra_subjects)
-
-        if self._normalize_index(raw) != expected:
-            JsonStore(path, expected).save(expected)
-
-        return issues
 
     def _repair_question_indexes(self, expected: dict[str, list[dict]]) -> int:
         issues = 0
@@ -154,15 +100,6 @@ class GlobalIndexChecker:
                 return json.load(file), False
         except (OSError, json.JSONDecodeError):
             return {}, True
-
-    def _normalize_index(self, raw) -> dict[str, list[dict]]:
-        if not isinstance(raw, dict):
-            return {subject: [] for subject in SUBJECTS}
-        normalized: dict[str, list[dict]] = {}
-        for subject in SUBJECTS:
-            items = raw.get(subject)
-            normalized[subject] = items if isinstance(items, list) else []
-        return normalized
 
     def _sync_question_bank_times(self, invalid_times: list[dict[str, str]]) -> int:
         issue_count = 0

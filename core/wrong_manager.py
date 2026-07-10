@@ -1,79 +1,138 @@
 from __future__ import annotations
 
-from dataclasses import asdict
+import json
+import sqlite3
 
-from config.settings import PAGE_SIZE, SUBJECTS, WRONG_DIR, WRONG_INDEX_FILE, WRONG_INDEX_TEMPLATE
-from core.json_store import JsonStore
-from models.wrong_question import WrongIndexItem, WrongQuestion
+from config.settings import PAGE_SIZE, SUBJECTS
+from core.database import DatabaseManager
+from core.errors import raise_app_error
+from models.wrong_question import WrongQuestion
 
 
 class WrongManager:
-    def __init__(self):
-        self.index_store = JsonStore(WRONG_INDEX_FILE, WRONG_INDEX_TEMPLATE, "E010", "E011", "E012")
-
-    def _subject_store(self, subject: str) -> JsonStore:
-        return JsonStore(WRONG_DIR / f"{subject}.json", [], "E010", "E011", "E012")
-
-    def load_index(self) -> dict[str, list[WrongIndexItem]]:
-        raw = self.index_store.load()
-        return {
-            subject: [WrongIndexItem(**item) for item in raw.get(subject, [])]
-            for subject in SUBJECTS
-        }
+    def __init__(self, database: DatabaseManager):
+        self.database = database
 
     def add_wrong(self, payload: WrongQuestion) -> None:
-        store = self._subject_store(payload.subject)
-        data = [WrongQuestion(**item) for item in store.load()]
-        found = False
-        for item in data:
-            if item.question_id == payload.question_id:
-                item.error_count += 1
-                found = True
-                payload = item
-                break
-        if not found:
-            data.append(payload)
-        store.save([asdict(item) for item in data])
-        self._rebuild_subject_index(payload.subject, data)
+        try:
+            with self.database.transaction() as connection:
+                connection.execute(
+                    """
+                    INSERT INTO wrong_questions (
+                        question_id, question_num, bank_name, bank_question_id,
+                        subject, question, options_json, answer, explanation,
+                        error_count
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(subject, question_id) DO UPDATE SET
+                        error_count = wrong_questions.error_count + 1
+                    """,
+                    (
+                        payload.question_id,
+                        payload.question_num,
+                        payload.bank_name,
+                        payload.bank_question_id,
+                        payload.subject,
+                        payload.question,
+                        self._encode_options(payload.options),
+                        payload.answer,
+                        payload.explanation,
+                        payload.error_count,
+                    ),
+                )
+        except (sqlite3.Error, TypeError, ValueError) as exc:
+            raise_app_error("E012", str(exc))
 
-    def list_wrongs(self, subject: str | None = None, keyword: str = "", page: int = 1, page_size: int = PAGE_SIZE) -> tuple[list[WrongQuestion], int]:
-        items: list[WrongQuestion] = []
-        subjects = [subject] if subject else list(SUBJECTS)
-        for current in subjects:
-            store = self._subject_store(current)
-            items.extend(WrongQuestion(**item) for item in store.load())
-        keyword_lower = keyword.strip().lower()
-        if keyword_lower:
-            items = [item for item in items if keyword_lower in item.question.lower() or keyword_lower in item.bank_name.lower()]
-        start = max(page - 1, 0) * page_size
-        end = start + page_size
-        return items[start:end], len(items)
+    def list_wrongs(
+        self,
+        subject: str | None = None,
+        keyword: str = "",
+        page: int = 1,
+        page_size: int = PAGE_SIZE,
+    ) -> tuple[list[WrongQuestion], int]:
+        where_sql, parameters = self._filters(subject, keyword)
+        offset = max(page - 1, 0) * page_size
+        try:
+            connection = self.database.connection()
+            total = connection.execute(
+                f"SELECT COUNT(*) FROM wrong_questions{where_sql}",
+                parameters,
+            ).fetchone()[0]
+            rows = connection.execute(
+                f"""
+                SELECT * FROM wrong_questions{where_sql}
+                ORDER BY {self._subject_order_sql()}, id
+                LIMIT ? OFFSET ?
+                """,
+                (*parameters, page_size, offset),
+            ).fetchall()
+            return [self._row_to_question(row) for row in rows], total
+        except sqlite3.Error as exc:
+            raise_app_error("E010", str(exc))
+        except (json.JSONDecodeError, TypeError, ValueError) as exc:
+            raise_app_error("E011", str(exc))
 
     def get_question(self, subject: str, question_id: str) -> WrongQuestion | None:
-        store = self._subject_store(subject)
-        for item in store.load():
-            wrong = WrongQuestion(**item)
-            if wrong.question_id == question_id:
-                return wrong
-        return None
+        try:
+            row = self.database.connection().execute(
+                """
+                SELECT * FROM wrong_questions
+                WHERE subject = ? AND question_id = ?
+                """,
+                (subject, question_id),
+            ).fetchone()
+            return self._row_to_question(row) if row else None
+        except sqlite3.Error as exc:
+            raise_app_error("E010", str(exc))
+        except (json.JSONDecodeError, TypeError, ValueError) as exc:
+            raise_app_error("E011", str(exc))
 
-    def refresh_index(self) -> dict[str, int]:
-        result = {}
-        for subject in SUBJECTS:
-            data = [WrongQuestion(**item) for item in self._subject_store(subject).load()]
-            self._rebuild_subject_index(subject, data)
-            result[subject] = len(data)
-        return result
-
-    def _rebuild_subject_index(self, subject: str, data: list[WrongQuestion]) -> None:
-        index = self.load_index()
-        index[subject] = [
-            WrongIndexItem(
-                question_id=item.question_id,
-                subject=item.subject,
-                question_content=item.question[:40],
-                error_count=item.error_count,
+    @staticmethod
+    def _filters(subject: str | None, keyword: str) -> tuple[str, tuple]:
+        clauses = []
+        parameters: list[object] = []
+        if subject:
+            clauses.append("subject = ?")
+            parameters.append(subject)
+        keyword = keyword.strip()
+        if keyword:
+            escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            pattern = f"%{escaped}%"
+            clauses.append(
+                "(question LIKE ? ESCAPE '\\' COLLATE NOCASE "
+                "OR bank_name LIKE ? ESCAPE '\\' COLLATE NOCASE)"
             )
-            for item in data
-        ]
-        self.index_store.save({name: [asdict(entry) for entry in entries] for name, entries in index.items()})
+            parameters.extend((pattern, pattern))
+        where_sql = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        return where_sql, tuple(parameters)
+
+    @staticmethod
+    def _subject_order_sql() -> str:
+        cases = " ".join(
+            f"WHEN '{subject}' THEN {position}"
+            for position, subject in enumerate(SUBJECTS)
+        )
+        return f"CASE subject {cases} ELSE {len(SUBJECTS)} END"
+
+    @staticmethod
+    def _encode_options(options: dict[str, str]) -> str:
+        if not isinstance(options, dict):
+            raise TypeError("题目选项不是字典")
+        return json.dumps(options, ensure_ascii=False, separators=(",", ":"))
+
+    @staticmethod
+    def _row_to_question(row: sqlite3.Row) -> WrongQuestion:
+        options = json.loads(row["options_json"])
+        if not isinstance(options, dict):
+            raise TypeError("题目选项不是字典")
+        return WrongQuestion(
+            question_id=row["question_id"],
+            question_num=row["question_num"],
+            bank_name=row["bank_name"],
+            bank_question_id=row["bank_question_id"],
+            subject=row["subject"],
+            question=row["question"],
+            options=options,
+            answer=row["answer"],
+            explanation=row["explanation"],
+            error_count=row["error_count"],
+        )

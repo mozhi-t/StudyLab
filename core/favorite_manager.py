@@ -1,71 +1,148 @@
 from __future__ import annotations
 
-from dataclasses import asdict
+import json
+import sqlite3
 
-from config.settings import FAVORITE_DIR, FAVORITE_INDEX_FILE, FAVORITE_INDEX_TEMPLATE, PAGE_SIZE, SUBJECTS
+from config.settings import PAGE_SIZE, SUBJECTS
+from core.database import DatabaseManager
 from core.errors import raise_app_error
-from core.json_store import JsonStore
-from models.favorite_question import FavoriteIndexItem, FavoriteQuestion
+from models.favorite_question import FavoriteQuestion
 
 
 class FavoriteManager:
-    def __init__(self):
-        self.index_store = JsonStore(FAVORITE_INDEX_FILE, FAVORITE_INDEX_TEMPLATE, "E013", "E014", "E015")
-
-    def _subject_store(self, subject: str) -> JsonStore:
-        return JsonStore(FAVORITE_DIR / f"{subject}.json", [], "E013", "E014", "E015")
-
-    def load_index(self) -> dict[str, list[FavoriteIndexItem]]:
-        raw = self.index_store.load()
-        return {
-            subject: [FavoriteIndexItem(**item) for item in raw.get(subject, [])]
-            for subject in SUBJECTS
-        }
+    def __init__(self, database: DatabaseManager):
+        self.database = database
 
     def toggle_favorite(self, payload: FavoriteQuestion) -> bool:
-        store = self._subject_store(payload.subject)
-        data = [FavoriteQuestion(**item) for item in store.load()]
-        existing = next((item for item in data if item.question_id == payload.question_id), None)
-        if existing:
-            try:
-                data = [item for item in data if item.question_id != payload.question_id]
-            except OSError as exc:
-                raise_app_error("E016", str(exc))
-            is_favorite = False
-        else:
-            data.append(payload)
-            is_favorite = True
-        store.save([asdict(item) for item in data])
-        self._rebuild_subject_index(payload.subject, data)
-        return is_favorite
+        try:
+            with self.database.transaction() as connection:
+                exists = connection.execute(
+                    """
+                    SELECT 1 FROM favorite_questions
+                    WHERE subject = ? AND question_id = ?
+                    """,
+                    (payload.subject, payload.question_id),
+                ).fetchone()
+                if exists:
+                    connection.execute(
+                        """
+                        DELETE FROM favorite_questions
+                        WHERE subject = ? AND question_id = ?
+                        """,
+                        (payload.subject, payload.question_id),
+                    )
+                    return False
+                connection.execute(
+                    """
+                    INSERT INTO favorite_questions (
+                        question_id, bank_name, bank_question_id, subject,
+                        question, options_json, answer, explanation
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        payload.question_id,
+                        payload.bank_name,
+                        payload.bank_question_id,
+                        payload.subject,
+                        payload.question,
+                        self._encode_options(payload.options),
+                        payload.answer,
+                        payload.explanation,
+                    ),
+                )
+                return True
+        except (sqlite3.Error, TypeError, ValueError) as exc:
+            raise_app_error("E015", str(exc))
 
-    def list_favorites(self, subject: str | None = None, keyword: str = "", page: int = 1, page_size: int = PAGE_SIZE) -> tuple[list[FavoriteQuestion], int]:
-        items: list[FavoriteQuestion] = []
-        subjects = [subject] if subject else list(SUBJECTS)
-        for current in subjects:
-            items.extend(FavoriteQuestion(**item) for item in self._subject_store(current).load())
-        keyword_lower = keyword.strip().lower()
-        if keyword_lower:
-            items = [item for item in items if keyword_lower in item.question.lower() or keyword_lower in item.bank_name.lower()]
-        start = max(page - 1, 0) * page_size
-        end = start + page_size
-        return items[start:end], len(items)
+    def list_favorites(
+        self,
+        subject: str | None = None,
+        keyword: str = "",
+        page: int = 1,
+        page_size: int = PAGE_SIZE,
+    ) -> tuple[list[FavoriteQuestion], int]:
+        where_sql, parameters = self._filters(subject, keyword)
+        offset = max(page - 1, 0) * page_size
+        try:
+            connection = self.database.connection()
+            total = connection.execute(
+                f"SELECT COUNT(*) FROM favorite_questions{where_sql}",
+                parameters,
+            ).fetchone()[0]
+            rows = connection.execute(
+                f"""
+                SELECT * FROM favorite_questions{where_sql}
+                ORDER BY {self._subject_order_sql()}, id
+                LIMIT ? OFFSET ?
+                """,
+                (*parameters, page_size, offset),
+            ).fetchall()
+            return [self._row_to_question(row) for row in rows], total
+        except sqlite3.Error as exc:
+            raise_app_error("E013", str(exc))
+        except (json.JSONDecodeError, TypeError, ValueError) as exc:
+            raise_app_error("E014", str(exc))
 
     def get_question(self, subject: str, question_id: str) -> FavoriteQuestion | None:
-        for item in self._subject_store(subject).load():
-            question = FavoriteQuestion(**item)
-            if question.question_id == question_id:
-                return question
-        return None
+        try:
+            row = self.database.connection().execute(
+                """
+                SELECT * FROM favorite_questions
+                WHERE subject = ? AND question_id = ?
+                """,
+                (subject, question_id),
+            ).fetchone()
+            return self._row_to_question(row) if row else None
+        except sqlite3.Error as exc:
+            raise_app_error("E013", str(exc))
+        except (json.JSONDecodeError, TypeError, ValueError) as exc:
+            raise_app_error("E014", str(exc))
 
-    def _rebuild_subject_index(self, subject: str, data: list[FavoriteQuestion]) -> None:
-        index = self.load_index()
-        index[subject] = [
-            FavoriteIndexItem(
-                question_id=item.question_id,
-                subject=item.subject,
-                question_content=item.question[:40],
+    @staticmethod
+    def _filters(subject: str | None, keyword: str) -> tuple[str, tuple]:
+        clauses = []
+        parameters: list[object] = []
+        if subject:
+            clauses.append("subject = ?")
+            parameters.append(subject)
+        keyword = keyword.strip()
+        if keyword:
+            escaped = keyword.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+            pattern = f"%{escaped}%"
+            clauses.append(
+                "(question LIKE ? ESCAPE '\\' COLLATE NOCASE "
+                "OR bank_name LIKE ? ESCAPE '\\' COLLATE NOCASE)"
             )
-            for item in data
-        ]
-        self.index_store.save({name: [asdict(entry) for entry in entries] for name, entries in index.items()})
+            parameters.extend((pattern, pattern))
+        where_sql = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        return where_sql, tuple(parameters)
+
+    @staticmethod
+    def _subject_order_sql() -> str:
+        cases = " ".join(
+            f"WHEN '{subject}' THEN {position}"
+            for position, subject in enumerate(SUBJECTS)
+        )
+        return f"CASE subject {cases} ELSE {len(SUBJECTS)} END"
+
+    @staticmethod
+    def _encode_options(options: dict[str, str]) -> str:
+        if not isinstance(options, dict):
+            raise TypeError("题目选项不是字典")
+        return json.dumps(options, ensure_ascii=False, separators=(",", ":"))
+
+    @staticmethod
+    def _row_to_question(row: sqlite3.Row) -> FavoriteQuestion:
+        options = json.loads(row["options_json"])
+        if not isinstance(options, dict):
+            raise TypeError("题目选项不是字典")
+        return FavoriteQuestion(
+            question_id=row["question_id"],
+            bank_name=row["bank_name"],
+            bank_question_id=row["bank_question_id"],
+            subject=row["subject"],
+            question=row["question"],
+            options=options,
+            answer=row["answer"],
+            explanation=row["explanation"],
+        )
