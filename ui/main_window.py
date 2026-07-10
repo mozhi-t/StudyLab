@@ -6,7 +6,6 @@ from qfluentwidgets import FluentIcon, MSFluentWindow
 
 from answer.choice_answer import ChoiceAnswerWindow
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
-from core.errors import raise_app_error
 from core.eye_care import EyeCareReminder
 from core.json_store import JsonStore
 from ui.pages.about_page import AboutPage
@@ -31,7 +30,7 @@ class MainWindow(MSFluentWindow):
         self.setWindowTitle("StudyLab")
         self.resize(1040, 680)
 
-        self.home_page = HomePage(self)
+        self.home_page = HomePage(user_manager, self)
         self.home_page.setObjectName("home_page")
         self.local_bank_page = LocalBankPage(question_index_manager, self)
         self.local_bank_page.setObjectName("local_bank_page")
@@ -60,7 +59,6 @@ class MainWindow(MSFluentWindow):
         self.page_lock_overlays: list[QWidget] = []
         self._init_page_lock_overlays()
 
-        self.home_page.navigate_requested.connect(self.switch_to_page)
         self.local_bank_page.open_bank_requested.connect(self.open_choice_answer)
         self.exam_page.favorite_changed.connect(self.favorite_page.reload)
 
@@ -91,17 +89,6 @@ class MainWindow(MSFluentWindow):
             page.installEventFilter(self)
             self.page_lock_overlays.append(overlay)
 
-    def switch_to_page(self, key: str):
-        mapping = {
-            "local_bank": self.local_bank_page,
-            "wrong_book": self.wrong_book_page,
-            "favorite": self.favorite_page,
-        }
-        page = mapping.get(key)
-        if not page:
-            raise_app_error("E023", key)
-        self.switchTo(page)
-
     def open_choice_answer(self, subject: str, bank_name: str):
         bank = self.question_index_manager.load_bank(subject, bank_name)
         self.answer_window = ChoiceAnswerWindow(
@@ -127,6 +114,7 @@ class MainWindow(MSFluentWindow):
         self.activateWindow()
         self.wrong_book_page.reload()
         self.favorite_page.reload()
+        self.home_page.reload()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

@@ -62,6 +62,37 @@ class UserDataManager:
         except (sqlite3.Error, ValueError) as exc:
             raise_app_error("E002", str(exc))
 
+    def load_avatar(self, user_id: int = DEFAULT_USER_ID) -> bytes | None:
+        try:
+            row = self.database.connection().execute(
+                "SELECT avatar_image FROM users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+            if row is None:
+                raise sqlite3.DatabaseError(f"用户不存在: {user_id}")
+            return bytes(row["avatar_image"]) if row["avatar_image"] is not None else None
+        except sqlite3.Error as exc:
+            raise_app_error("E001", str(exc))
+
+    def save_avatar(self, image_data: bytes, user_id: int = DEFAULT_USER_ID) -> None:
+        if not image_data:
+            raise_app_error("E002", "头像图片为空")
+        timestamp = now_text()
+        try:
+            with self.database.transaction() as connection:
+                updated = connection.execute(
+                    """
+                    UPDATE users
+                    SET avatar_image = ?, updated_at = ?
+                    WHERE id = ?
+                    """,
+                    (image_data, timestamp, user_id),
+                ).rowcount
+                if not updated:
+                    raise ValueError(f"用户不存在: {user_id}")
+        except (sqlite3.Error, ValueError) as exc:
+            raise_app_error("E002", str(exc))
+
     def record_answer(
         self,
         result: ScoreResult,
