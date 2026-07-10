@@ -9,8 +9,6 @@ from config.settings import (
     QUESTION_BANK_DIR,
     QUESTION_INDEX_TEMPLATE,
     SUBJECTS,
-    USER_FILE,
-    USER_TEMPLATE,
     question_bank_index_file,
 )
 from core.database import DatabaseManager
@@ -26,7 +24,6 @@ def bootstrap_app() -> DatabaseManager:
         (QUESTION_BANK_DIR / subject).mkdir(parents=True, exist_ok=True)
         JsonStore(question_bank_index_file(subject), QUESTION_INDEX_TEMPLATE, "E003", "E004", "E009").ensure()
 
-    JsonStore(USER_FILE, USER_TEMPLATE, "E001", "E002", "E001").ensure()
     JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, "E025", "E025", "E025").ensure()
 
     database = DatabaseManager(DATABASE_FILE)

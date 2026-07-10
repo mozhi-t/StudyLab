@@ -6,14 +6,15 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
-from config.settings import DATABASE_FILE
+from config.settings import DATABASE_FILE, SUBJECTS
+from core.datetime_utils import now_text
 from core.errors import raise_app_error
 
 
 class DatabaseManager:
-    """Manage StudyLab's SQLite connections, schema, and legacy migrations."""
+    """Manage StudyLab's SQLite connections, schema, and version upgrades."""
 
-    SCHEMA_VERSION = 1
+    SCHEMA_VERSION = 2
 
     def __init__(
         self,
@@ -73,6 +74,9 @@ class DatabaseManager:
             )
         if version < 1:
             self._migrate_to_version_1(connection)
+            version = 1
+        if version < 2:
+            self._migrate_to_version_2(connection)
 
     def _migrate_to_version_1(self, connection: sqlite3.Connection) -> None:
         try:
@@ -121,6 +125,112 @@ class DatabaseManager:
                 """
             )
             connection.execute("PRAGMA user_version = 1")
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+
+    def _migrate_to_version_2(self, connection: sqlite3.Connection) -> None:
+        try:
+            connection.executescript(
+                """
+                BEGIN IMMEDIATE;
+
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY,
+                    nickname TEXT NOT NULL DEFAULT '',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE TABLE user_statistics (
+                    user_id INTEGER PRIMARY KEY,
+                    total_questions INTEGER NOT NULL DEFAULT 0 CHECK (total_questions >= 0),
+                    total_study_seconds INTEGER NOT NULL DEFAULT 0 CHECK (total_study_seconds >= 0),
+                    total_study_days INTEGER NOT NULL DEFAULT 0 CHECK (total_study_days >= 0),
+                    continuous_days INTEGER NOT NULL DEFAULT 0 CHECK (continuous_days >= 0),
+                    max_continuous_days INTEGER NOT NULL DEFAULT 0 CHECK (max_continuous_days >= 0),
+                    last_study_date TEXT,
+                    updated_at TEXT NOT NULL,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE daily_study_stats (
+                    user_id INTEGER NOT NULL,
+                    study_date TEXT NOT NULL,
+                    answered_count INTEGER NOT NULL DEFAULT 0 CHECK (answered_count >= 0),
+                    study_seconds INTEGER NOT NULL DEFAULT 0 CHECK (study_seconds >= 0),
+                    session_count INTEGER NOT NULL DEFAULT 0 CHECK (session_count >= 0),
+                    score_earned REAL NOT NULL DEFAULT 0 CHECK (score_earned >= 0),
+                    score_possible REAL NOT NULL DEFAULT 0 CHECK (score_possible >= 0),
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (user_id, study_date),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                CREATE TABLE study_sessions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    subject TEXT NOT NULL,
+                    source_type TEXT NOT NULL,
+                    source_key TEXT,
+                    source_name TEXT NOT NULL,
+                    started_at TEXT NOT NULL,
+                    ended_at TEXT,
+                    duration_seconds INTEGER NOT NULL DEFAULT 0 CHECK (duration_seconds >= 0),
+                    answered_count INTEGER NOT NULL DEFAULT 0 CHECK (answered_count >= 0),
+                    score_earned REAL NOT NULL DEFAULT 0 CHECK (score_earned >= 0),
+                    score_possible REAL NOT NULL DEFAULT 0 CHECK (score_possible >= 0),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+
+                CREATE INDEX idx_study_sessions_user_time
+                    ON study_sessions(user_id, started_at DESC);
+                CREATE INDEX idx_study_sessions_subject
+                    ON study_sessions(user_id, subject);
+
+                CREATE TABLE user_subject_abilities (
+                    user_id INTEGER NOT NULL,
+                    subject TEXT NOT NULL,
+                    ability_index REAL NOT NULL DEFAULT 50 CHECK (ability_index BETWEEN 0 AND 100),
+                    sample_count INTEGER NOT NULL DEFAULT 0 CHECK (sample_count >= 0),
+                    score_earned REAL NOT NULL DEFAULT 0 CHECK (score_earned >= 0),
+                    score_possible REAL NOT NULL DEFAULT 0 CHECK (score_possible >= 0),
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (user_id, subject),
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                );
+                """
+            )
+
+            timestamp = now_text()
+            connection.execute(
+                """
+                INSERT INTO users (id, nickname, created_at, updated_at)
+                VALUES (1, '', ?, ?)
+                """,
+                (timestamp, timestamp),
+            )
+            connection.execute(
+                """
+                INSERT INTO user_statistics (
+                    user_id, total_questions, total_study_seconds,
+                    total_study_days, continuous_days, max_continuous_days,
+                    last_study_date, updated_at
+                ) VALUES (1, 0, 0, 0, 0, 0, NULL, ?)
+                """,
+                (timestamp,),
+            )
+            connection.executemany(
+                """
+                INSERT INTO user_subject_abilities (
+                    user_id, subject, ability_index, sample_count,
+                    score_earned, score_possible, updated_at
+                ) VALUES (1, ?, 50, 0, 0, 0, ?)
+                """,
+                [(subject, timestamp) for subject in SUBJECTS],
+            )
+            connection.execute("PRAGMA user_version = 2")
             connection.commit()
         except Exception:
             connection.rollback()

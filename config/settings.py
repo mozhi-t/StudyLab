@@ -13,7 +13,6 @@ else:
     BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 DATABASE_FILE = DATA_DIR / "studylab.db"
-USER_FILE = DATA_DIR / "user.json"
 QUESTION_BANK_DIR = BASE_DIR / "question_bank"
 QUESTION_BANK_INDEX_NAME = "index.json"
 EXAM_DIR = BASE_DIR / "exam"
@@ -35,15 +34,6 @@ PAGE_SIZE = 50
 DEFAULT_THEME = "Auto"
 DEFAULT_THEME_COLOR = "#0f52aa"
 DEFAULT_LANGUAGE = "zh_CN"
-
-USER_TEMPLATE = {
-    "nickname": "",
-    "total_questions": 0,
-    "total_study_days": 0,
-    "continuous_days": 0,
-    "max_continuous_days": 0,
-    "last_study_date": None,
-}
 
 APP_SETTINGS_TEMPLATE = {
     "theme": DEFAULT_THEME,

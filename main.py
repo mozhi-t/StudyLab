@@ -21,7 +21,7 @@ def main() -> int:
     apply_ui_scale()
     app = QApplication(sys.argv)
 
-    user_manager = UserDataManager()
+    user_manager = UserDataManager(database)
     question_index_manager = QuestionIndexManager()
     wrong_manager = WrongManager(database)
     favorite_manager = FavoriteManager(database)

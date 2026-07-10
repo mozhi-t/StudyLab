@@ -20,6 +20,7 @@ from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from core.json_store import JsonStore
 from models.favorite_question import FavoriteQuestion
 from models.question_bank import QuestionBank, QuestionItem
+from models.study import ScoreResult
 from models.wrong_question import WrongQuestion
 from ui.widgets.answer_card import AnswerCard
 from ui.widgets.styled_card import StyledCardWidget
@@ -97,6 +98,7 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.selected_answers: dict[int, str] = {}
         self.answer_results: dict[int, bool] = {}
         self.option_cards: dict[str, OptionCard] = {}
+        self.study_session_id: int | None = None
 
         self.setWindowTitle(question_bank.name)
         self.setWindowFlag(Qt.WindowType.Window, True)
@@ -184,6 +186,18 @@ class ChoiceAnswerWindow(AnswerWindow):
         self._init_shortcuts()
         self._apply_window_style()
         self.render_question()
+        self.study_session_id = self.user_manager.start_study_session(
+            subject=question_bank.subject,
+            source_type="question_bank",
+            source_key=f"{question_bank.subject}_{question_bank.name}",
+            source_name=question_bank.name,
+        )
+
+    def closeEvent(self, event) -> None:
+        if self.study_session_id is not None:
+            self.user_manager.finish_study_session(self.study_session_id)
+            self.study_session_id = None
+        super().closeEvent(event)
 
     def _apply_window_style(self) -> None:
         background = "#202020" if isDarkTheme() else "#f3f3f3"
@@ -239,7 +253,14 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.selected_answers[self.current_index] = selected
         is_correct = selected == question.answer
         self.answer_results[self.current_index] = is_correct
-        self.user_manager.record_study_session(1)
+        self.user_manager.record_answer(
+            ScoreResult(
+                earned=1 if is_correct else 0,
+                possible=1,
+            ),
+            subject=self.question_bank.subject,
+            session_id=self.study_session_id,
+        )
 
         self.render_question()
 
