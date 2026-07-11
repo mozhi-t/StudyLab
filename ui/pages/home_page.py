@@ -423,7 +423,7 @@ class HomePage(QWidget):
         completion = today_stats.answered_count / daily_goal * 100
         for style_widget in self.home_styles.values():
             style_widget.set_completion(completion)
-        self._set_home_page_style(settings.get("home_page_style", "样式二"))
+        self._set_home_page_style(settings.get("home_page_style", "样式一"))
 
         accuracy = (
             f"{today_stats.score_earned / today_stats.score_possible * 100:.0f}%"
@@ -455,7 +455,7 @@ class HomePage(QWidget):
         )
 
     def _set_home_page_style(self, style: str) -> None:
-        style_widget = self.home_styles.get(style, self.home_styles["样式二"])
+        style_widget = self.home_styles.get(style, self.home_styles["样式一"])
         self.welcome_stack.setCurrentWidget(style_widget)
 
     def _choose_avatar(self) -> None:

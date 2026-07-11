@@ -268,11 +268,11 @@ class SettingsPage(QWidget):
 
         self.home_style_card = self._create_combo_setting_card(
             "home_page_style",
-            self.settings.get("home_page_style", "样式二"),
+            self.settings.get("home_page_style", "样式一"),
             [style_class.style_name for style_class in HOME_STYLE_CLASSES],
             FluentIcon.HOME,
             "主页样式",
-            "切换主页欢迎卡片的显示样式",
+            "切换主页的显示样式",
         )
         self.home_style_combo = self.home_style_card.comboBox
         self.home_style_combo.currentTextChanged.connect(self.update_home_page_style)
