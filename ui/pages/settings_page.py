@@ -13,6 +13,7 @@ from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
 from core.index_checker import GlobalIndexChecker
 from core.json_store import JsonStore
+from ui.languages import LanguageManager
 from ui.styles.home import HOME_STYLE_CLASSES
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.invalid_bank_time_dialog import InvalidBankTimeDialog
@@ -158,6 +159,9 @@ class SettingsPage(QWidget):
         super().__init__(parent)
         self.store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
         self.settings = APP_SETTINGS_TEMPLATE | self.store.load()
+        if self.settings.get("language") == "跟随系统设置":
+            self.settings["language"] = "system"
+        self.language_manager = LanguageManager(self.settings.get("language", "system"))
         self.settings["answer_shortcuts"] = APP_SETTINGS_TEMPLATE["answer_shortcuts"] | self.settings.get("answer_shortcuts", {})
         self.settings["eye_care"] = APP_SETTINGS_TEMPLATE["eye_care"] | self.settings.get("eye_care", {})
         self.question_index_manager = question_index_manager
@@ -166,6 +170,7 @@ class SettingsPage(QWidget):
         self.index_checker = GlobalIndexChecker()
         self.index_check_thread: IndexCheckThread | None = None
         self.state_tooltip: StateToolTip | None = None
+        self.reset_shortcut_buttons: list[PushButton] = []
 
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
@@ -233,14 +238,13 @@ class SettingsPage(QWidget):
         self.color_button.colorChanged.connect(self.update_color)
         self.theme_color_layout.addWidget(self.reset_theme_color_button)
         self.theme_color_layout.addWidget(self.color_button)
-        layout.addWidget(
-            self._create_control_setting_card(
+        self.theme_color_card = self._create_control_setting_card(
                 FluentIcon.PALETTE,
                 "主题色",
                 "调整您的应用的主题色",
                 self.theme_color_control,
-            )
         )
+        layout.addWidget(self.theme_color_card)
 
         self.scale_card = self._create_combo_setting_card(
             "ui_scale",
@@ -257,13 +261,18 @@ class SettingsPage(QWidget):
         self.language_card = self._create_combo_setting_card(
             "language",
             self.settings.get("language", "zh_CN"),
-            ["跟随系统设置", "zh_CN", "en_US"],
+            ["system", "zh_CN", "en_US"],
             FluentIcon.LANGUAGE,
             "语言",
             "选择界面所使用的语言",
+            [
+                self.language_manager.text("language_system"),
+                self.language_manager.text("language_zh"),
+                self.language_manager.text("language_en"),
+            ],
         )
         self.language_combo = self.language_card.comboBox
-        self.language_combo.currentTextChanged.connect(self.update_settings)
+        self.language_combo.currentIndexChanged.connect(self.update_language)
         layout.addWidget(self.language_card)
 
         self.home_style_card = self._create_combo_setting_card(
@@ -285,30 +294,27 @@ class SettingsPage(QWidget):
         layout.addSpacing(18)
         layout.addWidget(self.shortcut_title)
         layout.addSpacing(18)
-        layout.addWidget(
-            self._create_control_setting_card(
+        self.prev_shortcut_card = self._create_control_setting_card(
                 FluentIcon.LEFT_ARROW,
                 "上一题快捷键",
                 "答题界面中触发上一题操作",
                 self.prev_shortcut_control,
-            )
         )
-        layout.addWidget(
-            self._create_control_setting_card(
+        layout.addWidget(self.prev_shortcut_card)
+        self.next_shortcut_card = self._create_control_setting_card(
                 FluentIcon.RIGHT_ARROW,
                 "下一题快捷键",
                 "答题界面中触发下一题操作",
                 self.next_shortcut_control,
-            )
         )
-        layout.addWidget(
-            self._create_control_setting_card(
+        layout.addWidget(self.next_shortcut_card)
+        self.mark_shortcut_card = self._create_control_setting_card(
                 FluentIcon.TAG,
                 "标记题目快捷键",
                 "答题界面中标记或取消标记当前题目",
                 self.mark_shortcut_control,
-            )
         )
+        layout.addWidget(self.mark_shortcut_card)
         # ===== 学习设置 =====
         self.learning_goal_combo = ComboBox(self.content)
         self._learning_goal_presets = ["20", "50", "100", "150", "200"]
@@ -355,13 +361,13 @@ class SettingsPage(QWidget):
         self.eye_care_mode_combo.setCurrentIndex(mode_index)
         self.eye_care_mode_combo.setFixedWidth(170)
         self.eye_care_mode_combo.currentIndexChanged.connect(self._on_eye_care_mode_changed)
-        self.eye_care_group_card.addGroup(
+        self.eye_care_interval_group = self.eye_care_group_card.addGroup(
             FluentIcon.DATE_TIME,
             "提醒间隔",
             "设置多久提醒一次",
             self.eye_care_interval_combo,
         )
-        self.eye_care_group_card.addGroup(
+        self.eye_care_mode_group = self.eye_care_group_card.addGroup(
             FluentIcon.MESSAGE,
             "提醒方式",
             "选择提醒以何种形式出现",
@@ -402,6 +408,7 @@ class SettingsPage(QWidget):
         self.index_check_card.clicked.connect(self.show_index_check_dialog)
         layout.addWidget(self.index_check_card)
         layout.addStretch(1)
+        self._apply_language()
 
     def _create_combo_setting_card(
         self,
@@ -433,10 +440,13 @@ class SettingsPage(QWidget):
         combo.blockSignals(True)
         custom_index = combo.count() - 1
         if str(minutes) in self._eye_care_presets:
-            combo.setItemText(custom_index, "自定义...")
-            combo.setCurrentText(f"{minutes} 分钟")
+            combo.setItemText(custom_index, self.language_manager.text("custom"))
+            combo.setCurrentText(self.language_manager.text("minutes", value=minutes))
         else:
-            combo.setItemText(custom_index, f"{minutes} 分钟 (自定义)")
+            combo.setItemText(
+                custom_index,
+                f'{self.language_manager.text("minutes", value=minutes)} ({self.language_manager.text("custom").rstrip(".")})',
+            )
             combo.setCurrentIndex(custom_index)
         combo.blockSignals(False)
 
@@ -445,10 +455,13 @@ class SettingsPage(QWidget):
         combo.blockSignals(True)
         custom_index = combo.count() - 1
         if str(count) in self._learning_goal_presets:
-            combo.setItemText(custom_index, "自定义...")
-            combo.setCurrentText(f"{count} 题")
+            combo.setItemText(custom_index, self.language_manager.text("custom"))
+            combo.setCurrentText(self.language_manager.text("questions", value=count))
         else:
-            combo.setItemText(custom_index, f"{count} 题 (自定义)")
+            combo.setItemText(
+                custom_index,
+                f'{self.language_manager.text("questions", value=count)} ({self.language_manager.text("custom").rstrip(".")})',
+            )
             combo.setCurrentIndex(custom_index)
         combo.blockSignals(False)
 
@@ -521,9 +534,64 @@ class SettingsPage(QWidget):
 
     def update_settings(self, *_args):
         self.settings["theme"] = self.theme_combo.currentText()
-        self.settings["language"] = self.language_combo.currentText()
         self.store.save(self.settings)
         apply_theme()
+
+    def update_language(self, index: int) -> None:
+        language = self.language_combo.itemData(index) or "system"
+        self.settings["language"] = language
+        self.store.save(self.settings)
+        self.language_manager.set_language(language)
+        self._apply_language()
+
+    def _apply_language(self) -> None:
+        tr = self.language_manager.text
+        self.page_title.setText(tr("settings"))
+        self.title_label.setText(tr("personalization"))
+        self.shortcut_title.setText(tr("shortcuts"))
+        self.eye_care_title.setText(tr("study"))
+        self.advanced_title.setText(tr("advanced"))
+
+        card_texts = (
+            (self.theme_card, "theme", "theme_desc"),
+            (self.theme_color_card, "theme_color", "theme_color_desc"),
+            (self.scale_card, "ui_scale", "ui_scale_desc"),
+            (self.language_card, "language", "language_desc"),
+            (self.home_style_card, "home_style", "home_style_desc"),
+            (self.prev_shortcut_card, "prev_shortcut", "prev_shortcut_desc"),
+            (self.next_shortcut_card, "next_shortcut", "next_shortcut_desc"),
+            (self.mark_shortcut_card, "mark_shortcut", "mark_shortcut_desc"),
+            (self.learning_goal_card, "daily_goal", "daily_goal_desc"),
+            (self.eye_care_group_card, "eye_care", "eye_care_desc"),
+            (self.index_check_card, "index_check", "index_check_desc"),
+        )
+        for card, title_key, content_key in card_texts:
+            target = card.card if hasattr(card, "card") else card
+            target.setTitle(tr(title_key))
+            target.setContent(tr(content_key))
+
+        language_texts = (tr("language_system"), tr("language_zh"), tr("language_en"))
+        for index, text in enumerate(language_texts):
+            self.language_combo.setItemText(index, text)
+        self.reset_theme_color_button.setText(tr("reset"))
+        for button in self.reset_shortcut_buttons:
+            button.setText(tr("reset"))
+        self.index_check_button.setText(tr("check_index"))
+        self.eye_care_interval_group.setTitle(tr("interval"))
+        self.eye_care_interval_group.setContent(tr("interval_desc"))
+        self.eye_care_mode_group.setTitle(tr("reminder_mode"))
+        self.eye_care_mode_group.setContent(tr("reminder_mode_desc"))
+        self.eye_care_interval_combo.setItemText(0, tr("minutes", value=20))
+        for index, minutes in enumerate(self._eye_care_presets):
+            self.eye_care_interval_combo.setItemText(index, tr("minutes", value=minutes))
+        for index, count in enumerate(self._learning_goal_presets):
+            self.learning_goal_combo.setItemText(index, tr("questions", value=count))
+        self.eye_care_mode_combo.setItemText(0, tr("mode_dialog"))
+        self.eye_care_mode_combo.setItemText(1, tr("mode_infobar"))
+        self._refresh_eye_care_interval_text(
+            int(self.settings["eye_care"].get("interval_minutes", 20))
+        )
+        self._refresh_learning_goal_text(int(self.settings.get("daily_question_goal", 50)))
 
     def update_home_page_style(self, *_args) -> None:
         self.settings["home_page_style"] = self.home_style_combo.currentText()
@@ -595,6 +663,7 @@ class SettingsPage(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
         reset_button = PushButton("重置", control)
+        self.reset_shortcut_buttons.append(reset_button)
         reset_button.clicked.connect(lambda: self.reset_shortcut(key, label_map[key]))
         layout.addWidget(reset_button)
         layout.addWidget(button)
