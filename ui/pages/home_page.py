@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
 from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
+    ProgressBar,
     SingleDirectionScrollArea,
     StrongBodyLabel,
     SubtitleLabel,
@@ -24,7 +25,8 @@ from qfluentwidgets import (
     themeColor,
 )
 
-from config.settings import SUBJECTS
+from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, SUBJECTS
+from core.json_store import JsonStore
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.styled_card import StyledCardWidget
 
@@ -36,7 +38,7 @@ class AvatarWidget(QWidget):
         super().__init__(parent)
         self._name = "用户"
         self._pixmap: QPixmap | None = None
-        self.setFixedSize(82, 82)
+        self.setFixedSize(76, 76)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("点击更换头像")
 
@@ -89,7 +91,7 @@ class AvatarWidget(QWidget):
             return
 
         font = QFont(self.font())
-        font.setPointSize(23)
+        font.setPointSize(22)
         font.setWeight(QFont.Weight.DemiBold)
         painter.setFont(font)
         painter.setPen(accent)
@@ -329,6 +331,7 @@ class HomePage(QWidget):
     def __init__(self, user_manager, parent: QWidget | None = None):
         super().__init__(parent)
         self.user_manager = user_manager
+        self.settings_store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
         self.metric_widgets: dict[str, MetricWidget] = {}
 
         page_layout = QVBoxLayout(self)
@@ -355,21 +358,55 @@ class HomePage(QWidget):
         welcome_layout.setSpacing(18)
         self.welcome_card.setFixedHeight(164)
 
+        welcome_left = QWidget(self.welcome_card)
+        welcome_left_layout = QVBoxLayout(welcome_left)
+        welcome_left_layout.setContentsMargins(0, 12, 0, 8)
+        welcome_left_layout.setSpacing(7)
+
+        identity_widget = QWidget(welcome_left)
+        identity_layout = QHBoxLayout(identity_widget)
+        identity_layout.setContentsMargins(0, 0, 0, 0)
+        identity_layout.setSpacing(14)
         self.avatar = AvatarWidget(self.welcome_card)
         self.avatar.clicked.connect(self._choose_avatar)
-        welcome_layout.addWidget(self.avatar, alignment=Qt.AlignmentFlag.AlignVCenter)
+        identity_layout.addWidget(self.avatar, alignment=Qt.AlignmentFlag.AlignTop)
 
         greeting_widget = QWidget(self.welcome_card)
         greeting_layout = QVBoxLayout(greeting_widget)
-        greeting_layout.setContentsMargins(0, 0, 0, 0)
-        greeting_layout.setSpacing(4)
+        greeting_layout.setContentsMargins(0, 9, 0, 0)
+        greeting_layout.setSpacing(2)
         self.greeting_label = SubtitleLabel("欢迎，用户", self.welcome_card)
         self.subtitle_label = BodyLabel("今天也向目标再靠近一点。", self.welcome_card)
-        greeting_layout.addStretch(1)
+        greeting_font = QFont(self.greeting_label.font())
+        greeting_font.setPointSize(17)
+        self.greeting_label.setFont(greeting_font)
         greeting_layout.addWidget(self.greeting_label)
         greeting_layout.addWidget(self.subtitle_label)
         greeting_layout.addStretch(1)
-        welcome_layout.addWidget(greeting_widget, 1)
+        identity_layout.addWidget(greeting_widget, 1)
+        welcome_left_layout.addWidget(identity_widget)
+
+        goal_widget = QWidget(welcome_left)
+        goal_widget.setFixedWidth(300)
+        goal_layout = QVBoxLayout(goal_widget)
+        goal_layout.setContentsMargins(0, 0, 0, 0)
+        goal_layout.setSpacing(3)
+        goal_header_layout = QHBoxLayout()
+        goal_header_layout.setContentsMargins(0, 0, 0, 0)
+        self.goal_title_label = CaptionLabel("每日目标完成度", self.welcome_card)
+        self.goal_percent_label = CaptionLabel("0%", self.welcome_card)
+        self.goal_percent_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.goal_progress = ProgressBar(self.welcome_card)
+        self.goal_progress.setRange(0, 100)
+        self.goal_progress.setValue(0)
+        self.goal_progress.setFixedHeight(4)
+        goal_header_layout.addWidget(self.goal_title_label)
+        goal_header_layout.addStretch(1)
+        goal_header_layout.addWidget(self.goal_percent_label)
+        goal_layout.addLayout(goal_header_layout)
+        goal_layout.addWidget(self.goal_progress)
+        welcome_left_layout.addWidget(goal_widget, 0, Qt.AlignmentFlag.AlignLeft)
+        welcome_layout.addWidget(welcome_left, 1)
 
         self.radar = AbilityRadarWidget(self.welcome_card)
         welcome_layout.addWidget(self.radar, alignment=Qt.AlignmentFlag.AlignVCenter)
@@ -422,6 +459,12 @@ class HomePage(QWidget):
         self.avatar.set_name(nickname)
         self.avatar.set_image_data(self.user_manager.load_avatar())
         self.radar.set_values({item.subject: item.ability_index for item in abilities})
+
+        settings = APP_SETTINGS_TEMPLATE | self.settings_store.load()
+        daily_goal = max(int(settings.get("daily_question_goal", 50)), 1)
+        completion = today_stats.answered_count / daily_goal * 100
+        self.goal_percent_label.setText(f"{completion:.0f}%")
+        self.goal_progress.setValue(min(round(completion), 100))
 
         accuracy = (
             f"{today_stats.score_earned / today_stats.score_possible * 100:.0f}%"

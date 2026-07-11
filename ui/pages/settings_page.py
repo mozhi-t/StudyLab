@@ -16,6 +16,7 @@ from core.json_store import JsonStore
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.invalid_bank_time_dialog import InvalidBankTimeDialog
 from ui.widgets.eye_care_dialog import CustomIntervalDialog
+from ui.widgets.learning_goal_dialog import CustomLearningGoalDialog
 
 
 # Keys that are not a valid shortcut on their own: modifiers, lock keys, etc.
@@ -149,6 +150,7 @@ class IndexCheckThread(QThread):
 
 class SettingsPage(QWidget):
     eye_care_changed = pyqtSignal()
+    learning_goal_changed = pyqtSignal()
 
     def __init__(self, question_index_manager=None, wrong_manager=None, favorite_manager=None, parent: QWidget | None = None):
         super().__init__(parent)
@@ -293,6 +295,21 @@ class SettingsPage(QWidget):
                 self.mark_shortcut_control,
             )
         )
+        # ===== 学习设置 =====
+        self.learning_goal_combo = ComboBox(self.content)
+        self._learning_goal_presets = ["20", "50", "100", "150", "200"]
+        self.learning_goal_combo.addItems([f"{count} 题" for count in self._learning_goal_presets])
+        self.learning_goal_combo.addItem("自定义...")
+        self._refresh_learning_goal_text(int(self.settings.get("daily_question_goal", 50)))
+        self.learning_goal_combo.setFixedWidth(170)
+        self.learning_goal_combo.activated.connect(self._on_learning_goal_changed)
+        self.learning_goal_card = self._create_control_setting_card(
+            FluentIcon.EDUCATION,
+            "每日学习目标",
+            "设置每天计划完成的刷题数量",
+            self.learning_goal_combo,
+        )
+
         # ===== 休息提醒 =====
         eye_care = self.settings["eye_care"]
 
@@ -348,6 +365,7 @@ class SettingsPage(QWidget):
         layout.addSpacing(18)
         layout.addWidget(self.eye_care_title)
         layout.addSpacing(18)
+        layout.addWidget(self.learning_goal_card)
         layout.addWidget(self.eye_care_group_card)
 
         self.advanced_title = SubtitleLabel("高级", self.content)
@@ -407,6 +425,41 @@ class SettingsPage(QWidget):
             combo.setItemText(custom_index, f"{minutes} 分钟 (自定义)")
             combo.setCurrentIndex(custom_index)
         combo.blockSignals(False)
+
+    def _refresh_learning_goal_text(self, count: int) -> None:
+        combo = self.learning_goal_combo
+        combo.blockSignals(True)
+        custom_index = combo.count() - 1
+        if str(count) in self._learning_goal_presets:
+            combo.setItemText(custom_index, "自定义...")
+            combo.setCurrentText(f"{count} 题")
+        else:
+            combo.setItemText(custom_index, f"{count} 题 (自定义)")
+            combo.setCurrentIndex(custom_index)
+        combo.blockSignals(False)
+
+    def _on_learning_goal_changed(self, index: int) -> None:
+        combo = self.learning_goal_combo
+        if index == combo.count() - 1:
+            current = int(self.settings.get("daily_question_goal", 50))
+            dialog = CustomLearningGoalDialog(current, self.window())
+            if dialog.exec():
+                count = dialog.value
+                self.settings["daily_question_goal"] = count
+                self.store.save(self.settings)
+                self._refresh_learning_goal_text(count)
+                self.learning_goal_changed.emit()
+            else:
+                self._refresh_learning_goal_text(current)
+            return
+
+        try:
+            count = int(combo.itemText(index).split()[0])
+        except (ValueError, IndexError):
+            count = 50
+        self.settings["daily_question_goal"] = count
+        self.store.save(self.settings)
+        self.learning_goal_changed.emit()
 
     def _on_eye_care_enabled_changed(self, checked: bool) -> None:
         self.settings["eye_care"]["enabled"] = bool(checked)

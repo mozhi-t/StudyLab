@@ -67,6 +67,7 @@ class MainWindow(MSFluentWindow):
             JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE),
         )
         self.settings_page.eye_care_changed.connect(self.eye_care_reminder.reload_config)
+        self.settings_page.learning_goal_changed.connect(self.home_page.reload)
 
         self._register_pages()
 
