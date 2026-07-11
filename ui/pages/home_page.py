@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
+    SegmentedWidget,
     SingleDirectionScrollArea,
     StrongBodyLabel,
     SubtitleLabel,
@@ -191,6 +192,8 @@ class StudyHeatmapWidget(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self._counts: dict[date, int] = {}
+        self._duration_seconds: dict[date, int] = {}
+        self._mode = "questions"
         self._day_span = 365
         self._start_date = self._aligned_start(date.today(), self._day_span)
         self._end_date = date.today()
@@ -201,11 +204,27 @@ class StudyHeatmapWidget(QWidget):
     def sizeHint(self) -> QSize:
         return QSize(820, 184)
 
-    def set_data(self, counts: dict[date, int], end_date: date | None = None) -> None:
+    def set_data(
+        self,
+        counts: dict[date, int],
+        end_date: date | None = None,
+        duration_seconds: dict[date, int] | None = None,
+    ) -> None:
         self._end_date = end_date or date.today()
         self._start_date = self.start_date_for(self._end_date)
         self._counts = counts
+        self._duration_seconds = duration_seconds or {}
         self.update()
+
+    def set_mode(self, mode: str) -> None:
+        if mode not in {"questions", "duration"}:
+            return
+        self._mode = mode
+        self.update()
+
+    def _value_for(self, day: date) -> int:
+        source = self._duration_seconds if self._mode == "duration" else self._counts
+        return source.get(day, 0)
 
     def set_day_span(self, days: int) -> None:
         self._day_span = max(int(days), 7)
@@ -252,7 +271,7 @@ class StudyHeatmapWidget(QWidget):
                 painter.drawText(x, 0, 32, 18, Qt.AlignmentFlag.AlignLeft, f"{current.month}月")
                 last_month_x = x
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(self._cell_color(self._counts.get(current, 0)))
+            painter.setBrush(self._cell_color(self._value_for(current)))
             painter.drawRoundedRect(QRectF(x, y, self.CELL_SIZE, self.CELL_SIZE), 2, 2)
             current += timedelta(days=1)
 
@@ -263,8 +282,9 @@ class StudyHeatmapWidget(QWidget):
         if cell is None or cell > self._end_date:
             QToolTip.hideText()
             return
-        count = self._counts.get(cell, 0)
-        QToolTip.showText(event.globalPosition().toPoint(), f"{cell:%Y-%m-%d} · {count} 题", self)
+        value = self._value_for(cell)
+        detail = self._format_duration(value) if self._mode == "duration" else f"{value} 题"
+        QToolTip.showText(event.globalPosition().toPoint(), f"{cell:%Y-%m-%d} · {detail}", self)
 
     def leaveEvent(self, event) -> None:
         QToolTip.hideText()
@@ -298,19 +318,28 @@ class StudyHeatmapWidget(QWidget):
     def _cell_color(self, count: int) -> QColor:
         if count <= 0:
             return QColor(255, 255, 255, 18) if isDarkTheme() else QColor(30, 30, 30, 18)
-        colors = (
-            (155, 233, 168),
-            (79, 201, 111),
-            (35, 154, 73),
-            (20, 108, 52),
-        )
-        level = 0 if count <= 5 else 1 if count <= 15 else 2 if count <= 30 else 3
+        if self._mode == "duration":
+            colors = ((159, 205, 255), (91, 160, 232), (45, 112, 200), (25, 75, 150))
+            level = 0 if count <= 15 * 60 else 1 if count <= 30 * 60 else 2 if count <= 60 * 60 else 3
+        else:
+            colors = ((155, 233, 168), (79, 201, 111), (35, 154, 73), (20, 108, 52))
+            level = 0 if count <= 5 else 1 if count <= 15 else 2 if count <= 30 else 3
         red, green, blue = colors[level]
         if isDarkTheme():
             red = max(red - 18, 0)
             green = max(green - 18, 0)
             blue = max(blue - 18, 0)
         return QColor(red, green, blue)
+
+    @staticmethod
+    def _format_duration(seconds: int) -> str:
+        if seconds < 60:
+            return f"{seconds} 秒"
+        hours, remaining = divmod(seconds, 3600)
+        minutes = remaining // 60
+        if hours:
+            return f"{hours} 小时 {minutes} 分钟" if minutes else f"{hours} 小时"
+        return f"{minutes} 分钟"
 
     def _draw_legend(self, painter: QPainter) -> None:
         y = self.TOP_MARGIN + 7 * (self.CELL_SIZE + self.CELL_GAP) + 10
@@ -319,7 +348,8 @@ class StudyHeatmapWidget(QWidget):
         painter.setPen(QColor(205, 205, 205) if isDarkTheme() else QColor(95, 95, 95))
         painter.drawText(x, y, 20, 14, Qt.AlignmentFlag.AlignVCenter, "少")
         x += 23
-        for count in (0, 1, 6, 16, 31):
+        samples = (0, 60, 16 * 60, 31 * 60, 61 * 60) if self._mode == "duration" else (0, 1, 6, 16, 31)
+        for count in samples:
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(self._cell_color(count))
             painter.drawRoundedRect(QRectF(x, y + 2, self.CELL_SIZE, self.CELL_SIZE), 2, 2)
@@ -408,8 +438,17 @@ class HomePage(QWidget):
         heatmap_layout.setSpacing(4)
         self.heatmap_title = StrongBodyLabel("学习活跃度", self.heatmap_card)
         self.heatmap_summary = CaptionLabel("过去一年暂无学习记录", self.heatmap_card)
+        heatmap_header = QHBoxLayout()
+        heatmap_header.setContentsMargins(0, 0, 0, 0)
+        heatmap_header.addWidget(self.heatmap_title)
+        heatmap_header.addStretch(1)
+        self.heatmap_mode = SegmentedWidget(self.heatmap_card)
+        self.heatmap_mode.addItem("questions", "刷题数", lambda: self._set_heatmap_mode("questions"))
+        self.heatmap_mode.addItem("duration", "刷题时长", lambda: self._set_heatmap_mode("duration"))
+        self.heatmap_mode.setCurrentItem("questions")
+        heatmap_header.addWidget(self.heatmap_mode)
         self.heatmap = StudyHeatmapWidget(self.heatmap_card)
-        heatmap_layout.addWidget(self.heatmap_title)
+        heatmap_layout.addLayout(heatmap_header)
         heatmap_layout.addWidget(self.heatmap_summary)
         heatmap_layout.addWidget(self.heatmap)
         analytics_layout.addWidget(self.heatmap_card, 1)
@@ -481,12 +520,32 @@ class HomePage(QWidget):
             date.fromisoformat(item.study_date): item.answered_count
             for item in daily_items
         }
-        self.heatmap.set_data(heatmap_counts, today)
+        heatmap_durations = {
+            date.fromisoformat(item.study_date): item.study_seconds
+            for item in daily_items
+        }
+        self.heatmap.set_data(heatmap_counts, today, heatmap_durations)
         active_days = sum(1 for item in daily_items if item.answered_count > 0 or item.study_seconds > 0)
-        total_questions = sum(item.answered_count for item in daily_items)
+        self._heatmap_active_days = active_days
+        self._heatmap_total_questions = sum(item.answered_count for item in daily_items)
+        self._heatmap_total_seconds = sum(item.study_seconds for item in daily_items)
+        self._update_heatmap_summary()
+
+    def _set_heatmap_mode(self, mode: str) -> None:
+        self.heatmap.set_mode(mode)
+        self._update_heatmap_summary()
+
+    def _update_heatmap_summary(self) -> None:
+        if not hasattr(self, "_heatmap_active_days"):
+            return
         period_text = "近半年" if self.heatmap._day_span == 182 else "过去一年"
+        if self.heatmap._mode == "duration":
+            total = self._format_duration(self._heatmap_total_seconds)
+            detail = f"累计学习 {total}"
+        else:
+            detail = f"共完成 {self._heatmap_total_questions} 题"
         self.heatmap_summary.setText(
-            f"{period_text}活跃 {active_days} 天，共完成 {total_questions} 题"
+            f"{period_text}活跃 {self._heatmap_active_days} 天，{detail}"
         )
 
     def _set_home_page_style(self, style: str) -> None:
