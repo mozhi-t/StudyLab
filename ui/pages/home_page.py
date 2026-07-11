@@ -191,7 +191,8 @@ class StudyHeatmapWidget(QWidget):
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self._counts: dict[date, int] = {}
-        self._start_date = self._aligned_start(date.today())
+        self._day_span = 365
+        self._start_date = self._aligned_start(date.today(), self._day_span)
         self._end_date = date.today()
         self.setMouseTracking(True)
         self.setMinimumHeight(184)
@@ -202,13 +203,21 @@ class StudyHeatmapWidget(QWidget):
 
     def set_data(self, counts: dict[date, int], end_date: date | None = None) -> None:
         self._end_date = end_date or date.today()
-        self._start_date = self._aligned_start(self._end_date)
+        self._start_date = self.start_date_for(self._end_date)
         self._counts = counts
         self.update()
 
+    def set_day_span(self, days: int) -> None:
+        self._day_span = max(int(days), 7)
+        self._start_date = self.start_date_for(self._end_date)
+        self.update()
+
+    def start_date_for(self, end_date: date) -> date:
+        return self._aligned_start(end_date, self._day_span)
+
     @staticmethod
-    def _aligned_start(end_date: date) -> date:
-        start = end_date - timedelta(days=364)
+    def _aligned_start(end_date: date, day_span: int = 365) -> date:
+        start = end_date - timedelta(days=day_span - 1)
         return start - timedelta(days=(start.weekday() + 1) % 7)
 
     def paintEvent(self, event) -> None:
@@ -387,7 +396,12 @@ class HomePage(QWidget):
                 stats_layout.addWidget(separator)
         root.addWidget(self.stats_card)
 
-        self.heatmap_card = StyledCardWidget(self.content, radius=14)
+        self.analytics_container = QWidget(self.content)
+        analytics_layout = QHBoxLayout(self.analytics_container)
+        analytics_layout.setContentsMargins(0, 0, 0, 0)
+        analytics_layout.setSpacing(10)
+
+        self.heatmap_card = StyledCardWidget(self.analytics_container, radius=14)
         self.heatmap_card.setMinimumHeight(252)
         heatmap_layout = QVBoxLayout(self.heatmap_card)
         heatmap_layout.setContentsMargins(20, 16, 20, 16)
@@ -398,7 +412,27 @@ class HomePage(QWidget):
         heatmap_layout.addWidget(self.heatmap_title)
         heatmap_layout.addWidget(self.heatmap_summary)
         heatmap_layout.addWidget(self.heatmap)
-        root.addWidget(self.heatmap_card)
+        analytics_layout.addWidget(self.heatmap_card, 1)
+
+        self.ability_card = StyledCardWidget(self.analytics_container, radius=14)
+        self.ability_card.setFixedWidth(340)
+        self.ability_card.setMinimumHeight(252)
+        ability_layout = QVBoxLayout(self.ability_card)
+        ability_layout.setContentsMargins(20, 16, 20, 16)
+        ability_layout.setSpacing(8)
+        self.ability_title = StrongBodyLabel("学科能力", self.ability_card)
+        ability_layout.addWidget(self.ability_title)
+        ability_layout.addStretch(1)
+        style_three_radar = self.home_styles["样式三"].radar
+        style_three_radar.setFixedSize(300, 180)
+        ability_layout.addWidget(
+            style_three_radar,
+            0,
+            Qt.AlignmentFlag.AlignCenter,
+        )
+        ability_layout.addStretch(1)
+        analytics_layout.addWidget(self.ability_card)
+        root.addWidget(self.analytics_container)
         root.addStretch(1)
 
         self.scroll.setWidget(self.content)
@@ -441,7 +475,7 @@ class HomePage(QWidget):
         for key, value in metric_values.items():
             self.metric_widgets[key].set_value(value)
 
-        start_date = self.heatmap._aligned_start(today)
+        start_date = self.heatmap.start_date_for(today)
         daily_items = self.user_manager.list_daily_stats(start_date, today)
         heatmap_counts = {
             date.fromisoformat(item.study_date): item.answered_count
@@ -450,13 +484,16 @@ class HomePage(QWidget):
         self.heatmap.set_data(heatmap_counts, today)
         active_days = sum(1 for item in daily_items if item.answered_count > 0 or item.study_seconds > 0)
         total_questions = sum(item.answered_count for item in daily_items)
+        period_text = "近半年" if self.heatmap._day_span == 182 else "过去一年"
         self.heatmap_summary.setText(
-            f"过去一年活跃 {active_days} 天，共完成 {total_questions} 题"
+            f"{period_text}活跃 {active_days} 天，共完成 {total_questions} 题"
         )
 
     def _set_home_page_style(self, style: str) -> None:
         style_widget = self.home_styles.get(style, self.home_styles["样式一"])
         self.welcome_stack.setCurrentWidget(style_widget)
+        self.ability_card.setVisible(style_widget.shows_separate_ability_card)
+        self.heatmap.set_day_span(182 if style_widget.shows_separate_ability_card else 365)
 
     def _choose_avatar(self) -> None:
         path, _selected_filter = QFileDialog.getOpenFileName(

@@ -16,6 +16,7 @@ class HomeWelcomeStyle(StyledCardWidget):
     """
 
     style_name = ""
+    shows_separate_ability_card = False
 
     def __init__(
         self,
