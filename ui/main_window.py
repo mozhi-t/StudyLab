@@ -68,6 +68,7 @@ class MainWindow(MSFluentWindow):
         )
         self.settings_page.eye_care_changed.connect(self.eye_care_reminder.reload_config)
         self.settings_page.learning_goal_changed.connect(self.home_page.reload)
+        self.settings_page.home_page_style_changed.connect(self.home_page.reload)
 
         self._register_pages()
 

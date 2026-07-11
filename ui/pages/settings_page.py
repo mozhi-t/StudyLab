@@ -13,6 +13,7 @@ from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
 from core.index_checker import GlobalIndexChecker
 from core.json_store import JsonStore
+from ui.styles.home import HOME_STYLE_CLASSES
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.invalid_bank_time_dialog import InvalidBankTimeDialog
 from ui.widgets.eye_care_dialog import CustomIntervalDialog
@@ -151,6 +152,7 @@ class IndexCheckThread(QThread):
 class SettingsPage(QWidget):
     eye_care_changed = pyqtSignal()
     learning_goal_changed = pyqtSignal()
+    home_page_style_changed = pyqtSignal()
 
     def __init__(self, question_index_manager=None, wrong_manager=None, favorite_manager=None, parent: QWidget | None = None):
         super().__init__(parent)
@@ -263,6 +265,18 @@ class SettingsPage(QWidget):
         self.language_combo = self.language_card.comboBox
         self.language_combo.currentTextChanged.connect(self.update_settings)
         layout.addWidget(self.language_card)
+
+        self.home_style_card = self._create_combo_setting_card(
+            "home_page_style",
+            self.settings.get("home_page_style", "样式二"),
+            [style_class.style_name for style_class in HOME_STYLE_CLASSES],
+            FluentIcon.HOME,
+            "主页样式",
+            "切换主页欢迎卡片的显示样式",
+        )
+        self.home_style_combo = self.home_style_card.comboBox
+        self.home_style_combo.currentTextChanged.connect(self.update_home_page_style)
+        layout.addWidget(self.home_style_card)
         self.shortcut_title = SubtitleLabel("快捷键", self.content)
         shortcut_font = QFont(self.shortcut_title.font())
         shortcut_font.setPointSize(16)
@@ -510,6 +524,11 @@ class SettingsPage(QWidget):
         self.settings["language"] = self.language_combo.currentText()
         self.store.save(self.settings)
         apply_theme()
+
+    def update_home_page_style(self, *_args) -> None:
+        self.settings["home_page_style"] = self.home_style_combo.currentText()
+        self.store.save(self.settings)
+        self.home_page_style_changed.emit()
 
     def save_shortcut(self, key: str, label: str, value: str) -> None:
         self._persist_shortcut(

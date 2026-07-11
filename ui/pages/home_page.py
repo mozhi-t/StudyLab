@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QSizePolicy,
+    QStackedWidget,
     QToolTip,
     QVBoxLayout,
     QWidget,
@@ -17,7 +18,6 @@ from PyQt6.QtWidgets import (
 from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
-    ProgressBar,
     SingleDirectionScrollArea,
     StrongBodyLabel,
     SubtitleLabel,
@@ -27,6 +27,7 @@ from qfluentwidgets import (
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, SUBJECTS
 from core.json_store import JsonStore
+from ui.styles.home import HOME_STYLE_CLASSES, HomeWelcomeStyle
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.styled_card import StyledCardWidget
 
@@ -318,6 +319,7 @@ class StudyHeatmapWidget(QWidget):
         painter.drawText(x + 2, y, 20, 14, Qt.AlignmentFlag.AlignVCenter, "多")
 
 
+
 class HomePage(QWidget):
     METRICS = (
         ("total_days", "累计学习天数"),
@@ -352,65 +354,20 @@ class HomePage(QWidget):
         apply_page_title_style(self.page_title)
         root.addWidget(self.page_title)
 
-        self.welcome_card = StyledCardWidget(self.content, radius=16)
-        welcome_layout = QHBoxLayout(self.welcome_card)
-        welcome_layout.setContentsMargins(30, 10, 30, 10)
-        welcome_layout.setSpacing(18)
-        self.welcome_card.setFixedHeight(164)
-
-        welcome_left = QWidget(self.welcome_card)
-        welcome_left_layout = QVBoxLayout(welcome_left)
-        welcome_left_layout.setContentsMargins(0, 12, 0, 8)
-        welcome_left_layout.setSpacing(7)
-
-        identity_widget = QWidget(welcome_left)
-        identity_layout = QHBoxLayout(identity_widget)
-        identity_layout.setContentsMargins(0, 0, 0, 0)
-        identity_layout.setSpacing(14)
-        self.avatar = AvatarWidget(self.welcome_card)
-        self.avatar.clicked.connect(self._choose_avatar)
-        identity_layout.addWidget(self.avatar, alignment=Qt.AlignmentFlag.AlignTop)
-
-        greeting_widget = QWidget(self.welcome_card)
-        greeting_layout = QVBoxLayout(greeting_widget)
-        greeting_layout.setContentsMargins(0, 9, 0, 0)
-        greeting_layout.setSpacing(2)
-        self.greeting_label = SubtitleLabel("欢迎，用户", self.welcome_card)
-        self.subtitle_label = BodyLabel("今天也向目标再靠近一点。", self.welcome_card)
-        greeting_font = QFont(self.greeting_label.font())
-        greeting_font.setPointSize(17)
-        self.greeting_label.setFont(greeting_font)
-        greeting_layout.addWidget(self.greeting_label)
-        greeting_layout.addWidget(self.subtitle_label)
-        greeting_layout.addStretch(1)
-        identity_layout.addWidget(greeting_widget, 1)
-        welcome_left_layout.addWidget(identity_widget)
-
-        goal_widget = QWidget(welcome_left)
-        goal_widget.setFixedWidth(300)
-        goal_layout = QVBoxLayout(goal_widget)
-        goal_layout.setContentsMargins(0, 0, 0, 0)
-        goal_layout.setSpacing(3)
-        goal_header_layout = QHBoxLayout()
-        goal_header_layout.setContentsMargins(0, 0, 0, 0)
-        self.goal_title_label = CaptionLabel("每日目标完成度", self.welcome_card)
-        self.goal_percent_label = CaptionLabel("0%", self.welcome_card)
-        self.goal_percent_label.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.goal_progress = ProgressBar(self.welcome_card)
-        self.goal_progress.setRange(0, 100)
-        self.goal_progress.setValue(0)
-        self.goal_progress.setFixedHeight(4)
-        goal_header_layout.addWidget(self.goal_title_label)
-        goal_header_layout.addStretch(1)
-        goal_header_layout.addWidget(self.goal_percent_label)
-        goal_layout.addLayout(goal_header_layout)
-        goal_layout.addWidget(self.goal_progress)
-        welcome_left_layout.addWidget(goal_widget, 0, Qt.AlignmentFlag.AlignLeft)
-        welcome_layout.addWidget(welcome_left, 1)
-
-        self.radar = AbilityRadarWidget(self.welcome_card)
-        welcome_layout.addWidget(self.radar, alignment=Qt.AlignmentFlag.AlignVCenter)
-        root.addWidget(self.welcome_card)
+        self.home_styles: dict[str, HomeWelcomeStyle] = {
+            style_class.style_name: style_class(
+                AvatarWidget,
+                AbilityRadarWidget,
+                self.content,
+            )
+            for style_class in HOME_STYLE_CLASSES
+        }
+        self.welcome_stack = QStackedWidget(self.content)
+        self.welcome_stack.setFixedHeight(164)
+        for style_widget in self.home_styles.values():
+            style_widget.avatar.clicked.connect(self._choose_avatar)
+            self.welcome_stack.addWidget(style_widget)
+        root.addWidget(self.welcome_stack)
 
         self.stats_card = StyledCardWidget(self.content, radius=14)
         stats_layout = QHBoxLayout(self.stats_card)
@@ -455,16 +412,18 @@ class HomePage(QWidget):
         abilities = self.user_manager.get_subject_abilities()
         nickname = user.nickname.strip() or "用户"
 
-        self.greeting_label.setText(f"欢迎，{nickname}")
-        self.avatar.set_name(nickname)
-        self.avatar.set_image_data(self.user_manager.load_avatar())
-        self.radar.set_values({item.subject: item.ability_index for item in abilities})
+        avatar_data = self.user_manager.load_avatar()
+        ability_values = {item.subject: item.ability_index for item in abilities}
+        for style_widget in self.home_styles.values():
+            style_widget.set_profile(nickname, avatar_data)
+            style_widget.set_abilities(ability_values)
 
         settings = APP_SETTINGS_TEMPLATE | self.settings_store.load()
         daily_goal = max(int(settings.get("daily_question_goal", 50)), 1)
         completion = today_stats.answered_count / daily_goal * 100
-        self.goal_percent_label.setText(f"{completion:.0f}%")
-        self.goal_progress.setValue(min(round(completion), 100))
+        for style_widget in self.home_styles.values():
+            style_widget.set_completion(completion)
+        self._set_home_page_style(settings.get("home_page_style", "样式二"))
 
         accuracy = (
             f"{today_stats.score_earned / today_stats.score_possible * 100:.0f}%"
@@ -495,6 +454,10 @@ class HomePage(QWidget):
             f"过去一年活跃 {active_days} 天，共完成 {total_questions} 题"
         )
 
+    def _set_home_page_style(self, style: str) -> None:
+        style_widget = self.home_styles.get(style, self.home_styles["样式二"])
+        self.welcome_stack.setCurrentWidget(style_widget)
+
     def _choose_avatar(self) -> None:
         path, _selected_filter = QFileDialog.getOpenFileName(
             self,
@@ -522,7 +485,8 @@ class HomePage(QWidget):
         normalized.save(buffer, "PNG")
         buffer.close()
         self.user_manager.save_avatar(bytes(data))
-        self.avatar.set_image_data(bytes(data))
+        for style_widget in self.home_styles.values():
+            style_widget.avatar.set_image_data(bytes(data))
 
     @staticmethod
     def _format_duration(seconds: int) -> str:
