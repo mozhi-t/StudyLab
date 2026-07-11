@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QEvent, Qt
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtCore import QEvent, QRect, Qt
+from PyQt6.QtWidgets import QApplication, QWidget
 from qfluentwidgets import FluentIcon, MSFluentWindow
 
 from answer.choice_answer import ChoiceAnswerWindow
@@ -26,9 +26,11 @@ class MainWindow(MSFluentWindow):
         self.wrong_manager = wrong_manager
         self.favorite_manager = favorite_manager
         self.answer_window = None
+        self.settings_store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
 
         self.setWindowTitle("StudyLab")
         self.resize(1040, 680)
+        self._restore_window_geometry()
 
         self.home_page = HomePage(user_manager, self)
         self.home_page.setObjectName("home_page")
@@ -121,6 +123,58 @@ class MainWindow(MSFluentWindow):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._update_page_lock_overlays()
+
+    def closeEvent(self, event):
+        self._save_window_geometry()
+        super().closeEvent(event)
+
+    def _restore_window_geometry(self) -> None:
+        settings = APP_SETTINGS_TEMPLATE | self.settings_store.load()
+        mode = settings.get("window_memory_mode", "default")
+        geometry = settings.get("window_geometry", {})
+        if not isinstance(geometry, dict):
+            return
+
+        if mode in {"size", "size_position"}:
+            width = max(int(geometry.get("width", 1040)), 800)
+            height = max(int(geometry.get("height", 680)), 560)
+            self.resize(width, height)
+
+        restored_position = False
+        if mode in {"position", "size_position"}:
+            x = int(geometry.get("x", self.x()))
+            y = int(geometry.get("y", self.y()))
+            candidate = QRect(x, y, self.width(), self.height())
+            if any(screen.availableGeometry().intersects(candidate) for screen in QApplication.screens()):
+                self.move(x, y)
+                restored_position = True
+        if not restored_position:
+            self._center_on_primary_screen()
+
+    def _center_on_primary_screen(self) -> None:
+        screen = QApplication.primaryScreen()
+        if screen is None:
+            return
+        available = screen.availableGeometry()
+        x = available.x() + (available.width() - self.width()) // 2
+        centered_y = available.y() + (available.height() - self.height()) // 2
+        y = min(centered_y + 40, available.bottom() - self.height() + 1)
+        self.move(x, y)
+
+    def _save_window_geometry(self) -> None:
+        settings = APP_SETTINGS_TEMPLATE | self.settings_store.load()
+        mode = settings.get("window_memory_mode", "default")
+        if mode == "default":
+            return
+
+        rect = self.normalGeometry() if self.isMaximized() else self.geometry()
+        geometry = dict(settings.get("window_geometry", {}))
+        if mode in {"size", "size_position"}:
+            geometry.update(width=rect.width(), height=rect.height())
+        if mode in {"position", "size_position"}:
+            geometry.update(x=rect.x(), y=rect.y())
+        settings["window_geometry"] = geometry
+        self.settings_store.save(settings)
 
     def eventFilter(self, obj, event):
         if hasattr(self, "pages") and obj in self.pages and event.type() in {QEvent.Type.Resize, QEvent.Type.Show, QEvent.Type.LayoutRequest}:

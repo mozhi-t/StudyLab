@@ -41,6 +41,8 @@ APP_SETTINGS_TEMPLATE = {
     "language": DEFAULT_LANGUAGE,
     "ui_scale": "跟随系统设置",
     "home_page_style": "样式一",
+    "window_memory_mode": "default",
+    "window_geometry": {},
     "daily_question_goal": 50,
     "answer_shortcuts": {
         "prev_question": "1",

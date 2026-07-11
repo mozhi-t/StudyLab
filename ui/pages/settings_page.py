@@ -286,6 +286,19 @@ class SettingsPage(QWidget):
         self.home_style_combo = self.home_style_card.comboBox
         self.home_style_combo.currentTextChanged.connect(self.update_home_page_style)
         layout.addWidget(self.home_style_card)
+
+        self.window_memory_card = self._create_combo_setting_card(
+            "window_memory_mode",
+            self.settings.get("window_memory_mode", "default"),
+            ["default", "size", "position", "size_position"],
+            FluentIcon.FIT_PAGE,
+            "窗口记忆",
+            "选择是否记忆主窗口的大小和位置",
+            self._window_memory_texts(),
+        )
+        self.window_memory_combo = self.window_memory_card.comboBox
+        self.window_memory_combo.currentIndexChanged.connect(self.update_window_memory)
+        layout.addWidget(self.window_memory_card)
         self.shortcut_title = SubtitleLabel("快捷键", self.content)
         shortcut_font = QFont(self.shortcut_title.font())
         shortcut_font.setPointSize(16)
@@ -558,6 +571,7 @@ class SettingsPage(QWidget):
             (self.scale_card, "ui_scale", "ui_scale_desc"),
             (self.language_card, "language", "language_desc"),
             (self.home_style_card, "home_style", "home_style_desc"),
+            (self.window_memory_card, "window_memory", "window_memory_desc"),
             (self.prev_shortcut_card, "prev_shortcut", "prev_shortcut_desc"),
             (self.next_shortcut_card, "next_shortcut", "next_shortcut_desc"),
             (self.mark_shortcut_card, "mark_shortcut", "mark_shortcut_desc"),
@@ -573,6 +587,8 @@ class SettingsPage(QWidget):
         language_texts = (tr("language_system"), tr("language_zh"), tr("language_en"))
         for index, text in enumerate(language_texts):
             self.language_combo.setItemText(index, text)
+        for index, text in enumerate(self._window_memory_texts()):
+            self.window_memory_combo.setItemText(index, text)
         self.reset_theme_color_button.setText(tr("reset"))
         for button in self.reset_shortcut_buttons:
             button.setText(tr("reset"))
@@ -597,6 +613,19 @@ class SettingsPage(QWidget):
         self.settings["home_page_style"] = self.home_style_combo.currentText()
         self.store.save(self.settings)
         self.home_page_style_changed.emit()
+
+    def update_window_memory(self, index: int) -> None:
+        self.settings["window_memory_mode"] = self.window_memory_combo.itemData(index) or "default"
+        self.store.save(self.settings)
+
+    def _window_memory_texts(self) -> list[str]:
+        tr = self.language_manager.text
+        return [
+            tr("window_default"),
+            tr("window_size"),
+            tr("window_position"),
+            tr("window_size_position"),
+        ]
 
     def save_shortcut(self, key: str, label: str, value: str) -> None:
         self._persist_shortcut(

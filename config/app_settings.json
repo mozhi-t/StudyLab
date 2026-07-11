@@ -4,6 +4,13 @@
   "language": "zh_CN",
   "ui_scale": "100%",
   "home_page_style": "样式一",
+  "window_memory_mode": "default",
+  "window_geometry": {
+    "width": 1061,
+    "height": 994,
+    "x": 55,
+    "y": 21
+  },
   "daily_question_goal": 50,
   "answer_shortcuts": {
     "prev_question": "1",
