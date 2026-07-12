@@ -6,7 +6,7 @@ from PyQt6 import sip
 from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QKeySequence
 from PyQt6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, ColorPickerButton, ComboBox, ComboBoxSettingCard, ExpandGroupSettingCard, FluentIcon, InfoBar, InfoBarPosition, LineEdit, MessageBox, MessageBoxBase, OptionsConfigItem, OptionsValidator, PushButton, PushSettingCard, SettingCard, SingleDirectionScrollArea, StateToolTip, SubtitleLabel, SwitchButton, qconfig
+from qfluentwidgets import BodyLabel, ColorPickerButton, ComboBox, ComboBoxSettingCard, ExpandGroupSettingCard, FluentIcon, InfoBar, InfoBarPosition, MessageBox, MessageBoxBase, OptionsConfigItem, OptionsValidator, PushButton, PushSettingCard, SettingCard, SingleDirectionScrollArea, StateToolTip, SubtitleLabel, SwitchButton, qconfig
 from qfluentwidgets.components.settings.expand_setting_card import GroupWidget
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
@@ -403,52 +403,58 @@ class SettingsPage(QWidget):
         layout.addWidget(self.learning_goal_card)
         layout.addWidget(self.eye_care_group_card)
 
-        self.python_title = SubtitleLabel("Python答题", self.content)
-        python_font = QFont(self.python_title.font())
-        python_font.setPointSize(16)
-        python_font.setWeight(QFont.Weight.DemiBold)
-        self.python_title.setFont(python_font)
+        self.answer_title = SubtitleLabel("答题", self.content)
+        answer_font = QFont(self.answer_title.font())
+        answer_font.setPointSize(16)
+        answer_font.setWeight(QFont.Weight.DemiBold)
+        self.answer_title.setFont(answer_font)
         layout.addSpacing(18)
-        layout.addWidget(self.python_title)
+        layout.addWidget(self.answer_title)
         layout.addSpacing(18)
 
         python_settings = self.settings["python_answer"]
-        self.python_mode_card = self._create_combo_setting_card(
-            "python_answer_mode",
-            python_settings.get("default_mode", "builtin"),
-            ["builtin", "pycharm"],
+        self.python_answer_group_card = WheelTransparentExpandGroupSettingCard(
+            FluentIcon.CODE,
+            "Python",
+            "配置 Python 编程题的答题方式和外部编辑器",
+            parent=self.content,
+        )
+        self.python_mode_combo = ComboBox(self.python_answer_group_card.view)
+        self.python_mode_combo.addItem("内置编辑器", userData="builtin")
+        self.python_mode_combo.addItem("PyCharm", userData="pycharm")
+        mode_index = 1 if python_settings.get("default_mode", "builtin") == "pycharm" else 0
+        self.python_mode_combo.setCurrentIndex(mode_index)
+        self.python_mode_combo.setFixedWidth(180)
+        self.python_mode_combo.currentIndexChanged.connect(self._on_python_mode_changed)
+        self.python_mode_group = self.python_answer_group_card.addGroup(
             FluentIcon.CODE,
             "默认答题模式",
-            "选择 Python 编程题默认使用的编辑方式",
-            ["内置编辑器", "PyCharm"],
+            "选择进入 Python 编程题时默认使用的编辑方式",
+            self.python_mode_combo,
         )
-        self.python_mode_combo = self.python_mode_card.comboBox
-        self.python_mode_combo.currentIndexChanged.connect(self._on_python_mode_changed)
-        layout.addWidget(self.python_mode_card)
 
-        self.pycharm_path_control = QWidget(self.content)
+        saved_pycharm_dir = str(python_settings.get("pycharm_install_dir", "") or "")
+        self.pycharm_path_control = QWidget(self.python_answer_group_card.view)
         pycharm_path_layout = QHBoxLayout(self.pycharm_path_control)
         pycharm_path_layout.setContentsMargins(0, 0, 0, 0)
         pycharm_path_layout.setSpacing(8)
-        self.pycharm_path_edit = LineEdit(self.pycharm_path_control)
-        self.pycharm_path_edit.setText(python_settings.get("pycharm_install_dir", ""))
-        self.pycharm_path_edit.setPlaceholderText("选择 PyCharm 安装目录")
-        self.pycharm_path_edit.setMinimumWidth(320)
-        self.pycharm_path_edit.editingFinished.connect(self._save_pycharm_path)
         self.pycharm_browse_button = PushButton("选择目录", self.pycharm_path_control)
         self.pycharm_browse_button.clicked.connect(self._choose_pycharm_dir)
+        self.pycharm_detect_button = PushButton("自动侦测", self.pycharm_path_control)
+        self.pycharm_detect_button.clicked.connect(self._auto_detect_pycharm)
         self.pycharm_test_button = PushButton("检查", self.pycharm_path_control)
-        self.pycharm_test_button.clicked.connect(self._test_pycharm_path)
-        pycharm_path_layout.addWidget(self.pycharm_path_edit)
+        self.pycharm_test_button.clicked.connect(self._test_saved_pycharm_path)
         pycharm_path_layout.addWidget(self.pycharm_browse_button)
+        pycharm_path_layout.addWidget(self.pycharm_detect_button)
         pycharm_path_layout.addWidget(self.pycharm_test_button)
-        self.pycharm_path_card = self._create_control_setting_card(
+        self.pycharm_path_group = self.python_answer_group_card.addGroup(
             FluentIcon.COMMAND_PROMPT,
             "PyCharm安装目录",
-            "用于从 Python 答题界面启动 PyCharm",
+            saved_pycharm_dir or "未设置",
             self.pycharm_path_control,
         )
-        layout.addWidget(self.pycharm_path_card)
+        self.python_answer_group_card.setExpand(True)
+        layout.addWidget(self.python_answer_group_card)
 
         self.advanced_title = SubtitleLabel("高级", self.content)
         advanced_font = QFont(self.advanced_title.font())
@@ -599,24 +605,46 @@ class SettingsPage(QWidget):
         self.store.save(self.settings)
 
     def _choose_pycharm_dir(self) -> None:
+        current = str(self.settings["python_answer"].get("pycharm_install_dir", "") or "")
         selected = QFileDialog.getExistingDirectory(
-            self, "选择 PyCharm 安装目录", self.pycharm_path_edit.text().strip()
+            self, "选择 PyCharm 安装目录", current
         )
         if selected:
-            self.pycharm_path_edit.setText(selected)
-            self._save_pycharm_path()
-            self._test_pycharm_path()
+            self._save_pycharm_path(selected)
+            self._test_pycharm_path(selected)
 
-    def _save_pycharm_path(self) -> None:
-        self.settings["python_answer"]["pycharm_install_dir"] = self.pycharm_path_edit.text().strip()
+    def _save_pycharm_path(self, value: str) -> None:
+        value = value.strip()
+        self.pycharm_path_group.setContent(value or "未设置")
+        self.settings["python_answer"]["pycharm_install_dir"] = value
         self.store.save(self.settings)
 
-    def _test_pycharm_path(self) -> None:
-        self._save_pycharm_path()
-        executable = PyCharmLauncher().resolve(self.pycharm_path_edit.text().strip())
+    def _auto_detect_pycharm(self) -> None:
+        launcher = PyCharmLauncher()
+        executable = launcher.detect()
+        if executable is None:
+            self.show_error_message("自动侦测失败", "未在系统中找到 PyCharm")
+            return
+        install_dir = str(launcher.install_dir_for(executable))
+        self._save_pycharm_path(install_dir)
+        self.show_message("已侦测到 PyCharm", install_dir)
+
+    def _test_saved_pycharm_path(self) -> None:
+        value = str(self.settings["python_answer"].get("pycharm_install_dir", "") or "")
+        if not value:
+            self.show_error_message("尚未设置目录", "请先选择目录或使用自动侦测")
+            return
+        self._test_pycharm_path(value)
+
+    def _test_pycharm_path(self, value: str) -> None:
+        launcher = PyCharmLauncher()
+        executable = launcher.resolve(value.strip())
         if executable:
+            install_dir = str(launcher.install_dir_for(executable))
+            self._save_pycharm_path(install_dir)
             self.show_message("PyCharm配置有效", str(executable))
         else:
+            self.pycharm_path_group.setContent(f"{value}（未找到 PyCharm）")
             self.show_error_message("未找到 PyCharm", "请选择包含 bin/pycharm64.exe 的安装目录")
 
     def update_settings(self, *_args):
@@ -637,6 +665,7 @@ class SettingsPage(QWidget):
         self.title_label.setText(tr("personalization"))
         self.shortcut_title.setText(tr("shortcuts"))
         self.eye_care_title.setText(tr("study"))
+        self.answer_title.setText("答题")
         self.advanced_title.setText(tr("advanced"))
 
         card_texts = (
