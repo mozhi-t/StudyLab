@@ -7,6 +7,7 @@ from config.settings import QUESTION_BANK_DIR, QUESTION_BANK_INDEX_NAME, SUBJECT
 from core.datetime_utils import parse_datetime
 from core.json_store import JsonStore
 from models.question_bank import BankMeta, QuestionBank
+from models.python.question import PythonQuestionBank
 
 
 class GlobalIndexChecker:
@@ -39,7 +40,7 @@ class GlobalIndexChecker:
                 if file_path.name == QUESTION_BANK_INDEX_NAME:
                     continue
                 raw = JsonStore(file_path, {}, "E006", "E007", "E009").load()
-                bank = QuestionBank(**raw)
+                bank = PythonQuestionBank(**raw) if raw.get("question_type") == "python_programming" else QuestionBank(**raw)
                 create_time = self._raw_bank_time(raw.get("create_time"))
                 if create_time is None:
                     create_time = str(bank.create_time)

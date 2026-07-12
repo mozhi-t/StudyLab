@@ -1,0 +1,93 @@
+{
+  "name": "Python程序设计练习题库",
+  "subject": "python",
+  "question_type": "python_programming",
+  "create_time": "2026-07-13T10:00:00",
+  "difficulty": 2,
+  "total_questions": 3,
+  "questions": [
+    {
+      "id": 1,
+      "code": "\"\"\"【Python程序设计】\n题目: 列表元素分组\n编写一个函数 group_list(lst, group_size), 将一个整数列表 lst 按照给定的分组大小 group_size\n进行分组。如果列表长度不能被分组大小整除, 最后一组的元素个数会小于分组大小。用嵌套列表保存\n分组后的结果。\n该函数返回分组后的结果。\n\n编程要求: 使用名为 result 的列表保存分组结果, 使用 range、len、append 和列表切片完成处理,\n最后返回 result。\n\n然后程序接收用户输入的一串整数, 整数之间用英文逗号 (,) 分隔。程序还要接收用户输入的分组大小。\n然后调用上述函数, 输出分组结果。\n\n示例1:\n请输入一串整数, 用英文逗号 (,) 分隔:8,9,10,11,12\n分组大小:2\n[[8, 9], [10, 11], [12]]\n--------------------------------------------------\n注意: 部分源程序给出如下。仅在Program-End之间填入若干语句。\n不要删除标志否则不得分。\n不要修改或删除Program-End之外的内容否则不得分。\n--------------------------------------------------\n\"\"\"\n\n#********Program********\n\n#********End********\ninput_str = input(\"请输入一串整数, 用英文逗号 (,) 分隔:\")\nlst = list(map(int, input_str.split(',')))\ngroup_size = int(input(\"分组大小:\"))\nprint(group_list(lst, group_size))\n",
+      "answer": "def group_list(lst, group_size):\n    result = []\n    for i in range(0, len(lst), group_size):\n        result.append(lst[i:i + group_size])\n    return result",
+      "grading_points": [
+        {"id": "execution", "type": "execution", "name": "程序正常运行", "score": 2, "timeout_seconds": 3},
+        {
+          "id": "output", "type": "output", "name": "分组结果测试", "score": 11, "compare_mode": "contains",
+          "cases": [
+            {"id": "output_1", "stdin": "10,20,30,40,50,60,70\n3\n", "expected_stdout": "[[10, 20, 30], [40, 50, 60], [70]]"},
+            {"id": "output_2", "stdin": "1,2,3,4\n2\n", "expected_stdout": "[[1, 2], [3, 4]]"},
+            {"id": "output_3", "stdin": "5,6,7\n5\n", "expected_stdout": "[[5, 6, 7]]"}
+          ]
+        },
+        {
+          "id": "keywords", "type": "code_features", "name": "关键代码检查", "score": 7, "minimum_match_ratio": 0.8,
+          "rules": [
+            {"id": "define_group_list", "kind": "function_definition", "value": "group_list"},
+            {"id": "use_range", "kind": "function_call", "value": "range"},
+            {"id": "use_len", "kind": "function_call", "value": "len"},
+            {"id": "use_append", "kind": "method_call", "value": "append"},
+            {"id": "use_slice", "kind": "syntax", "value": "slice"},
+            {"id": "return_result", "kind": "return_name", "value": "result"}
+          ]
+        }
+      ],
+      "full_score": 20
+    },
+    {
+      "id": 2,
+      "code": "\"\"\"【Python程序设计】\n题目: 计算非负整数的阶乘\n编写一个函数 factorial(n), 使用循环计算非负整数 n 的阶乘。0 的阶乘为 1。\n该函数返回计算得到的阶乘结果。\n\n编程要求: 函数名必须为 factorial, 使用名为 result 的变量保存阶乘结果, 使用 for 和 range 完成循环,\n最后返回 result。循环变量名称可以自行定义。\n\n然后程序接收用户输入的一个非负整数, 调用上述函数, 输出该整数的阶乘。\n\n示例1:\n请输入非负整数:4\n24\n--------------------------------------------------\n注意: 部分源程序给出如下。仅在Program-End之间填入若干语句。\n不要删除标志否则不得分。\n不要修改或删除Program-End之外的内容否则不得分。\n--------------------------------------------------\n\"\"\"\n\n#********Program********\n\n#********End********\nn = int(input(\"请输入非负整数:\"))\nprint(factorial(n))\n",
+      "answer": "def factorial(n):\n    result = 1\n    for number in range(1, n + 1):\n        result *= number\n    return result",
+      "grading_points": [
+        {"id": "execution", "type": "execution", "name": "程序正常运行", "score": 2, "timeout_seconds": 3},
+        {
+          "id": "output", "type": "output", "name": "阶乘结果测试", "score": 11, "compare_mode": "contains",
+          "cases": [
+            {"id": "output_1", "stdin": "3\n", "expected_stdout": "6"},
+            {"id": "output_2", "stdin": "5\n", "expected_stdout": "120"},
+            {"id": "output_3", "stdin": "0\n", "expected_stdout": "1"}
+          ]
+        },
+        {
+          "id": "keywords", "type": "code_features", "name": "关键代码检查", "score": 7, "minimum_match_ratio": 0.8,
+          "rules": [
+            {"id": "define_factorial", "kind": "function_definition", "value": "factorial"},
+            {"id": "use_for", "kind": "syntax", "value": "for"},
+            {"id": "use_range", "kind": "function_call", "value": "range"},
+            {"id": "use_result", "kind": "name", "value": "result"},
+            {"id": "return_result", "kind": "return_name", "value": "result"}
+          ]
+        }
+      ],
+      "full_score": 20
+    },
+    {
+      "id": 3,
+      "code": "\"\"\"【Python程序设计】\n题目: 列表去重并保持原有顺序\n编写一个函数 unique_items(items), 删除整数列表 items 中重复的元素, 同时保持每个元素第一次出现时的顺序。\n该函数返回去重后的列表。\n\n编程要求: 函数名必须为 unique_items, 使用名为 result 的列表保存结果, 使用 for、if 和 append 完成处理,\n最后返回 result。循环变量名称可以自行定义。\n\n然后程序接收用户输入的一串整数, 整数之间用英文逗号 (,) 分隔。程序调用上述函数, 输出去重后的列表。\n\n示例1:\n请输入整数列表:4,4,2,4,1\n[4, 2, 1]\n--------------------------------------------------\n注意: 部分源程序给出如下。仅在Program-End之间填入若干语句。\n不要删除标志否则不得分。\n不要修改或删除Program-End之外的内容否则不得分。\n--------------------------------------------------\n\"\"\"\n\n#********Program********\n\n#********End********\nitems = list(map(int, input(\"请输入整数列表:\").split(',')))\nprint(unique_items(items))\n",
+      "answer": "def unique_items(items):\n    result = []\n    for item in items:\n        if item not in result:\n            result.append(item)\n    return result",
+      "grading_points": [
+        {"id": "execution", "type": "execution", "name": "程序正常运行", "score": 2, "timeout_seconds": 3},
+        {
+          "id": "output", "type": "output", "name": "去重结果测试", "score": 11, "compare_mode": "contains",
+          "cases": [
+            {"id": "output_1", "stdin": "1,2,1,3,2\n", "expected_stdout": "[1, 2, 3]"},
+            {"id": "output_2", "stdin": "5,5,5\n", "expected_stdout": "[5]"},
+            {"id": "output_3", "stdin": "3,2,1\n", "expected_stdout": "[3, 2, 1]"}
+          ]
+        },
+        {
+          "id": "keywords", "type": "code_features", "name": "关键代码检查", "score": 7, "minimum_match_ratio": 0.8,
+          "rules": [
+            {"id": "define_unique_items", "kind": "function_definition", "value": "unique_items"},
+            {"id": "use_for", "kind": "syntax", "value": "for"},
+            {"id": "use_if", "kind": "syntax", "value": "if"},
+            {"id": "use_append", "kind": "method_call", "value": "append"},
+            {"id": "use_result", "kind": "name", "value": "result"},
+            {"id": "return_result", "kind": "return_name", "value": "result"}
+          ]
+        }
+      ],
+      "full_score": 20
+    }
+  ]
+}

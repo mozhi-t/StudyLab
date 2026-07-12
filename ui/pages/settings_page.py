@@ -5,14 +5,15 @@ import sys
 from PyQt6 import sip
 from PyQt6.QtCore import QPoint, QThread, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QKeySequence
-from PyQt6.QtWidgets import QApplication, QFrame, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, ColorPickerButton, ComboBox, ComboBoxSettingCard, ExpandGroupSettingCard, FluentIcon, InfoBar, InfoBarPosition, MessageBox, MessageBoxBase, OptionsConfigItem, OptionsValidator, PushButton, PushSettingCard, SettingCard, SingleDirectionScrollArea, StateToolTip, SubtitleLabel, SwitchButton, qconfig
+from PyQt6.QtWidgets import QApplication, QFileDialog, QFrame, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, ColorPickerButton, ComboBox, ComboBoxSettingCard, ExpandGroupSettingCard, FluentIcon, InfoBar, InfoBarPosition, LineEdit, MessageBox, MessageBoxBase, OptionsConfigItem, OptionsValidator, PushButton, PushSettingCard, SettingCard, SingleDirectionScrollArea, StateToolTip, SubtitleLabel, SwitchButton, qconfig
 from qfluentwidgets.components.settings.expand_setting_card import GroupWidget
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
 from core.index_checker import GlobalIndexChecker
 from core.json_store import JsonStore
+from core.python.pycharm_launcher import PyCharmLauncher
 from ui.languages import LanguageManager
 from ui.styles.home import HOME_STYLE_CLASSES
 from ui.styles.title_style import apply_page_title_style
@@ -164,6 +165,7 @@ class SettingsPage(QWidget):
         self.language_manager = LanguageManager(self.settings.get("language", "system"))
         self.settings["answer_shortcuts"] = APP_SETTINGS_TEMPLATE["answer_shortcuts"] | self.settings.get("answer_shortcuts", {})
         self.settings["eye_care"] = APP_SETTINGS_TEMPLATE["eye_care"] | self.settings.get("eye_care", {})
+        self.settings["python_answer"] = APP_SETTINGS_TEMPLATE["python_answer"] | self.settings.get("python_answer", {})
         self.question_index_manager = question_index_manager
         self.wrong_manager = wrong_manager
         self.favorite_manager = favorite_manager
@@ -401,6 +403,53 @@ class SettingsPage(QWidget):
         layout.addWidget(self.learning_goal_card)
         layout.addWidget(self.eye_care_group_card)
 
+        self.python_title = SubtitleLabel("Python答题", self.content)
+        python_font = QFont(self.python_title.font())
+        python_font.setPointSize(16)
+        python_font.setWeight(QFont.Weight.DemiBold)
+        self.python_title.setFont(python_font)
+        layout.addSpacing(18)
+        layout.addWidget(self.python_title)
+        layout.addSpacing(18)
+
+        python_settings = self.settings["python_answer"]
+        self.python_mode_card = self._create_combo_setting_card(
+            "python_answer_mode",
+            python_settings.get("default_mode", "builtin"),
+            ["builtin", "pycharm"],
+            FluentIcon.CODE,
+            "默认答题模式",
+            "选择 Python 编程题默认使用的编辑方式",
+            ["内置编辑器", "PyCharm"],
+        )
+        self.python_mode_combo = self.python_mode_card.comboBox
+        self.python_mode_combo.currentIndexChanged.connect(self._on_python_mode_changed)
+        layout.addWidget(self.python_mode_card)
+
+        self.pycharm_path_control = QWidget(self.content)
+        pycharm_path_layout = QHBoxLayout(self.pycharm_path_control)
+        pycharm_path_layout.setContentsMargins(0, 0, 0, 0)
+        pycharm_path_layout.setSpacing(8)
+        self.pycharm_path_edit = LineEdit(self.pycharm_path_control)
+        self.pycharm_path_edit.setText(python_settings.get("pycharm_install_dir", ""))
+        self.pycharm_path_edit.setPlaceholderText("选择 PyCharm 安装目录")
+        self.pycharm_path_edit.setMinimumWidth(320)
+        self.pycharm_path_edit.editingFinished.connect(self._save_pycharm_path)
+        self.pycharm_browse_button = PushButton("选择目录", self.pycharm_path_control)
+        self.pycharm_browse_button.clicked.connect(self._choose_pycharm_dir)
+        self.pycharm_test_button = PushButton("检查", self.pycharm_path_control)
+        self.pycharm_test_button.clicked.connect(self._test_pycharm_path)
+        pycharm_path_layout.addWidget(self.pycharm_path_edit)
+        pycharm_path_layout.addWidget(self.pycharm_browse_button)
+        pycharm_path_layout.addWidget(self.pycharm_test_button)
+        self.pycharm_path_card = self._create_control_setting_card(
+            FluentIcon.COMMAND_PROMPT,
+            "PyCharm安装目录",
+            "用于从 Python 答题界面启动 PyCharm",
+            self.pycharm_path_control,
+        )
+        layout.addWidget(self.pycharm_path_card)
+
         self.advanced_title = SubtitleLabel("高级", self.content)
         advanced_font = QFont(self.advanced_title.font())
         advanced_font.setPointSize(16)
@@ -544,6 +593,31 @@ class SettingsPage(QWidget):
         self.settings["eye_care"]["reminder_mode"] = self.eye_care_mode_combo.currentData()
         self.store.save(self.settings)
         self.eye_care_changed.emit()
+
+    def _on_python_mode_changed(self, index: int) -> None:
+        self.settings["python_answer"]["default_mode"] = self.python_mode_combo.itemData(index) or "builtin"
+        self.store.save(self.settings)
+
+    def _choose_pycharm_dir(self) -> None:
+        selected = QFileDialog.getExistingDirectory(
+            self, "选择 PyCharm 安装目录", self.pycharm_path_edit.text().strip()
+        )
+        if selected:
+            self.pycharm_path_edit.setText(selected)
+            self._save_pycharm_path()
+            self._test_pycharm_path()
+
+    def _save_pycharm_path(self) -> None:
+        self.settings["python_answer"]["pycharm_install_dir"] = self.pycharm_path_edit.text().strip()
+        self.store.save(self.settings)
+
+    def _test_pycharm_path(self) -> None:
+        self._save_pycharm_path()
+        executable = PyCharmLauncher().resolve(self.pycharm_path_edit.text().strip())
+        if executable:
+            self.show_message("PyCharm配置有效", str(executable))
+        else:
+            self.show_error_message("未找到 PyCharm", "请选择包含 bin/pycharm64.exe 的安装目录")
 
     def update_settings(self, *_args):
         self.settings["theme"] = self.theme_combo.currentText()

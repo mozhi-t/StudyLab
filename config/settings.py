@@ -17,6 +17,8 @@ QUESTION_BANK_DIR = BASE_DIR / "question_bank"
 QUESTION_BANK_INDEX_NAME = "index.json"
 EXAM_DIR = BASE_DIR / "exam"
 LAN_EXAM_DIR = EXAM_DIR / "LAN"
+ANSWER_WORKSPACE_DIR = BASE_DIR / "answer_workspace"
+PYTHON_ANSWER_WORKSPACE_DIR = ANSWER_WORKSPACE_DIR / "python"
 
 SETTINGS_DIR = BASE_DIR / "config"
 APP_SETTINGS_FILE = SETTINGS_DIR / "app_settings.json"
@@ -54,6 +56,11 @@ APP_SETTINGS_TEMPLATE = {
         "interval_minutes": 20,
         "reminder_mode": "dialog",
         "first_shown": False,
+    },
+    "python_answer": {
+        "default_mode": "builtin",
+        "pycharm_install_dir": "",
+        "remind_save_before_run": True,
     },
 }
 

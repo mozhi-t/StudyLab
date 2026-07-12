@@ -9,6 +9,7 @@ AGENTS.md
 # Python caches
 __pycache__/
 *.py[cod]
+/tests
 
 # Build artifacts
 /build
@@ -21,6 +22,7 @@ __pycache__/
 /data/*.db-wal
 /data/*.db-shm
 /data/*.db-journal
+/answer_workspace
 
 # Generated docs
 /docs

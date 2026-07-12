@@ -9,6 +9,7 @@ from core.datetime_utils import format_datetime, parse_datetime
 from core.errors import raise_app_error
 from core.json_store import JsonStore
 from models.question_bank import BankMeta, QuestionBank
+from models.python.question import PythonQuestionBank
 
 
 class QuestionIndexManager:
@@ -75,25 +76,27 @@ class QuestionIndexManager:
         except OSError as exc:
             raise_app_error("E008", str(exc))
 
-    def load_bank(self, subject: str, bank_name: str) -> QuestionBank:
+    def load_bank(self, subject: str, bank_name: str) -> QuestionBank | PythonQuestionBank:
         file_path = QUESTION_BANK_DIR / subject / f"{bank_name}.json"
         if not file_path.exists():
             raise_app_error("E024", f"{subject}/{bank_name}")
         return self._read_bank(file_path)
 
     def add_downloaded_bank(self, payload: dict) -> None:
-        bank = QuestionBank(**payload)
+        bank = PythonQuestionBank(**payload) if payload.get("question_type") == "python_programming" else QuestionBank(**payload)
         file_path = QUESTION_BANK_DIR / bank.subject / f"{bank.name}.json"
         JsonStore(file_path, payload, "E006", "E007", "E009").save(payload)
         index = [item for item in self.load_subject_index(bank.subject) if item.name != bank.name]
         index.append(BankMeta(name=bank.name, subject=bank.subject, create_time=format_datetime(bank.create_time)))
         self.save_subject_index(bank.subject, index)
 
-    def _read_bank(self, file_path: Path) -> QuestionBank:
+    def _read_bank(self, file_path: Path) -> QuestionBank | PythonQuestionBank:
         raw = JsonStore(file_path, {}, "E006", "E007", "E009").load()
         try:
             if "create_time" in raw:
                 raw["create_time"] = format_datetime(raw.get("create_time"))
+            if raw.get("question_type") == "python_programming":
+                return PythonQuestionBank(**raw)
             return QuestionBank(**raw)
-        except TypeError as exc:
+        except (TypeError, ValueError) as exc:
             raise_app_error("E007", str(exc))

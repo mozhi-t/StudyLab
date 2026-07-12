@@ -23,5 +23,10 @@
     "reminder_mode": "infobar",
     "first_shown": true
   },
+  "python_answer": {
+    "default_mode": "builtin",
+    "pycharm_install_dir": "",
+    "remind_save_before_run": true
+  },
   "mica_enabled": false
 }

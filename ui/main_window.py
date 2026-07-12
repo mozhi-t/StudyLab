@@ -5,9 +5,11 @@ from PyQt6.QtWidgets import QApplication, QWidget
 from qfluentwidgets import FluentIcon, MSFluentWindow
 
 from answer.choice_answer import ChoiceAnswerWindow
+from answer.python import PythonAnswerWindow
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from core.eye_care import EyeCareReminder
 from core.json_store import JsonStore
+from models.python.question import PythonQuestionBank
 from ui.pages.about_page import AboutPage
 from ui.pages.exam_page import ExamPage
 from ui.pages.favorite_page import FavoritePage
@@ -95,12 +97,18 @@ class MainWindow(MSFluentWindow):
 
     def open_choice_answer(self, subject: str, bank_name: str):
         bank = self.question_index_manager.load_bank(subject, bank_name)
-        self.answer_window = ChoiceAnswerWindow(
-            question_bank=bank,
-            user_manager=self.user_manager,
-            wrong_manager=self.wrong_manager,
-            favorite_manager=self.favorite_manager,
-        )
+        if isinstance(bank, PythonQuestionBank):
+            self.answer_window = PythonAnswerWindow(
+                question_bank=bank,
+                user_manager=self.user_manager,
+            )
+        else:
+            self.answer_window = ChoiceAnswerWindow(
+                question_bank=bank,
+                user_manager=self.user_manager,
+                wrong_manager=self.wrong_manager,
+                favorite_manager=self.favorite_manager,
+            )
         self.answer_window.window_closed.connect(self._restore_after_answer)
         self._set_locked(True)
         self.showMinimized()
