@@ -59,12 +59,10 @@ class PythonAnswerWindow(AnswerWindow):
         self.user_manager = user_manager
         self.wrong_manager = wrong_manager
         self.favorite_manager = favorite_manager
-        self.settings_store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
-        self.settings = APP_SETTINGS_TEMPLATE | self.settings_store.load()
+        self.settings = APP_SETTINGS_TEMPLATE | JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE).load()
         self.settings["python_answer"] = APP_SETTINGS_TEMPLATE["python_answer"] | self.settings.get("python_answer", {})
         self.workspace = PythonWorkspace()
-        self.runner = PythonRunner()
-        self.judge = PythonJudge(self.runner)
+        self.judge = PythonJudge(PythonRunner())
         self.launcher = PyCharmLauncher()
         self.current_index = next(
             (index for index, question in enumerate(question_bank.questions) if question.id == initial_question_id),
@@ -74,7 +72,6 @@ class PythonAnswerWindow(AnswerWindow):
         self.states: dict[int, str] = {}
         self.scores: dict[int, tuple[float, float]] = {}
         self.recorded_questions: set[int] = set()
-        self.judge_results: dict[int, PythonJudgeResult] = {}
         self.task_thread: PythonTaskThread | None = None
         self.detail_window: PythonJudgeDetailWindow | None = None
         self.run_stopped_by_user = False
@@ -373,7 +370,6 @@ class PythonAnswerWindow(AnswerWindow):
         self.answer_card.refresh(self.current_index, self.states, self.scores)
 
     def _judge_finished(self, result: PythonJudgeResult) -> None:
-        self.judge_results[self.current_index] = result
         self.scores[self.current_index] = (result.earned, result.possible)
         if result.earned >= result.possible:
             self.states[self.current_index] = "full"

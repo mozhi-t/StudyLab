@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, SingleDirectionScrollArea, StrongBodyLabel
 
@@ -14,9 +13,7 @@ class PythonAnswerCard(StyledCardWidget):
 
     STATE_MAP = {
         "unstarted": "default",
-        "current": "default",
         "modified": "marked",
-        "ran": "pending",
         "full": "correct",
         "partial": "marked",
         "failed": "wrong",
@@ -26,7 +23,6 @@ class PythonAnswerCard(StyledCardWidget):
         super().__init__(parent, radius=14, light_border_alpha=34)
         self.buttons: list[QuestionStatusCard] = []
         self.states: dict[int, str] = {}
-        self.current_index = 0
         self.total_possible = 0.0
 
         root = QVBoxLayout(self)
@@ -66,7 +62,6 @@ class PythonAnswerCard(StyledCardWidget):
         self.refresh(0, {}, {})
 
     def refresh(self, current_index: int, states: dict[int, str], scores: dict[int, tuple[float, float]]) -> None:
-        self.current_index = current_index
         self.states.update(states)
         for index, button in enumerate(self.buttons):
             state = self.STATE_MAP.get(self.states.get(index, "unstarted"), "default")

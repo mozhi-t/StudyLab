@@ -26,7 +26,6 @@ class JudgePointRow(BodyLabel):
         self.set_status("pending")
 
     def set_status(self, status: str, detail: JudgeDetail | None = None, message: str = "") -> None:
-        self.status = status
         suffix = "未检查"
         if status == "checking":
             suffix = "正在检查..."
