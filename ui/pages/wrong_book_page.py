@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PipsPager, PipsScrollButtonDisplayMode, PrimaryPushButton, SingleDirectionScrollArea, SubtitleLabel
 
@@ -8,13 +8,19 @@ from config.settings import SUBJECTS
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.question_card import QuestionCard
 from ui.widgets.question_detail_dialog import QuestionDetailDialog
+from ui.widgets.python.record_detail_dialog import PythonWrongDetailDialog
+from models.favorite_question import FavoriteQuestion
 from ui.widgets.styled_card import StyledCardWidget
 
 
 class WrongBookPage(QWidget):
-    def __init__(self, wrong_manager, parent: QWidget | None = None):
+    practice_python_requested = pyqtSignal(str, int)
+    favorite_changed = pyqtSignal()
+
+    def __init__(self, wrong_manager, favorite_manager=None, parent: QWidget | None = None):
         super().__init__(parent)
         self.wrong_manager = wrong_manager
+        self.favorite_manager = favorite_manager
         self.current_page = 1
         self.total_count = 0
         self.cards: list[QuestionCard] = []
@@ -112,7 +118,47 @@ class WrongBookPage(QWidget):
         self._sync_pager(max_page)
 
     def show_detail(self, item):
+        if item.question_type == "python_programming":
+            dialog = PythonWrongDetailDialog(item, self)
+            dialog.set_favorite(self._is_python_favorite(item))
+            dialog.practice_requested.connect(
+                lambda: self.practice_python_requested.emit(item.bank_name, item.bank_question_id)
+            )
+            dialog.favorite_requested.connect(lambda: self._favorite_python_item(item, dialog))
+            dialog.exec()
+            return
         QuestionDetailDialog(item.bank_name, item.question, item.options, item.answer, item.explanation, self).exec()
+
+    def _is_python_favorite(self, item) -> bool:
+        return bool(
+            self.favorite_manager
+            and self.favorite_manager.get_question(item.subject, item.question_id) is not None
+        )
+
+    def _favorite_python_item(self, item, dialog: PythonWrongDetailDialog) -> None:
+        if self.favorite_manager is None or self._is_python_favorite(item):
+            dialog.set_favorite(True)
+            return
+        self.favorite_manager.toggle_favorite(
+            FavoriteQuestion(
+                question_id=item.question_id,
+                bank_name=item.bank_name,
+                bank_question_id=item.bank_question_id,
+                subject=item.subject,
+                question=item.question,
+                options={},
+                answer=item.answer,
+                explanation="",
+                question_type="python_programming",
+                payload={
+                    "code": item.payload.get("code", ""),
+                    "full_score": item.payload.get("full_score", 20),
+                    "grading_points": item.payload.get("grading_points", []),
+                },
+            )
+        )
+        dialog.set_favorite(True)
+        self.favorite_changed.emit()
 
     def on_page_changed(self, index: int):
         page = index + 1

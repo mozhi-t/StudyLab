@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import ast
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
 from PyQt6.QtCore import QFileSystemWatcher, QProcess, QThread, QTimer, Qt, pyqtSignal
@@ -20,7 +22,9 @@ from core.python.runner import PythonRunner
 from core.python.workspace import PythonWorkspace
 from models.python.grading import PythonJudgeResult
 from models.python.question import PythonQuestion, PythonQuestionBank
+from models.favorite_question import FavoriteQuestion
 from models.study import ScoreResult
+from models.wrong_question import WrongQuestion
 from ui.widgets.python import PythonAnswerCard, PythonCodeEditor, PythonQuestionView, PythonResultCard
 from ui.widgets.styled_card import StyledCardWidget
 
@@ -41,10 +45,20 @@ class PythonTaskThread(QThread):
 
 
 class PythonAnswerWindow(AnswerWindow):
-    def __init__(self, question_bank: PythonQuestionBank, user_manager, parent: QWidget | None = None):
+    def __init__(
+        self,
+        question_bank: PythonQuestionBank,
+        user_manager,
+        wrong_manager,
+        favorite_manager,
+        initial_question_id: int | None = None,
+        parent: QWidget | None = None,
+    ):
         super().__init__(parent)
         self.question_bank = question_bank
         self.user_manager = user_manager
+        self.wrong_manager = wrong_manager
+        self.favorite_manager = favorite_manager
         self.settings_store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
         self.settings = APP_SETTINGS_TEMPLATE | self.settings_store.load()
         self.settings["python_answer"] = APP_SETTINGS_TEMPLATE["python_answer"] | self.settings.get("python_answer", {})
@@ -52,7 +66,10 @@ class PythonAnswerWindow(AnswerWindow):
         self.runner = PythonRunner()
         self.judge = PythonJudge(self.runner)
         self.launcher = PyCharmLauncher()
-        self.current_index = 0
+        self.current_index = next(
+            (index for index, question in enumerate(question_bank.questions) if question.id == initial_question_id),
+            0,
+        )
         self.prepared: set[int] = set()
         self.states: dict[int, str] = {}
         self.scores: dict[int, tuple[float, float]] = {}
@@ -87,15 +104,18 @@ class PythonAnswerWindow(AnswerWindow):
         self.mode_switch.addItem("builtin", "内置编辑器", lambda: None)
         self.mode_switch.addItem("pycharm", "PyCharm", lambda: None)
         self.mode_switch.currentItemChanged.connect(self._switch_mode)
+        self.favorite_button = PushButton(FluentIcon.HEART, "收藏题目", self)
         self.reset_button = PushButton(FluentIcon.SYNC, "重置本题", self)
         self.run_button = PrimaryPushButton(FluentIcon.PLAY, "运行", self)
         self.submit_button = PrimaryPushButton(FluentIcon.SEND, "提交该题", self)
+        self.favorite_button.clicked.connect(self.toggle_current_favorite)
         self.reset_button.clicked.connect(self.reset_current_question)
         self.run_button.clicked.connect(self.run_current)
         self.submit_button.clicked.connect(self.submit_current)
         toolbar.addWidget(self.back_button)
         toolbar.addWidget(self.title_label, 1)
         toolbar.addWidget(self.mode_switch)
+        toolbar.addWidget(self.favorite_button)
         toolbar.addWidget(self.reset_button)
         toolbar.addWidget(self.run_button)
         toolbar.addWidget(self.submit_button)
@@ -186,6 +206,7 @@ class PythonAnswerWindow(AnswerWindow):
         self._reload_editor_from_disk()
         self._watch_current_file()
         self.answer_card.refresh(self.current_index, self.states, self.scores)
+        self._sync_favorite_button()
 
     def jump_to_question(self, index: int) -> None:
         if index == self.current_index:
@@ -299,6 +320,8 @@ class PythonAnswerWindow(AnswerWindow):
             self.detail_window.close()
         self.detail_window = PythonJudgeDetailWindow(question, source, self)
         self.detail_window.window_closed.connect(self._judge_window_closed)
+        self.detail_window.favorite_requested.connect(self.toggle_current_favorite)
+        self.detail_window.set_favorite(self._is_current_favorite())
         self.judge_overlay.setGeometry(self.rect())
         self.judge_overlay.show()
         self.judge_overlay.raise_()
@@ -364,6 +387,10 @@ class PythonAnswerWindow(AnswerWindow):
             )
             self.recorded_questions.add(self.current_index)
         self.answer_card.refresh(self.current_index, self.states, self.scores)
+        if result.earned < result.possible:
+            self.wrong_manager.add_wrong(self._build_wrong(result))
+        else:
+            self.wrong_manager.remove_wrong("python", self._build_question_id())
         if self.detail_window is not None:
             self.detail_window.set_result(result)
 
@@ -388,6 +415,76 @@ class PythonAnswerWindow(AnswerWindow):
 
     def _show_error(self, title: str, content: str) -> None:
         InfoBar.error(title=title, content=content, position=InfoBarPosition.TOP_RIGHT, duration=3500, parent=self)
+
+    def toggle_current_favorite(self) -> None:
+        favorite = self.favorite_manager.toggle_favorite(self._build_favorite())
+        self._sync_favorite_button()
+        if self.detail_window is not None:
+            self.detail_window.set_favorite(favorite)
+        self._show_info("收藏成功" if favorite else "已取消收藏", "")
+
+    def _sync_favorite_button(self) -> None:
+        favorite = self._is_current_favorite()
+        self.favorite_button.setText("已收藏" if favorite else "收藏题目")
+        if self.detail_window is not None:
+            self.detail_window.set_favorite(favorite)
+
+    def _is_current_favorite(self) -> bool:
+        return self.favorite_manager.get_question("python", self._build_question_id()) is not None
+
+    def _build_question_id(self) -> str:
+        return f"python_{self.question_bank.name}_{self.current_question.id}"
+
+    def _question_title(self) -> str:
+        try:
+            description = ast.get_docstring(ast.parse(self.current_question.code), clean=False) or ""
+        except SyntaxError:
+            description = ""
+        for line in description.splitlines():
+            if line.strip().startswith(("题目:", "题目：")):
+                return line.split(":", 1)[-1].split("：", 1)[-1].strip()
+        return f"Python 编程题 {self.current_question.id}"
+
+    def _build_favorite(self) -> FavoriteQuestion:
+        return FavoriteQuestion(
+            question_id=self._build_question_id(),
+            bank_name=self.question_bank.name,
+            bank_question_id=self.current_question.id,
+            subject="python",
+            question=self._question_title(),
+            options={},
+            answer=self.current_question.answer,
+            explanation="",
+            question_type="python_programming",
+            payload={
+                "code": self.current_question.code,
+                "full_score": self.current_question.full_score,
+                "grading_points": [asdict(point) for point in self.current_question.grading_points],
+            },
+        )
+
+    def _build_wrong(self, result: PythonJudgeResult) -> WrongQuestion:
+        path = self.workspace.question_file(self.question_bank.name, self.current_question.id)
+        user_code = path.read_text(encoding="utf-8") if path.exists() else self.current_question.code
+        return WrongQuestion(
+            question_id=self._build_question_id(),
+            question_num=self.current_question.id,
+            bank_name=self.question_bank.name,
+            bank_question_id=self.current_question.id,
+            subject="python",
+            question=self._question_title(),
+            options={},
+            answer=self.current_question.answer,
+            explanation=result.message,
+            question_type="python_programming",
+            payload={
+                "code": self.current_question.code,
+                "user_code": user_code,
+                "full_score": self.current_question.full_score,
+                "grading_points": [asdict(point) for point in self.current_question.grading_points],
+                "judge_result": asdict(result),
+            },
+        )
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)

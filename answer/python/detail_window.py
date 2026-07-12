@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QTimer, Qt, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QPlainTextEdit, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, SingleDirectionScrollArea, StrongBodyLabel
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPlainTextEdit, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, PushButton, SingleDirectionScrollArea, StrongBodyLabel
 
 from models.python.grading import JudgeDetail, PythonJudgeResult
 from models.python.question import PythonQuestion
@@ -40,6 +40,7 @@ class JudgePointRow(BodyLabel):
 
 class PythonJudgeDetailWindow(QWidget):
     window_closed = pyqtSignal()
+    favorite_requested = pyqtSignal()
 
     def __init__(self, question: PythonQuestion, source: str, parent: QWidget | None = None):
         super().__init__(parent)
@@ -54,8 +55,13 @@ class PythonJudgeDetailWindow(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(18, 16, 18, 18)
         root.setSpacing(12)
+        title_row = QHBoxLayout()
         self.title = StrongBodyLabel(f"第 {question.id} 题　判分详情", self)
-        root.addWidget(self.title)
+        title_row.addWidget(self.title, 1)
+        self.favorite_button = PushButton("收藏题目", self)
+        self.favorite_button.clicked.connect(self.favorite_requested)
+        title_row.addWidget(self.favorite_button)
+        root.addLayout(title_row)
         self.subtitle = BodyLabel("准备检查...", self)
         root.addWidget(self.subtitle)
 
@@ -94,6 +100,9 @@ class PythonJudgeDetailWindow(QWidget):
         points_layout.addWidget(scroll, 1)
         root.addWidget(self.points_card, 2)
         self.begin_checking()
+
+    def set_favorite(self, favorite: bool) -> None:
+        self.favorite_button.setText("已收藏" if favorite else "收藏题目")
 
     def begin_checking(self) -> None:
         self.current_point = 0

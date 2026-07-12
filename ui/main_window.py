@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from PyQt6.QtCore import QEvent, QRect, Qt
 from PyQt6.QtWidgets import QApplication, QWidget
 from qfluentwidgets import FluentIcon, MSFluentWindow
@@ -42,7 +44,7 @@ class MainWindow(MSFluentWindow):
         self.question_bank_page.setObjectName("question_bank_page")
         self.exam_page = ExamPage(wrong_manager, favorite_manager, self)
         self.exam_page.setObjectName("exam_page")
-        self.wrong_book_page = WrongBookPage(wrong_manager, self)
+        self.wrong_book_page = WrongBookPage(wrong_manager, favorite_manager, self)
         self.wrong_book_page.setObjectName("wrong_book_page")
         self.favorite_page = FavoritePage(favorite_manager, self)
         self.favorite_page.setObjectName("favorite_page")
@@ -65,6 +67,9 @@ class MainWindow(MSFluentWindow):
 
         self.local_bank_page.open_bank_requested.connect(self.open_choice_answer)
         self.exam_page.favorite_changed.connect(self.favorite_page.reload)
+        self.favorite_page.practice_python_requested.connect(self.open_python_favorite)
+        self.wrong_book_page.practice_python_requested.connect(self.open_python_favorite)
+        self.wrong_book_page.favorite_changed.connect(self.favorite_page.reload)
 
         self.eye_care_reminder = EyeCareReminder(
             self,
@@ -95,12 +100,18 @@ class MainWindow(MSFluentWindow):
             page.installEventFilter(self)
             self.page_lock_overlays.append(overlay)
 
-    def open_choice_answer(self, subject: str, bank_name: str):
+    def open_choice_answer(self, subject: str, bank_name: str, initial_question_id: int | None = None):
         bank = self.question_index_manager.load_bank(subject, bank_name)
+        self._open_loaded_bank(bank, initial_question_id)
+
+    def _open_loaded_bank(self, bank, initial_question_id: int | None = None) -> None:
         if isinstance(bank, PythonQuestionBank):
             self.answer_window = PythonAnswerWindow(
                 question_bank=bank,
                 user_manager=self.user_manager,
+                wrong_manager=self.wrong_manager,
+                favorite_manager=self.favorite_manager,
+                initial_question_id=initial_question_id,
             )
         else:
             self.answer_window = ChoiceAnswerWindow(
@@ -115,6 +126,20 @@ class MainWindow(MSFluentWindow):
         self.answer_window.show()
         self.answer_window.raise_()
         self.answer_window.activateWindow()
+
+    def open_python_favorite(self, bank_name: str, question_id: int) -> None:
+        bank = self.question_index_manager.load_bank("python", bank_name)
+        if not isinstance(bank, PythonQuestionBank):
+            return
+        question = next((item for item in bank.questions if item.id == question_id), None)
+        if question is None:
+            return
+        single_question_bank = replace(
+            bank,
+            total_questions=1,
+            questions=[question],
+        )
+        self._open_loaded_bank(single_question_bank, question_id)
 
     def _restore_after_answer(self):
         if not self.isVisible():

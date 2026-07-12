@@ -36,8 +36,9 @@ class FavoriteManager:
                     """
                     INSERT INTO favorite_questions (
                         question_id, bank_name, bank_question_id, subject,
-                        question, options_json, answer, explanation
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        question, options_json, answer, explanation,
+                        question_type, payload_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         payload.question_id,
@@ -48,6 +49,8 @@ class FavoriteManager:
                         self._encode_options(payload.options),
                         payload.answer,
                         payload.explanation,
+                        payload.question_type,
+                        self._encode_payload(payload.payload),
                     ),
                 )
                 return True
@@ -98,6 +101,16 @@ class FavoriteManager:
         except (json.JSONDecodeError, TypeError, ValueError) as exc:
             raise_app_error("E014", str(exc))
 
+    def remove_favorite(self, subject: str, question_id: str) -> None:
+        try:
+            with self.database.transaction() as connection:
+                connection.execute(
+                    "DELETE FROM favorite_questions WHERE subject = ? AND question_id = ?",
+                    (subject, question_id),
+                )
+        except sqlite3.Error as exc:
+            raise_app_error("E015", str(exc))
+
     @staticmethod
     def _filters(subject: str | None, keyword: str) -> tuple[str, tuple]:
         clauses = []
@@ -132,10 +145,19 @@ class FavoriteManager:
         return json.dumps(options, ensure_ascii=False, separators=(",", ":"))
 
     @staticmethod
+    def _encode_payload(payload: dict) -> str:
+        if not isinstance(payload, dict):
+            raise TypeError("题目扩展数据不是字典")
+        return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+    @staticmethod
     def _row_to_question(row: sqlite3.Row) -> FavoriteQuestion:
         options = json.loads(row["options_json"])
+        payload = json.loads(row["payload_json"])
         if not isinstance(options, dict):
             raise TypeError("题目选项不是字典")
+        if not isinstance(payload, dict):
+            raise TypeError("题目扩展数据不是字典")
         return FavoriteQuestion(
             question_id=row["question_id"],
             bank_name=row["bank_name"],
@@ -145,4 +167,6 @@ class FavoriteManager:
             options=options,
             answer=row["answer"],
             explanation=row["explanation"],
+            question_type=row["question_type"],
+            payload=payload,
         )

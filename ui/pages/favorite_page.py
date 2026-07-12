@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PipsPager, PipsScrollButtonDisplayMode, SingleDirectionScrollArea, SubtitleLabel
 
@@ -8,10 +8,13 @@ from config.settings import SUBJECTS
 from ui.styles.title_style import apply_page_title_style
 from ui.widgets.question_card import QuestionCard
 from ui.widgets.question_detail_dialog import QuestionDetailDialog
+from ui.widgets.python.record_detail_dialog import PythonFavoriteDetailDialog
 from ui.widgets.styled_card import StyledCardWidget
 
 
 class FavoritePage(QWidget):
+    practice_python_requested = pyqtSignal(str, int)
+
     def __init__(self, favorite_manager, parent: QWidget | None = None):
         super().__init__(parent)
         self.favorite_manager = favorite_manager
@@ -108,7 +111,19 @@ class FavoritePage(QWidget):
         self._sync_pager(max_page)
 
     def show_detail(self, item):
+        if item.question_type == "python_programming":
+            dialog = PythonFavoriteDetailDialog(item, self)
+            dialog.practice_requested.connect(
+                lambda: self.practice_python_requested.emit(item.bank_name, item.bank_question_id)
+            )
+            dialog.remove_requested.connect(lambda: self._remove_python_favorite(item))
+            dialog.exec()
+            return
         QuestionDetailDialog(item.bank_name, item.question, item.options, item.answer, item.explanation, self).exec()
+
+    def _remove_python_favorite(self, item) -> None:
+        self.favorite_manager.remove_favorite(item.subject, item.question_id)
+        self.reload()
 
     def on_page_changed(self, index: int):
         page = index + 1

@@ -14,7 +14,7 @@ from core.errors import raise_app_error
 class DatabaseManager:
     """Manage StudyLab's SQLite connections, schema, and version upgrades."""
 
-    SCHEMA_VERSION = 3
+    SCHEMA_VERSION = 4
 
     def __init__(
         self,
@@ -80,6 +80,9 @@ class DatabaseManager:
             version = 2
         if version < 3:
             self._migrate_to_version_3(connection)
+            version = 3
+        if version < 4:
+            self._migrate_to_version_4(connection)
 
     def _migrate_to_version_1(self, connection: sqlite3.Connection) -> None:
         try:
@@ -245,6 +248,19 @@ class DatabaseManager:
             with connection:
                 connection.execute("ALTER TABLE users ADD COLUMN avatar_image BLOB")
                 connection.execute("PRAGMA user_version = 3")
+        except Exception:
+            connection.rollback()
+            raise
+
+    @staticmethod
+    def _migrate_to_version_4(connection: sqlite3.Connection) -> None:
+        try:
+            with connection:
+                connection.execute("ALTER TABLE wrong_questions ADD COLUMN question_type TEXT NOT NULL DEFAULT 'choice'")
+                connection.execute("ALTER TABLE wrong_questions ADD COLUMN payload_json TEXT NOT NULL DEFAULT '{}'")
+                connection.execute("ALTER TABLE favorite_questions ADD COLUMN question_type TEXT NOT NULL DEFAULT 'choice'")
+                connection.execute("ALTER TABLE favorite_questions ADD COLUMN payload_json TEXT NOT NULL DEFAULT '{}'")
+                connection.execute("PRAGMA user_version = 4")
         except Exception:
             connection.rollback()
             raise

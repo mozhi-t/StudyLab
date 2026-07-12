@@ -21,10 +21,15 @@ class WrongManager:
                     INSERT INTO wrong_questions (
                         question_id, question_num, bank_name, bank_question_id,
                         subject, question, options_json, answer, explanation,
-                        error_count
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        error_count, question_type, payload_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(subject, question_id) DO UPDATE SET
-                        error_count = wrong_questions.error_count + 1
+                        error_count = wrong_questions.error_count + 1,
+                        question = excluded.question,
+                        answer = excluded.answer,
+                        explanation = excluded.explanation,
+                        question_type = excluded.question_type,
+                        payload_json = excluded.payload_json
                     """,
                     (
                         payload.question_id,
@@ -37,6 +42,8 @@ class WrongManager:
                         payload.answer,
                         payload.explanation,
                         payload.error_count,
+                        payload.question_type,
+                        self._encode_payload(payload.payload),
                     ),
                 )
         except (sqlite3.Error, TypeError, ValueError) as exc:
@@ -86,6 +93,16 @@ class WrongManager:
         except (json.JSONDecodeError, TypeError, ValueError) as exc:
             raise_app_error("E011", str(exc))
 
+    def remove_wrong(self, subject: str, question_id: str) -> None:
+        try:
+            with self.database.transaction() as connection:
+                connection.execute(
+                    "DELETE FROM wrong_questions WHERE subject = ? AND question_id = ?",
+                    (subject, question_id),
+                )
+        except sqlite3.Error as exc:
+            raise_app_error("E012", str(exc))
+
     @staticmethod
     def _filters(subject: str | None, keyword: str) -> tuple[str, tuple]:
         clauses = []
@@ -120,10 +137,19 @@ class WrongManager:
         return json.dumps(options, ensure_ascii=False, separators=(",", ":"))
 
     @staticmethod
+    def _encode_payload(payload: dict) -> str:
+        if not isinstance(payload, dict):
+            raise TypeError("题目扩展数据不是字典")
+        return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+    @staticmethod
     def _row_to_question(row: sqlite3.Row) -> WrongQuestion:
         options = json.loads(row["options_json"])
+        payload = json.loads(row["payload_json"])
         if not isinstance(options, dict):
             raise TypeError("题目选项不是字典")
+        if not isinstance(payload, dict):
+            raise TypeError("题目扩展数据不是字典")
         return WrongQuestion(
             question_id=row["question_id"],
             question_num=row["question_num"],
@@ -135,4 +161,6 @@ class WrongManager:
             answer=row["answer"],
             explanation=row["explanation"],
             error_count=row["error_count"],
+            question_type=row["question_type"],
+            payload=payload,
         )

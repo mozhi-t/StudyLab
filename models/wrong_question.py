@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -15,3 +15,5 @@ class WrongQuestion:
     answer: str
     explanation: str
     error_count: int = 1
+    question_type: str = "choice"
+    payload: dict = field(default_factory=dict)
