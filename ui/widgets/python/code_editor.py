@@ -137,7 +137,10 @@ class PythonCodeEditor(QPlainTextEdit):
             self._change_indent(-1)
             return
         if event.key() == Qt.Key.Key_Tab:
-            self.insertPlainText("    ")
+            if self.textCursor().hasSelection():
+                self._change_indent(1)
+            else:
+                self.insertPlainText("\t")
             return
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
             self.completer.popup().hide()
@@ -145,7 +148,7 @@ class PythonCodeEditor(QPlainTextEdit):
             line = cursor.block().text()
             indent = re.match(r"\s*", line).group(0)
             if line.rstrip().endswith(":"):
-                indent += "    "
+                indent += "\t"
             super().keyPressEvent(event)
             self.insertPlainText(indent)
             return
@@ -154,16 +157,38 @@ class PythonCodeEditor(QPlainTextEdit):
             self._show_completions()
 
     def _change_indent(self, direction: int) -> None:
-        cursor = self.textCursor()
-        cursor.beginEditBlock()
-        cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
-        if direction > 0:
-            cursor.insertText("    ")
-        else:
-            cursor.movePosition(QTextCursor.MoveOperation.Right, QTextCursor.MoveMode.KeepAnchor, 4)
-            selected = cursor.selectedText()
-            cursor.insertText(selected[4 - len(selected.lstrip(" ")):] if selected.strip() else "")
-        cursor.endEditBlock()
+        selection = self.textCursor()
+        document = self.document()
+        start = selection.selectionStart()
+        end = selection.selectionEnd()
+        first_block = document.findBlock(start)
+        last_block = document.findBlock(max(start, end - 1))
+        blocks = []
+        block = first_block
+        while block.isValid():
+            blocks.append(block)
+            if block == last_block:
+                break
+            block = block.next()
+
+        edit_cursor = QTextCursor(document)
+        edit_cursor.beginEditBlock()
+        for block in reversed(blocks):
+            cursor = QTextCursor(block)
+            cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+            if direction > 0:
+                cursor.insertText("\t")
+                continue
+            text = block.text()
+            remove_count = 1 if text.startswith("\t") else min(4, len(text) - len(text.lstrip(" ")))
+            if remove_count:
+                cursor.movePosition(
+                    QTextCursor.MoveOperation.Right,
+                    QTextCursor.MoveMode.KeepAnchor,
+                    remove_count,
+                )
+                cursor.removeSelectedText()
+        edit_cursor.endEditBlock()
 
     def _word_under_cursor(self) -> str:
         cursor = self.textCursor()
