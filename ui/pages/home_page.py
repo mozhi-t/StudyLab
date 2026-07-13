@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import math
 from datetime import date, timedelta
 
 from PyQt6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRectF, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPixmap, QPolygonF
+from PyQt6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPixmap
 from PyQt6.QtWidgets import (
     QFileDialog,
     QFrame,
@@ -26,11 +25,11 @@ from qfluentwidgets import (
     themeColor,
 )
 
-from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, SUBJECTS
+from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from core.base.json_store import JsonStore
 from ui.styles.home import HOME_STYLE_CLASSES, HomeWelcomeStyle
 from ui.styles.title_style import apply_page_title_style
-from ui.widgets.base import StyledCardWidget
+from ui.widgets.base import AbilityRadarWidget, AbilityRadarWindow, StyledCardWidget
 
 
 class AvatarWidget(QWidget):
@@ -98,68 +97,6 @@ class AvatarWidget(QWidget):
         painter.setFont(font)
         painter.setPen(accent)
         painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, self._name[0].upper())
-
-
-class AbilityRadarWidget(QWidget):
-    SUBJECT_LABELS = [SUBJECTS[key] for key in SUBJECTS]
-
-    def __init__(self, parent: QWidget | None = None):
-        super().__init__(parent)
-        self._values = [50.0] * len(self.SUBJECT_LABELS)
-        self.setFixedSize(245, 146)
-        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-
-    def set_values(self, values: dict[str, float]) -> None:
-        self._values = [max(0.0, min(float(values.get(key, 50)), 100.0)) for key in SUBJECTS]
-        self.update()
-
-    def paintEvent(self, event) -> None:
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        center = QPointF(self.width() / 2, self.height() / 2 + 2)
-        radius = max(min(self.width() / 2 - 58, self.height() / 2 - 30), 28)
-        axis_count = len(self.SUBJECT_LABELS)
-        grid_color = QColor(255, 255, 255, 42) if isDarkTheme() else QColor(30, 30, 30, 35)
-        text_color = QColor(235, 235, 235) if isDarkTheme() else QColor(55, 55, 55)
-        accent = themeColor()
-
-        painter.setPen(QPen(grid_color, 1))
-        for level in range(1, 6):
-            level_radius = radius * level / 5
-            painter.drawPolygon(self._polygon(center, level_radius, axis_count))
-        for index in range(axis_count):
-            point = self._point(center, radius, index, axis_count)
-            painter.drawLine(center, point)
-
-        radar_points = QPolygonF()
-        for index, value in enumerate(self._values):
-            radar_points.append(self._point(center, radius * value / 100, index, axis_count))
-        painter.setPen(QPen(accent, 2))
-        painter.setBrush(QColor(accent.red(), accent.green(), accent.blue(), 72))
-        painter.drawPolygon(radar_points)
-        painter.setBrush(accent)
-        for point in radar_points:
-            painter.drawEllipse(point, 2.5, 2.5)
-
-        label_font = QFont(self.font())
-        label_font.setPointSize(9)
-        painter.setFont(label_font)
-        painter.setPen(text_color)
-        metrics = painter.fontMetrics()
-        for index, (label, value) in enumerate(zip(self.SUBJECT_LABELS, self._values)):
-            label = f"{label} {value:.0f}"
-            point = self._point(center, radius + 16, index, axis_count)
-            width = metrics.horizontalAdvance(label)
-            painter.drawText(QPointF(point.x() - width / 2, point.y() + metrics.ascent() / 2), label)
-
-    @staticmethod
-    def _point(center: QPointF, radius: float, index: int, count: int) -> QPointF:
-        angle = -math.pi / 2 + 2 * math.pi * index / count
-        return QPointF(center.x() + radius * math.cos(angle), center.y() + radius * math.sin(angle))
-
-    @classmethod
-    def _polygon(cls, center: QPointF, radius: float, count: int) -> QPolygonF:
-        return QPolygonF([cls._point(center, radius, index, count) for index in range(count)])
 
 
 class MetricWidget(QWidget):
@@ -374,6 +311,8 @@ class HomePage(QWidget):
         self.user_manager = user_manager
         self.settings_store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
         self.metric_widgets: dict[str, MetricWidget] = {}
+        self._ability_values: dict[str, float] = {}
+        self._ability_radar_window: AbilityRadarWindow | None = None
 
         page_layout = QVBoxLayout(self)
         page_layout.setContentsMargins(0, 0, 0, 0)
@@ -405,6 +344,7 @@ class HomePage(QWidget):
         self.welcome_stack.setFixedHeight(164)
         for style_widget in self.home_styles.values():
             style_widget.avatar.clicked.connect(self._choose_avatar)
+            style_widget.radar.clicked.connect(self._show_ability_radar)
             self.welcome_stack.addWidget(style_widget)
         root.addWidget(self.welcome_stack)
 
@@ -487,9 +427,12 @@ class HomePage(QWidget):
 
         avatar_data = self.user_manager.load_avatar()
         ability_values = {item.subject: item.ability_index for item in abilities}
+        self._ability_values = ability_values
         for style_widget in self.home_styles.values():
             style_widget.set_profile(nickname, avatar_data)
             style_widget.set_abilities(ability_values)
+        if self._ability_radar_window is not None:
+            self._ability_radar_window.set_values(ability_values)
 
         settings = APP_SETTINGS_TEMPLATE | self.settings_store.load()
         daily_goal = max(int(settings.get("daily_question_goal", 50)), 1)
@@ -553,6 +496,17 @@ class HomePage(QWidget):
         self.welcome_stack.setCurrentWidget(style_widget)
         self.ability_card.setVisible(style_widget.shows_separate_ability_card)
         self.heatmap.set_day_span(182 if style_widget.shows_separate_ability_card else 365)
+
+    def _show_ability_radar(self) -> None:
+        if self._ability_radar_window is None:
+            self._ability_radar_window = AbilityRadarWindow(self)
+        self._ability_radar_window.set_values(self._ability_values)
+        if self._ability_radar_window.isMinimized():
+            self._ability_radar_window.showNormal()
+        else:
+            self._ability_radar_window.show()
+        self._ability_radar_window.raise_()
+        self._ability_radar_window.activateWindow()
 
     def _choose_avatar(self) -> None:
         path, _selected_filter = QFileDialog.getOpenFileName(
