@@ -15,7 +15,9 @@ class TerminalConsole(QPlainTextEdit):
         super().__init__(parent)
         self.input_start = 0
         self.setUndoRedoEnabled(False)
-        self.setStyleSheet("QPlainTextEdit{font-family: Consolas; background: transparent; border: none;}")
+        self.setStyleSheet(
+            "QPlainTextEdit{font-family: Consolas; font-size: 13px; background: transparent; border: none;}"
+        )
 
     def begin(self) -> None:
         self.clear()

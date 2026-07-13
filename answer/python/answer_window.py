@@ -119,7 +119,7 @@ class PythonAnswerWindow(AnswerWindow):
         root.addLayout(toolbar)
 
         body = QHBoxLayout()
-        body.setSpacing(12)
+        body.setSpacing(8)
         self.answer_card = PythonAnswerCard(self)
         self.answer_card.setFixedWidth(150)
         self.answer_card.set_questions(
@@ -129,7 +129,7 @@ class PythonAnswerWindow(AnswerWindow):
         body.addWidget(self.answer_card)
 
         right = QVBoxLayout()
-        right.setSpacing(10)
+        right.setSpacing(6)
         self.page_stack = QStackedWidget(self)
         self.editor_card = StyledCardWidget(self, radius=14, light_border_alpha=34)
         editor_layout = QVBoxLayout(self.editor_card)
@@ -144,7 +144,7 @@ class PythonAnswerWindow(AnswerWindow):
         self.page_stack.addWidget(self.question_view)
         right.addWidget(self.page_stack, 1)
         self.result_card = PythonResultCard(self)
-        self.result_card.setMaximumHeight(180)
+        self.result_card.setFixedHeight(220)
         right.addWidget(self.result_card)
         body.addLayout(right, 1)
         root.addLayout(body, 1)
