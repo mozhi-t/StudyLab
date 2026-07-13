@@ -9,15 +9,12 @@ from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
     ComboBox,
-    FluentIcon,
     PrimaryPushButton,
     ProgressRing,
     PushButton,
     RadioButton,
     StrongBodyLabel,
     SwitchButton,
-    TeachingTip,
-    TeachingTipTailPosition,
     isDarkTheme,
 )
 
@@ -29,6 +26,7 @@ from models.question_bank import QuestionBank, QuestionItem
 from models.study import ScoreResult
 from models.wrong_question import WrongQuestion
 from ui.widgets.answer_card import AnswerCard
+from ui.widgets.favorite_tip import show_favorite_tip
 from ui.widgets.styled_card import StyledCardWidget
 
 
@@ -436,26 +434,7 @@ class ChoiceAnswerWindow(AnswerWindow):
     def favorite_current_question(self):
         is_favorite = self.favorite_manager.toggle_favorite(self._build_favorite(self.current_question))
         self._sync_favorite_button()
-        if is_favorite:
-            TeachingTip.create(
-                self.favorite_button,
-                "收藏成功",
-                "题目已加入收藏夹",
-                icon=FluentIcon.HEART,
-                duration=1500,
-                tailPosition=TeachingTipTailPosition.BOTTOM,
-                parent=self,
-            )
-        else:
-            TeachingTip.create(
-                self.favorite_button,
-                "已移出收藏",
-                "题目已从收藏夹移除",
-                icon=FluentIcon.DELETE,
-                duration=1500,
-                tailPosition=TeachingTipTailPosition.BOTTOM,
-                parent=self,
-            )
+        show_favorite_tip(self.favorite_button, is_favorite, self)
 
     def prev_question(self):
         if self.current_index > 0:

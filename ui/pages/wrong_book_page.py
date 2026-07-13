@@ -10,6 +10,7 @@ from ui.widgets.question_card import QuestionCard
 from ui.widgets.question_detail_dialog import QuestionDetailDialog
 from ui.widgets.python.record_detail_dialog import PythonWrongDetailDialog
 from models.favorite_question import FavoriteQuestion
+from ui.widgets.favorite_tip import show_favorite_tip
 from ui.widgets.styled_card import StyledCardWidget
 
 
@@ -136,10 +137,9 @@ class WrongBookPage(QWidget):
         )
 
     def _favorite_python_item(self, item, dialog: PythonWrongDetailDialog) -> None:
-        if self.favorite_manager is None or self._is_python_favorite(item):
-            dialog.set_favorite(True)
+        if self.favorite_manager is None:
             return
-        self.favorite_manager.toggle_favorite(
+        favorite = self.favorite_manager.toggle_favorite(
             FavoriteQuestion(
                 question_id=item.question_id,
                 bank_name=item.bank_name,
@@ -157,8 +157,9 @@ class WrongBookPage(QWidget):
                 },
             )
         )
-        dialog.set_favorite(True)
+        dialog.set_favorite(favorite)
         self.favorite_changed.emit()
+        show_favorite_tip(dialog.favorite_button, favorite, dialog)
 
     def on_page_changed(self, index: int):
         page = index + 1

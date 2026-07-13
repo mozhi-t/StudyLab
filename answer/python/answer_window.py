@@ -26,6 +26,7 @@ from models.favorite_question import FavoriteQuestion
 from models.study import ScoreResult
 from models.wrong_question import WrongQuestion
 from ui.widgets.python import PythonAnswerCard, PythonCodeEditor, PythonQuestionView, PythonResultCard
+from ui.widgets.favorite_tip import show_favorite_tip
 from ui.widgets.styled_card import StyledCardWidget
 
 
@@ -101,7 +102,7 @@ class PythonAnswerWindow(AnswerWindow):
         self.mode_switch.addItem("builtin", "内置编辑器", lambda: None)
         self.mode_switch.addItem("pycharm", "PyCharm", lambda: None)
         self.mode_switch.currentItemChanged.connect(self._switch_mode)
-        self.favorite_button = PushButton(FluentIcon.HEART, "收藏题目", self)
+        self.favorite_button = PushButton("收藏题目", self)
         self.reset_button = PushButton(FluentIcon.SYNC, "重置本题", self)
         self.run_button = PrimaryPushButton(FluentIcon.PLAY, "运行", self)
         self.submit_button = PrimaryPushButton(FluentIcon.SEND, "提交该题", self)
@@ -431,7 +432,10 @@ class PythonAnswerWindow(AnswerWindow):
         self._sync_favorite_button()
         if self.detail_window is not None:
             self.detail_window.set_favorite(favorite)
-        self._show_info("收藏成功" if favorite else "已取消收藏", "")
+        if self.detail_window is not None and self.detail_window.isVisible():
+            show_favorite_tip(self.detail_window.favorite_button, favorite, self.detail_window)
+        else:
+            show_favorite_tip(self.favorite_button, favorite, self)
 
     def _sync_favorite_button(self) -> None:
         favorite = self._is_current_favorite()

@@ -9,6 +9,7 @@ from ui.styles.title_style import apply_page_title_style
 from ui.widgets.question_card import QuestionCard
 from ui.widgets.question_detail_dialog import QuestionDetailDialog
 from ui.widgets.python.record_detail_dialog import PythonFavoriteDetailDialog
+from ui.widgets.favorite_tip import show_favorite_tip
 from ui.widgets.styled_card import StyledCardWidget
 
 
@@ -113,17 +114,20 @@ class FavoritePage(QWidget):
     def show_detail(self, item):
         if item.question_type == "python_programming":
             dialog = PythonFavoriteDetailDialog(item, self)
+            dialog.set_favorite(True)
             dialog.practice_requested.connect(
                 lambda: self.practice_python_requested.emit(item.bank_name, item.bank_question_id)
             )
-            dialog.remove_requested.connect(lambda: self._remove_python_favorite(item))
+            dialog.favorite_requested.connect(lambda: self._toggle_python_favorite(item, dialog))
             dialog.exec()
             return
         QuestionDetailDialog(item.bank_name, item.question, item.options, item.answer, item.explanation, self).exec()
 
-    def _remove_python_favorite(self, item) -> None:
-        self.favorite_manager.remove_favorite(item.subject, item.question_id)
+    def _toggle_python_favorite(self, item, dialog: PythonFavoriteDetailDialog) -> None:
+        favorite = self.favorite_manager.toggle_favorite(item)
+        dialog.set_favorite(favorite)
         self.reload()
+        show_favorite_tip(dialog.favorite_button, favorite, dialog)
 
     def on_page_changed(self, index: int):
         page = index + 1

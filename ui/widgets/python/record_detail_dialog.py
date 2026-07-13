@@ -37,26 +37,24 @@ class _PythonRecordDialog(QDialog):
 
 class PythonFavoriteDetailDialog(_PythonRecordDialog):
     practice_requested = pyqtSignal()
-    remove_requested = pyqtSignal()
+    favorite_requested = pyqtSignal()
 
     def __init__(self, item: FavoriteQuestion, parent: QWidget | None = None):
         source = str(item.payload.get("code", ""))
         super().__init__(f"{item.bank_name} · 第 {item.bank_question_id} 题", source, parent)
         self.practice_button = PrimaryPushButton("练习该题", self)
-        self.remove_button = PushButton("取消收藏", self)
+        self.favorite_button = PushButton("已收藏", self)
         self.practice_button.clicked.connect(self._practice)
-        self.remove_button.clicked.connect(self._remove)
+        self.favorite_button.clicked.connect(self.favorite_requested)
         self.button_row.addWidget(self.practice_button)
-        self.button_row.addWidget(self.remove_button)
+        self.button_row.addWidget(self.favorite_button)
+
+    def set_favorite(self, favorite: bool) -> None:
+        self.favorite_button.setText("已收藏" if favorite else "收藏题目")
 
     def _practice(self) -> None:
         self.accept()
         self.practice_requested.emit()
-
-    def _remove(self) -> None:
-        self.accept()
-        self.remove_requested.emit()
-
 
 class PythonWrongDetailDialog(_PythonRecordDialog):
     practice_requested = pyqtSignal()
@@ -98,15 +96,14 @@ class PythonWrongDetailDialog(_PythonRecordDialog):
             points_layout.addWidget(label)
         self.layout().insertWidget(self.layout().count() - 1, self.points_card)
         self.practice_button = PrimaryPushButton("练习该题", self)
-        self.favorite_button = PushButton("收藏该题", self)
+        self.favorite_button = PushButton("收藏题目", self)
         self.practice_button.clicked.connect(self._practice)
         self.favorite_button.clicked.connect(self.favorite_requested)
         self.button_row.addWidget(self.practice_button)
         self.button_row.addWidget(self.favorite_button)
 
     def set_favorite(self, favorite: bool) -> None:
-        self.favorite_button.setText("已收藏" if favorite else "收藏该题")
-        self.favorite_button.setEnabled(not favorite)
+        self.favorite_button.setText("已收藏" if favorite else "收藏题目")
 
     def _practice(self) -> None:
         self.accept()
