@@ -6,7 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from PyQt6.QtCore import QFileSystemWatcher, QProcess, QThread, QTimer, Qt, pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QStackedWidget, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QSplitter, QStackedWidget, QVBoxLayout, QWidget
 from qfluentwidgets import (
     FluentIcon, InfoBar, InfoBarPosition, MessageBox, PrimaryPushButton,
     PushButton, SegmentedWidget, StrongBodyLabel, isDarkTheme,
@@ -129,7 +129,11 @@ class PythonAnswerWindow(AnswerWindow):
         body.addWidget(self.answer_card)
 
         right = QVBoxLayout()
-        right.setSpacing(6)
+        right.setSpacing(0)
+        self.editor_result_splitter = QSplitter(Qt.Orientation.Vertical, self)
+        self.editor_result_splitter.setChildrenCollapsible(False)
+        self.editor_result_splitter.setHandleWidth(9)
+        self.editor_result_splitter.setStyleSheet("QSplitter::handle:vertical{background: transparent;}")
         self.page_stack = QStackedWidget(self)
         self.editor_card = StyledCardWidget(self, radius=14, light_border_alpha=34)
         editor_layout = QVBoxLayout(self.editor_card)
@@ -142,10 +146,14 @@ class PythonAnswerWindow(AnswerWindow):
         self.question_view.answer_requested.connect(self.open_in_pycharm)
         self.page_stack.addWidget(self.editor_card)
         self.page_stack.addWidget(self.question_view)
-        right.addWidget(self.page_stack, 1)
+        self.editor_result_splitter.addWidget(self.page_stack)
         self.result_card = PythonResultCard(self)
-        self.result_card.setFixedHeight(220)
-        right.addWidget(self.result_card)
+        self.result_card.setMinimumHeight(120)
+        self.editor_result_splitter.addWidget(self.result_card)
+        self.editor_result_splitter.setStretchFactor(0, 1)
+        self.editor_result_splitter.setStretchFactor(1, 0)
+        self.editor_result_splitter.setSizes([500, 220])
+        right.addWidget(self.editor_result_splitter, 1)
         body.addLayout(right, 1)
         root.addLayout(body, 1)
 
@@ -191,10 +199,12 @@ class PythonAnswerWindow(AnswerWindow):
             self._save_editor()
             self.page_stack.setCurrentWidget(self.question_view)
             self.result_card.hide()
+            self.editor_result_splitter.handle(1).hide()
         else:
             self._reload_editor_from_disk()
             self.page_stack.setCurrentWidget(self.editor_card)
             self.result_card.show()
+            self.editor_result_splitter.handle(1).show()
 
     def render_question(self) -> None:
         question = self.current_question
