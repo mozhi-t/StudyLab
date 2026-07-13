@@ -120,7 +120,7 @@ class ChoiceAnswerWindow(AnswerWindow):
 
         self.setWindowTitle(question_bank.name)
         self.setWindowFlag(Qt.WindowType.Window, True)
-        self.resize(1320, 720)
+        self.resize(1320, 780)
         self.setMinimumSize(1120, 680)
         self.setObjectName("choiceAnswerWindow")
 
