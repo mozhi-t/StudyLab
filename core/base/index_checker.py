@@ -4,9 +4,10 @@ import json
 from dataclasses import asdict
 
 from config.settings import QUESTION_BANK_DIR, QUESTION_BANK_INDEX_NAME, SUBJECTS, question_bank_index_file
-from core.datetime_utils import parse_datetime
-from core.json_store import JsonStore
-from models.question_bank import BankMeta, QuestionBank
+from core.base.datetime_utils import parse_datetime
+from core.base.json_store import JsonStore
+from models.base import BankMeta
+from models.choice import QuestionBank
 from models.python.question import PythonQuestionBank
 
 

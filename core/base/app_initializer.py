@@ -11,11 +11,11 @@ from config.settings import (
     SUBJECTS,
     question_bank_index_file,
 )
-from core.database import DatabaseManager
-from core.json_store import JsonStore
+from core.base.database import DatabaseManager
+from core.base.json_store import JsonStore
 
 
-def bootstrap_app() -> DatabaseManager:
+def initialize_app() -> DatabaseManager:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     QUESTION_BANK_DIR.mkdir(parents=True, exist_ok=True)
     LAN_EXAM_DIR.mkdir(parents=True, exist_ok=True)

@@ -11,15 +11,13 @@ from qfluentwidgets.components.settings.expand_setting_card import GroupWidget
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 from config.theme import apply_theme
-from core.index_checker import GlobalIndexChecker
-from core.json_store import JsonStore
+from core.base.index_checker import GlobalIndexChecker
+from core.base.json_store import JsonStore
 from core.python.pycharm_launcher import PyCharmLauncher
 from ui.languages import LanguageManager
 from ui.styles.home import HOME_STYLE_CLASSES
 from ui.styles.title_style import apply_page_title_style
-from ui.widgets.invalid_bank_time_dialog import InvalidBankTimeDialog
-from ui.widgets.eye_care_dialog import CustomIntervalDialog
-from ui.widgets.learning_goal_dialog import CustomLearningGoalDialog
+from ui.widgets.base.dialogs import CustomIntervalDialog, CustomLearningGoalDialog, InvalidBankTimeDialog
 
 
 # Keys that are not a valid shortcut on their own: modifiers, lock keys, etc.

@@ -9,8 +9,8 @@ from qfluentwidgets import FluentIcon, MSFluentWindow
 from answer.choice_answer import ChoiceAnswerWindow
 from answer.python import PythonAnswerWindow
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
-from core.eye_care import EyeCareReminder
-from core.json_store import JsonStore
+from core.base.json_store import JsonStore
+from ui.controllers import EyeCareReminder
 from models.python.question import PythonQuestionBank
 from ui.pages.about_page import AboutPage
 from ui.pages.exam_page import ExamPage

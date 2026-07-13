@@ -27,10 +27,10 @@ from qfluentwidgets import (
 )
 
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, SUBJECTS
-from core.json_store import JsonStore
+from core.base.json_store import JsonStore
 from ui.styles.home import HOME_STYLE_CLASSES, HomeWelcomeStyle
 from ui.styles.title_style import apply_page_title_style
-from ui.widgets.styled_card import StyledCardWidget
+from ui.widgets.base import StyledCardWidget
 
 
 class AvatarWidget(QWidget):

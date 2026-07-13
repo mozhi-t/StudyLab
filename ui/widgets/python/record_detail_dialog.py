@@ -4,9 +4,8 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QDialog, QHBoxLayout, QPlainTextEdit, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, PrimaryPushButton, PushButton, StrongBodyLabel
 
-from models.favorite_question import FavoriteQuestion
-from models.wrong_question import WrongQuestion
-from ui.widgets.styled_card import StyledCardWidget
+from models.base import FavoriteQuestion, WrongQuestion
+from ui.widgets.base import StyledCardWidget
 
 
 class _PythonRecordDialog(QDialog):

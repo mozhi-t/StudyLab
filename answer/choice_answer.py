@@ -3,8 +3,8 @@ from __future__ import annotations
 import random
 
 from PyQt6.QtCore import QTimer, Qt
-from PyQt6.QtGui import QColor, QFont, QKeySequence, QShortcut
-from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
+from PyQt6.QtGui import QFont, QKeySequence, QShortcut
+from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
@@ -12,7 +12,6 @@ from qfluentwidgets import (
     PrimaryPushButton,
     ProgressRing,
     PushButton,
-    RadioButton,
     StrongBodyLabel,
     SwitchButton,
     isDarkTheme,
@@ -20,74 +19,12 @@ from qfluentwidgets import (
 
 from answer.answer_window import AnswerWindow
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
-from core.json_store import JsonStore
-from models.favorite_question import FavoriteQuestion
-from models.question_bank import QuestionBank, QuestionItem
-from models.study import ScoreResult
-from models.wrong_question import WrongQuestion
-from ui.widgets.answer_card import AnswerCard
-from ui.widgets.favorite_tip import show_favorite_tip
-from ui.widgets.styled_card import StyledCardWidget
-
-
-class OptionCard(StyledCardWidget):
-    def __init__(self, option_key: str, parent: QWidget | None = None):
-        self._state = "default"
-        super().__init__(parent, radius=12, light_border_alpha=34)
-        self.option_key = option_key
-        self.setMinimumHeight(56)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-        self.button = RadioButton(self)
-        self.button.setObjectName(f"choiceOption{option_key}")
-        self.button.setText("")
-        self.button.setFixedWidth(24)
-        self.button.setMinimumHeight(24)
-        self.button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-
-        self.text_label = BodyLabel("", self)
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(18, 8, 18, 8)
-        layout.setSpacing(12)
-        layout.addWidget(self.button, 0, Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(self.text_label, 1, Qt.AlignmentFlag.AlignVCenter)
-
-    def set_option_text(self, text: str) -> None:
-        self.text_label.setText(text)
-
-    def set_checked(self, checked: bool) -> None:
-        self.button.setChecked(checked)
-
-    def set_enabled(self, enabled: bool) -> None:
-        self.button.setEnabled(enabled)
-
-    def set_state(self, state: str) -> None:
-        self._state = state
-        self._apply_state_style()
-        self.update()
-
-    def _normalBackgroundColor(self):
-        if self._state == "correct":
-            return QColor(15, 163, 97, 42)
-        if self._state == "wrong":
-            return QColor(224, 72, 72, 38)
-        return super()._normalBackgroundColor()
-
-    def _apply_state_style(self) -> None:
-        if self._state == "correct":
-            self.text_label.setStyleSheet("color: rgb(19, 126, 67); font-weight: 600;")
-        elif self._state == "wrong":
-            self.text_label.setStyleSheet("color: rgb(198, 52, 52); font-weight: 600;")
-        else:
-            self.text_label.setStyleSheet("color: white;" if isDarkTheme() else "")
-
-    def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.LeftButton and self.button.isEnabled():
-            self.button.click()
-            event.accept()
-            return
-        super().mousePressEvent(event)
+from core.base.json_store import JsonStore
+from core.choice import ChoiceJudge
+from models.base import FavoriteQuestion, ScoreResult, WrongQuestion
+from models.choice import QuestionBank, QuestionItem
+from ui.widgets.base import StyledCardWidget, show_favorite_tip
+from ui.widgets.choice import AnswerCard, OptionCard
 
 
 class ChoiceAnswerWindow(AnswerWindow):
@@ -412,7 +349,7 @@ class ChoiceAnswerWindow(AnswerWindow):
         question = self.current_question
         answered_index = self.current_index
         self.selected_answers[self.current_index] = selected
-        is_correct = selected == question.answer
+        is_correct = ChoiceJudge.judge(selected, question.answer)
         self.answer_results[self.current_index] = is_correct
         self.user_manager.record_answer(
             ScoreResult(

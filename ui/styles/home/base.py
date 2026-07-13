@@ -5,7 +5,7 @@ from collections.abc import Callable
 from PyQt6.QtWidgets import QWidget
 from qfluentwidgets import BodyLabel, SubtitleLabel
 
-from ui.widgets.styled_card import StyledCardWidget
+from ui.widgets.base import StyledCardWidget
 
 
 class HomeWelcomeStyle(StyledCardWidget):

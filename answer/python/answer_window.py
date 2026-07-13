@@ -15,19 +15,16 @@ from qfluentwidgets import (
 from answer.answer_window import AnswerWindow
 from answer.python.detail_window import PythonJudgeDetailWindow
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
-from core.json_store import JsonStore
+from core.base.json_store import JsonStore
 from core.python.judge import PythonJudge
 from core.python.pycharm_launcher import PyCharmLauncher
 from core.python.runner import PythonRunner
 from core.python.workspace import PythonWorkspace
 from models.python.grading import PythonJudgeResult
 from models.python.question import PythonQuestion, PythonQuestionBank
-from models.favorite_question import FavoriteQuestion
-from models.study import ScoreResult
-from models.wrong_question import WrongQuestion
+from models.base import FavoriteQuestion, ScoreResult, WrongQuestion
 from ui.widgets.python import PythonAnswerCard, PythonCodeEditor, PythonQuestionView, PythonResultCard
-from ui.widgets.favorite_tip import show_favorite_tip
-from ui.widgets.styled_card import StyledCardWidget
+from ui.widgets.base import StyledCardWidget, show_favorite_tip
 
 
 class PythonTaskThread(QThread):

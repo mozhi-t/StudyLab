@@ -5,7 +5,7 @@ from PyQt6.QtGui import QColor, QKeyEvent, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import QPlainTextEdit, QVBoxLayout, QWidget
 from qfluentwidgets import StrongBodyLabel, isDarkTheme
 
-from ui.widgets.styled_card import StyledCardWidget
+from ui.widgets.base import StyledCardWidget
 
 
 class TerminalConsole(QPlainTextEdit):

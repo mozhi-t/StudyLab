@@ -4,8 +4,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, SingleDirectionScrollArea, StrongBodyLabel
 
-from ui.widgets.answer_card import QuestionStatusCard
-from ui.widgets.styled_card import StyledCardWidget
+from ui.widgets.base import QuestionStatusCard, StyledCardWidget
 
 
 class PythonAnswerCard(StyledCardWidget):

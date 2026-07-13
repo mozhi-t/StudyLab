@@ -4,13 +4,6 @@ from dataclasses import dataclass, field
 
 
 @dataclass
-class BankMeta:
-    name: str
-    subject: str
-    create_time: str
-
-
-@dataclass
 class QuestionItem:
     id: int
     question: str

@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QPlainTextEdit, QVBoxLayout, QWidget
 from qfluentwidgets import PrimaryPushButton, StrongBodyLabel
 
-from ui.widgets.styled_card import StyledCardWidget
+from ui.widgets.base import StyledCardWidget
 
 
 class PythonQuestionView(StyledCardWidget):

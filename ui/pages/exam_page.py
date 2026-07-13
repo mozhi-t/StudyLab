@@ -10,13 +10,11 @@ from PyQt6.QtWidgets import QFrame, QHBoxLayout, QStackedWidget, QVBoxLayout, QW
 from qfluentwidgets import BodyLabel, InfoBar, InfoBarPosition, Pivot, PrimaryPushButton, SingleDirectionScrollArea, StateToolTip, SubtitleLabel, LineEdit
 
 from answer.lan_exam_window import LanExamWindow
-from core.datetime_utils import format_datetime
-from core.lan_exam_client import LanExamClientThread
-from core.lan_exam_store import LanExamStore
+from core.base.datetime_utils import format_datetime
+from core.lan_exam import LanExamClientThread, LanExamStore
 from ui.styles.title_style import apply_page_title_style
-from ui.widgets.lan_exam_dialogs import ExamPasswordDialog, LanExamAuthDialog, LoadingMessageDialog
-from ui.widgets.question_card import QuestionCard
-from ui.widgets.styled_card import StyledCardWidget
+from ui.widgets.base import QuestionCard, StyledCardWidget
+from ui.widgets.lan_exam import ExamPasswordDialog, LanExamAuthDialog, LoadingMessageDialog
 
 
 def local_ip() -> str:

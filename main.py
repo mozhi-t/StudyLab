@@ -5,18 +5,20 @@ import sys
 from PyQt6.QtWidgets import QApplication
 
 from config.theme import apply_theme, apply_ui_scale
-from core.data_manager import bootstrap_app
-from core.errors import AppError, install_exception_hook
-from core.favorite_manager import FavoriteManager
-from core.question_index import QuestionIndexManager
-from core.user_data import UserDataManager
-from core.wrong_manager import WrongManager
+from core.base import (
+    FavoriteManager,
+    QuestionIndexManager,
+    UserDataManager,
+    WrongManager,
+    initialize_app,
+)
+from core.base.errors import AppError, install_exception_hook
 from ui.main_window import MainWindow
 
 
 def main() -> int:
     install_exception_hook()
-    database = bootstrap_app()
+    database = initialize_app()
 
     apply_ui_scale()
     app = QApplication(sys.argv)

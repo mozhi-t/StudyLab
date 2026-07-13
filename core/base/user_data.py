@@ -4,11 +4,10 @@ import sqlite3
 from datetime import date, datetime
 
 from config.settings import SUBJECTS
-from core.database import DatabaseManager
-from core.datetime_utils import format_date, now_text, parse_date, parse_datetime
-from core.errors import raise_app_error
-from models.study import DailyStudyStats, ScoreResult, StudySession, SubjectAbility
-from models.user import User
+from core.base.database import DatabaseManager
+from core.base.datetime_utils import format_date, now_text, parse_date, parse_datetime
+from core.base.errors import raise_app_error
+from models.base import DailyStudyStats, ScoreResult, StudySession, SubjectAbility, User
 
 
 class UserDataManager:

@@ -6,11 +6,9 @@ from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PipsPager, PipsScrollB
 
 from config.settings import SUBJECTS
 from ui.styles.title_style import apply_page_title_style
-from ui.widgets.question_card import QuestionCard
-from ui.widgets.question_detail_dialog import QuestionDetailDialog
+from ui.widgets.base import QuestionCard, StyledCardWidget, show_favorite_tip
+from ui.widgets.choice import QuestionDetailDialog
 from ui.widgets.python.record_detail_dialog import PythonFavoriteDetailDialog
-from ui.widgets.favorite_tip import show_favorite_tip
-from ui.widgets.styled_card import StyledCardWidget
 
 
 class FavoritePage(QWidget):

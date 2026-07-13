@@ -6,7 +6,7 @@ from qfluentwidgets import BodyLabel, PushButton, SingleDirectionScrollArea, Str
 
 from models.python.grading import JudgeDetail, PythonJudgeResult
 from models.python.question import PythonQuestion
-from ui.widgets.styled_card import StyledCardWidget
+from ui.widgets.base import StyledCardWidget
 
 
 class JudgePointRow(BodyLabel):

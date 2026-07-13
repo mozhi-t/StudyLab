@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 from config.settings import LAN_EXAM_DIR
-from core.json_store import JsonStore
+from core.base.json_store import JsonStore
 
 
 class LanExamStore:

@@ -8,15 +8,14 @@ from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QStackedWidget, QVBoxLayo
 from qfluentwidgets import BodyLabel, MessageBox, Pivot, PrimaryPushButton, PushButton, StrongBodyLabel, isDarkTheme
 
 from answer.answer_window import AnswerWindow
-from answer.choice_answer import OptionCard
+from ui.widgets.choice import AnswerCard, OptionCard
 from answer.lan_exam_review_window import LanExamReviewWindow
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE, SUBJECTS
-from core.datetime_utils import parse_datetime
-from core.json_store import JsonStore
-from core.lan_exam_store import LanExamStore
-from models.wrong_question import WrongQuestion
-from ui.widgets.answer_card import AnswerCard
-from ui.widgets.styled_card import StyledCardWidget
+from core.base.datetime_utils import parse_datetime
+from core.base.json_store import JsonStore
+from core.lan_exam import LanExamStore
+from models.base import WrongQuestion
+from ui.widgets.base import StyledCardWidget
 
 
 class SubjectExamPage(QWidget):

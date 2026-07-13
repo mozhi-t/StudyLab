@@ -5,8 +5,8 @@ from PyQt6.QtWidgets import QWidget
 from qfluentwidgets import InfoBar, InfoBarPosition
 
 from config.settings import APP_SETTINGS_TEMPLATE
-from core.json_store import JsonStore
-from ui.widgets.eye_care_dialog import EyeCareDialog
+from core.base.json_store import JsonStore
+from ui.widgets.base.dialogs.eye_care_dialog import EyeCareDialog
 
 
 class EyeCareReminder(QObject):

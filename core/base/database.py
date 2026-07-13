@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Iterator
 
 from config.settings import DATABASE_FILE, SUBJECTS
-from core.datetime_utils import now_text
-from core.errors import raise_app_error
+from core.base.datetime_utils import now_text
+from core.base.errors import raise_app_error
 
 
 class DatabaseManager:

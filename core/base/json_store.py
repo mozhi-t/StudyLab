@@ -4,7 +4,7 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
-from core.errors import raise_app_error
+from core.base.errors import raise_app_error
 
 
 class JsonStore:

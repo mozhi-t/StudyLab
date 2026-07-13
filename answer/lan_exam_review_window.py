@@ -6,11 +6,10 @@ from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QStackedWidget, QVBoxLayo
 from qfluentwidgets import BodyLabel, FluentIcon, Pivot, PrimaryPushButton, PushButton, StrongBodyLabel, TeachingTip, TeachingTipTailPosition, isDarkTheme
 
 from answer.answer_window import AnswerWindow
-from answer.choice_answer import OptionCard
+from ui.widgets.choice import AnswerCard, OptionCard
 from config.settings import SUBJECTS
-from models.favorite_question import FavoriteQuestion
-from ui.widgets.answer_card import AnswerCard
-from ui.widgets.styled_card import StyledCardWidget
+from models.base import FavoriteQuestion
+from ui.widgets.base import StyledCardWidget
 
 
 class SubjectReviewPage(QWidget):

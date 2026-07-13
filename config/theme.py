@@ -6,7 +6,7 @@ import re
 from PyQt6.QtGui import QColor
 from qfluentwidgets import Theme, setTheme, setThemeColor
 
-from core.json_store import JsonStore
+from core.base.json_store import JsonStore
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
 
 
