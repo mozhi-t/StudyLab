@@ -300,9 +300,9 @@ class HomePage(QWidget):
     METRICS = (
         ("total_days", "累计学习天数"),
         ("total_questions", "累计刷题数"),
-        ("continuous_days", "连续刷题天数"),
+        ("continuous_days", "连续学习天数"),
         ("today_questions", "今日刷题数"),
-        ("today_time", "今日刷题时间"),
+        ("today_time", "今日学习时间"),
         ("today_accuracy", "今日刷题正确率"),
     )
 
