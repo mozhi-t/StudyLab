@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QKeyEvent, QTextCursor
+from PyQt6.QtGui import QColor, QKeyEvent, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import QPlainTextEdit, QVBoxLayout, QWidget
-from qfluentwidgets import StrongBodyLabel
+from qfluentwidgets import StrongBodyLabel, isDarkTheme
 
 from ui.widgets.styled_card import StyledCardWidget
 
@@ -23,17 +23,40 @@ class TerminalConsole(QPlainTextEdit):
         self.clear()
         self.input_start = 0
         self.setReadOnly(False)
+        self.setCurrentCharFormat(self._input_text_format())
         self.setFocus()
 
     def append_program_output(self, text: str) -> None:
+        self._append_program_text(text, is_error=False)
+
+    def append_program_error(self, text: str) -> None:
+        self._append_program_text(text, is_error=True)
+
+    def _append_program_text(self, text: str, is_error: bool) -> None:
         if not text:
             return
         cursor = self.textCursor()
         cursor.movePosition(QTextCursor.MoveOperation.End)
-        cursor.insertText(text)
+        cursor.insertText(text, self._error_text_format() if is_error else self._output_text_format())
         self.setTextCursor(cursor)
         self.input_start = cursor.position()
+        if not self.isReadOnly():
+            self.setCurrentCharFormat(self._input_text_format())
         self.ensureCursorVisible()
+
+    def _input_text_format(self) -> QTextCharFormat:
+        return self._text_format("#65c98b" if isDarkTheme() else "#006b3c")
+
+    def _error_text_format(self) -> QTextCharFormat:
+        return self._text_format("#ff6b6b" if isDarkTheme() else "#c42b1c")
+
+    def _output_text_format(self) -> QTextCharFormat:
+        return self._text_format("#f0f0f0" if isDarkTheme() else "#202020")
+
+    def _text_format(self, color: str) -> QTextCharFormat:
+        text_format = QTextCharFormat()
+        text_format.setForeground(QColor(color))
+        return text_format
 
     def finish(self) -> None:
         self.setReadOnly(True)
@@ -59,7 +82,9 @@ class TerminalConsole(QPlainTextEdit):
             self.input_start = end_cursor.position()
             self.input_submitted.emit(value + "\n")
             return
+        self.setCurrentCharFormat(self._input_text_format())
         super().keyPressEvent(event)
+        self.setCurrentCharFormat(self._input_text_format())
 
 
 class PythonResultCard(StyledCardWidget):

@@ -190,9 +190,11 @@ class PythonAnswerWindow(AnswerWindow):
         if route_key == "pycharm":
             self._save_editor()
             self.page_stack.setCurrentWidget(self.question_view)
+            self.result_card.hide()
         else:
             self._reload_editor_from_disk()
             self.page_stack.setCurrentWidget(self.editor_card)
+            self.result_card.show()
 
     def render_question(self) -> None:
         question = self.current_question
@@ -350,7 +352,9 @@ class PythonAnswerWindow(AnswerWindow):
         self.result_card.console.append_program_output(bytes(self.run_process.readAllStandardOutput()).decode("utf-8", "replace"))
 
     def _read_run_stderr(self) -> None:
-        self.result_card.console.append_program_output(bytes(self.run_process.readAllStandardError()).decode("utf-8", "replace"))
+        self.result_card.console.append_program_error(
+            bytes(self.run_process.readAllStandardError()).decode("utf-8", "replace")
+        )
 
     def _write_run_input(self, value: str) -> None:
         if self.run_process.state() != QProcess.ProcessState.NotRunning:
