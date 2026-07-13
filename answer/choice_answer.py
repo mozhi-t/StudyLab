@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QSizePolicy, QVBoxLayout,
 from qfluentwidgets import (
     BodyLabel,
     CaptionLabel,
+    ComboBox,
     FluentIcon,
     PrimaryPushButton,
     ProgressRing,
@@ -104,6 +105,11 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.shuffle_options = bool(choice_settings["shuffle_options"])
         self.auto_next = bool(choice_settings["auto_next"])
         self.study_mode = bool(choice_settings["study_mode"])
+        try:
+            font_size = max(12, min(24, int(choice_settings["question_font_size"])))
+            self.question_font_size = 12 + ((font_size - 12 + 1) // 2) * 2
+        except (TypeError, ValueError):
+            self.question_font_size = APP_SETTINGS_TEMPLATE["choice_answer"]["question_font_size"]
         self.current_index = 0
         self.selected_answers: dict[int, str] = {}
         self.answer_results: dict[int, bool] = {}
@@ -155,7 +161,7 @@ class ChoiceAnswerWindow(AnswerWindow):
 
         self.question_label = StrongBodyLabel("", self)
         question_font = QFont(self.question_label.font())
-        question_font.setPointSize(12)
+        question_font.setPixelSize(self.question_font_size)
         question_font.setBold(False)
         self.question_label.setFont(question_font)
         self.question_label.setWordWrap(True)
@@ -236,15 +242,19 @@ class ChoiceAnswerWindow(AnswerWindow):
         study_row, self.study_mode_switch = self._create_switch_row(
             "背题模式", self.study_mode, self.settings_card
         )
+        font_size_row, self.question_font_size_combo = self._create_font_size_row(self.settings_card)
         settings_layout.addWidget(shuffle_row)
         settings_layout.addWidget(self._create_horizontal_divider(self.settings_card))
         settings_layout.addWidget(auto_next_row)
         settings_layout.addWidget(self._create_horizontal_divider(self.settings_card))
         settings_layout.addWidget(study_row)
+        settings_layout.addWidget(self._create_horizontal_divider(self.settings_card))
+        settings_layout.addWidget(font_size_row)
 
         self.shuffle_switch.checkedChanged.connect(self._on_shuffle_options_changed)
         self.auto_next_switch.checkedChanged.connect(self._on_auto_next_changed)
         self.study_mode_switch.checkedChanged.connect(self._on_study_mode_changed)
+        self.question_font_size_combo.currentIndexChanged.connect(self._on_question_font_size_changed)
         sidebar_layout.addWidget(self.settings_card)
         sidebar_layout.addStretch(1)
         body.addWidget(sidebar, 0, Qt.AlignmentFlag.AlignTop)
@@ -321,6 +331,21 @@ class ChoiceAnswerWindow(AnswerWindow):
         switch.setChecked(checked)
         layout.addWidget(switch, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         return row, switch
+
+    def _create_font_size_row(self, parent: QWidget) -> tuple[QWidget, ComboBox]:
+        row = QWidget(parent)
+        row.setFixedHeight(48)
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        layout.addWidget(BodyLabel("题目字号", row), 1)
+        combo = ComboBox(row)
+        for size in range(12, 25, 2):
+            combo.addItem(f"{size} px", userData=size)
+        combo.setCurrentIndex(combo.findData(self.question_font_size))
+        combo.setFixedWidth(88)
+        layout.addWidget(combo, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        return row, combo
 
     def _create_horizontal_divider(self, parent: QWidget) -> QWidget:
         divider = QWidget(parent)
@@ -489,7 +514,7 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.wrong_value_label.setText(str(wrong_count))
         self.score_value_label.setText(f"{correct_count} 分")
 
-    def _save_choice_setting(self, key: str, value: bool) -> None:
+    def _save_choice_setting(self, key: str, value: bool | int) -> None:
         self.settings.setdefault("choice_answer", {})[key] = value
         self.settings_store.save(self.settings)
 
@@ -506,6 +531,16 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.study_mode = checked
         self._save_choice_setting("study_mode", checked)
         self.render_question()
+
+    def _on_question_font_size_changed(self, index: int) -> None:
+        value = self.question_font_size_combo.itemData(index)
+        if value is None:
+            return
+        self.question_font_size = value
+        question_font = QFont(self.question_label.font())
+        question_font.setPixelSize(value)
+        self.question_label.setFont(question_font)
+        self._save_choice_setting("question_font_size", value)
 
     def _sync_favorite_button(self) -> None:
         self.favorite_button.setText("已收藏" if self._is_current_favorite() else "收藏题目")

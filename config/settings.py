@@ -55,6 +55,7 @@ APP_SETTINGS_TEMPLATE = {
         "shuffle_options": False,
         "auto_next": True,
         "study_mode": False,
+        "question_font_size": 12,
     },
     "eye_care": {
         "enabled": True,
