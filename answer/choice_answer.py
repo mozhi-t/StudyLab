@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import random
+
 from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QColor, QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import QButtonGroup, QHBoxLayout, QSizePolicy, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
+    CaptionLabel,
     FluentIcon,
     PrimaryPushButton,
+    ProgressRing,
     PushButton,
     RadioButton,
     StrongBodyLabel,
+    SwitchButton,
     TeachingTip,
     TeachingTipTailPosition,
     isDarkTheme,
@@ -93,16 +98,24 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.user_manager = user_manager
         self.wrong_manager = wrong_manager
         self.favorite_manager = favorite_manager
-        self.settings = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE).load()
+        self.settings_store = JsonStore(APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE)
+        self.settings = self.settings_store.load()
+        choice_settings = APP_SETTINGS_TEMPLATE["choice_answer"] | self.settings.get("choice_answer", {})
+        self.shuffle_options = bool(choice_settings["shuffle_options"])
+        self.auto_next = bool(choice_settings["auto_next"])
+        self.study_mode = bool(choice_settings["study_mode"])
         self.current_index = 0
         self.selected_answers: dict[int, str] = {}
         self.answer_results: dict[int, bool] = {}
         self.option_cards: dict[str, OptionCard] = {}
+        self.option_orders: dict[int, list[str]] = {}
+        self.displayed_options: dict[str, str] = {}
         self.study_session_id: int | None = None
 
         self.setWindowTitle(question_bank.name)
         self.setWindowFlag(Qt.WindowType.Window, True)
-        self.resize(1040, 660)
+        self.resize(1320, 720)
+        self.setMinimumSize(1120, 680)
         self.setObjectName("choiceAnswerWindow")
 
         root = QVBoxLayout(self)
@@ -152,7 +165,7 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.option_group.setExclusive(True)
         for key in ["A", "B", "C", "D"]:
             option_card = OptionCard(key, self)
-            option_card.button.clicked.connect(lambda checked=False, option=key: self.submit_answer(option))
+            option_card.button.clicked.connect(lambda checked=False, slot=key: self.submit_display_answer(slot))
             self.option_group.addButton(option_card.button)
             self.option_cards[key] = option_card
             right.addWidget(option_card)
@@ -166,6 +179,75 @@ class ChoiceAnswerWindow(AnswerWindow):
         right.addWidget(self.explanation_label)
         right.addStretch(1)
         body.addWidget(self.content_card, 1)
+
+        self.details_divider = QWidget(self)
+        self.details_divider.setFixedWidth(1)
+        self.details_divider.setStyleSheet("background-color: rgba(128, 128, 128, 0.35);")
+        body.addWidget(self.details_divider)
+
+        sidebar = QWidget(self)
+        sidebar.setFixedWidth(276)
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_layout.setSpacing(12)
+
+        self.details_card = StyledCardWidget(sidebar, radius=16, light_border_alpha=34)
+        details_layout = QVBoxLayout(self.details_card)
+        details_layout.setContentsMargins(18, 16, 18, 16)
+        details_layout.setSpacing(8)
+        details_layout.addWidget(StrongBodyLabel("答题详情", self.details_card))
+
+        accuracy_title = BodyLabel("答题正确率", self.details_card)
+        accuracy_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        details_layout.addWidget(accuracy_title)
+
+        self.accuracy_ring = ProgressRing(self.details_card)
+        self.accuracy_ring.setRange(0, 100)
+        self.accuracy_ring.setValue(0)
+        self.accuracy_ring.setTextVisible(True)
+        self.accuracy_ring.setFixedSize(106, 106)
+        details_layout.addWidget(self.accuracy_ring, 0, Qt.AlignmentFlag.AlignCenter)
+
+        stats_layout = QHBoxLayout()
+        stats_layout.setContentsMargins(0, 4, 0, 0)
+        stats_layout.setSpacing(4)
+        correct_stat, self.correct_value_label = self._create_stat("答对", "0", self.details_card)
+        wrong_stat, self.wrong_value_label = self._create_stat("答错", "0", self.details_card)
+        score_stat, self.score_value_label = self._create_stat("本次得分", "0 分", self.details_card)
+        stats_layout.addWidget(correct_stat, 1)
+        stats_layout.addWidget(wrong_stat, 1)
+        stats_layout.addWidget(score_stat, 1)
+        details_layout.addLayout(stats_layout)
+        sidebar_layout.addWidget(self.details_card)
+
+        self.settings_card = StyledCardWidget(sidebar, radius=16, light_border_alpha=34)
+        settings_layout = QVBoxLayout(self.settings_card)
+        settings_layout.setContentsMargins(18, 16, 18, 16)
+        settings_layout.setSpacing(0)
+        settings_layout.addWidget(StrongBodyLabel("答题设置", self.settings_card))
+        settings_layout.addSpacing(8)
+
+        shuffle_row, self.shuffle_switch = self._create_switch_row(
+            "打乱选项顺序", self.shuffle_options, self.settings_card
+        )
+        auto_next_row, self.auto_next_switch = self._create_switch_row(
+            "答对后自动切换下一题", self.auto_next, self.settings_card
+        )
+        study_row, self.study_mode_switch = self._create_switch_row(
+            "背题模式", self.study_mode, self.settings_card
+        )
+        settings_layout.addWidget(shuffle_row)
+        settings_layout.addWidget(self._create_horizontal_divider(self.settings_card))
+        settings_layout.addWidget(auto_next_row)
+        settings_layout.addWidget(self._create_horizontal_divider(self.settings_card))
+        settings_layout.addWidget(study_row)
+
+        self.shuffle_switch.checkedChanged.connect(self._on_shuffle_options_changed)
+        self.auto_next_switch.checkedChanged.connect(self._on_auto_next_changed)
+        self.study_mode_switch.checkedChanged.connect(self._on_study_mode_changed)
+        sidebar_layout.addWidget(self.settings_card)
+        sidebar_layout.addStretch(1)
+        body.addWidget(sidebar, 0, Qt.AlignmentFlag.AlignTop)
         root.addLayout(body, 1)
 
         nav = QHBoxLayout()
@@ -213,10 +295,45 @@ class ChoiceAnswerWindow(AnswerWindow):
     def current_question(self) -> QuestionItem:
         return self.question_bank.questions[self.current_index]
 
+    def _create_stat(self, title: str, value: str, parent: QWidget) -> tuple[QWidget, StrongBodyLabel]:
+        widget = QWidget(parent)
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(1)
+        value_label = StrongBodyLabel(value, widget)
+        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title_label = CaptionLabel(title, widget)
+        title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(value_label)
+        layout.addWidget(title_label)
+        return widget, value_label
+
+    def _create_switch_row(self, title: str, checked: bool, parent: QWidget) -> tuple[QWidget, SwitchButton]:
+        row = QWidget(parent)
+        row.setFixedHeight(48)
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        layout.addWidget(BodyLabel(title, row), 1)
+        switch = SwitchButton(row)
+        switch.setOnText("")
+        switch.setOffText("")
+        switch.setChecked(checked)
+        layout.addWidget(switch, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        return row, switch
+
+    def _create_horizontal_divider(self, parent: QWidget) -> QWidget:
+        divider = QWidget(parent)
+        divider.setFixedHeight(1)
+        divider.setStyleSheet("background-color: rgba(128, 128, 128, 0.24);")
+        return divider
+
     def render_question(self):
         question = self.current_question
         selected_option = self.selected_answers.get(self.current_index)
         answered = selected_option is not None
+        option_order = self._current_option_order()
+        self.displayed_options.clear()
 
         self.question_label.setText(f"{question.id}. {question.question}")
 
@@ -225,14 +342,28 @@ class ChoiceAnswerWindow(AnswerWindow):
             button.setChecked(False)
         self.option_group.setExclusive(True)
 
-        for key, option_card in self.option_cards.items():
-            option_card.set_option_text(f"{key}. {question.options.get(key, '')}")
-            option_card.set_checked(selected_option == key)
-            option_card.set_enabled(not answered)
-            option_card.set_state(self._option_state(key, selected_option, question.answer))
+        for position, (slot, option_card) in enumerate(self.option_cards.items()):
+            if position >= len(option_order):
+                option_card.hide()
+                continue
+            actual_key = option_order[position]
+            self.displayed_options[slot] = actual_key
+            option_card.show()
+            option_card.set_option_text(f"{slot}. {question.options.get(actual_key, '')}")
+            option_card.set_checked(selected_option == actual_key)
+            option_card.set_enabled(not answered and not self.study_mode)
+            if self.study_mode and not answered:
+                state = "correct" if actual_key == question.answer else "default"
+            else:
+                state = self._option_state(actual_key, selected_option, question.answer)
+            option_card.set_state(state)
 
-        if answered:
-            self.answer_label.setText(f"正确答案：{question.answer}")
+        if answered or self.study_mode:
+            display_answer = next(
+                (slot for slot, actual_key in self.displayed_options.items() if actual_key == question.answer),
+                question.answer,
+            )
+            self.answer_label.setText(f"正确答案：{display_answer}")
             self.explanation_label.setText(f"解析：{question.explanation}")
             self.answer_label.show()
             self.explanation_label.show()
@@ -241,15 +372,22 @@ class ChoiceAnswerWindow(AnswerWindow):
             self.explanation_label.hide()
 
         self.answer_card.update_status(self.answer_results, self.current_index)
+        self._update_answer_details()
         self.prev_button.setEnabled(self.current_index > 0)
         self.next_button.setEnabled(self.current_index < len(self.question_bank.questions) - 1)
         self._sync_favorite_button()
 
+    def submit_display_answer(self, slot: str) -> None:
+        selected = self.displayed_options.get(slot)
+        if selected is not None:
+            self.submit_answer(selected)
+
     def submit_answer(self, selected: str):
-        if self.current_index in self.selected_answers:
+        if self.study_mode or self.current_index in self.selected_answers:
             return
 
         question = self.current_question
+        answered_index = self.current_index
         self.selected_answers[self.current_index] = selected
         is_correct = selected == question.answer
         self.answer_results[self.current_index] = is_correct
@@ -264,10 +402,11 @@ class ChoiceAnswerWindow(AnswerWindow):
 
         self.render_question()
 
-        if is_correct:
-            QTimer.singleShot(1000, self._auto_next)
+        if is_correct and self.auto_next:
+            QTimer.singleShot(1000, lambda index=answered_index: self._auto_next(index))
         else:
-            self.wrong_manager.add_wrong(self._build_wrong(question))
+            if not is_correct:
+                self.wrong_manager.add_wrong(self._build_wrong(question))
 
     def favorite_current_question(self):
         is_favorite = self.favorite_manager.toggle_favorite(self._build_favorite(self.current_question))
@@ -311,6 +450,7 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.current_index = 0
         self.selected_answers.clear()
         self.answer_results.clear()
+        self.option_orders.clear()
         self.render_question()
 
     def _init_shortcuts(self) -> None:
@@ -320,11 +460,52 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.next_shortcut = QShortcut(QKeySequence(shortcuts.get("next_question", "2")), self)
         self.next_shortcut.activated.connect(self.next_question)
 
-    def _auto_next(self):
-        if self.current_index in self.answer_results and self.answer_results[self.current_index]:
-            if self.current_index < len(self.question_bank.questions) - 1:
-                self.current_index += 1
-                self.render_question()
+    def _auto_next(self, answered_index: int):
+        if not self.auto_next or self.current_index != answered_index:
+            return
+        if self.answer_results.get(answered_index) and answered_index < len(self.question_bank.questions) - 1:
+            self.current_index += 1
+            self.render_question()
+
+    def _current_option_order(self) -> list[str]:
+        option_keys = [key for key in ("A", "B", "C", "D") if key in self.current_question.options]
+        if not self.shuffle_options:
+            return option_keys
+        if self.current_index not in self.option_orders:
+            shuffled = option_keys.copy()
+            random.shuffle(shuffled)
+            if len(shuffled) > 1 and shuffled == option_keys:
+                shuffled = shuffled[1:] + shuffled[:1]
+            self.option_orders[self.current_index] = shuffled
+        return self.option_orders[self.current_index]
+
+    def _update_answer_details(self) -> None:
+        correct_count = sum(1 for result in self.answer_results.values() if result)
+        wrong_count = len(self.answer_results) - correct_count
+        answered_count = len(self.answer_results)
+        accuracy = round(correct_count / answered_count * 100) if answered_count else 0
+        self.accuracy_ring.setValue(accuracy)
+        self.correct_value_label.setText(str(correct_count))
+        self.wrong_value_label.setText(str(wrong_count))
+        self.score_value_label.setText(f"{correct_count} 分")
+
+    def _save_choice_setting(self, key: str, value: bool) -> None:
+        self.settings.setdefault("choice_answer", {})[key] = value
+        self.settings_store.save(self.settings)
+
+    def _on_shuffle_options_changed(self, checked: bool) -> None:
+        self.shuffle_options = checked
+        self._save_choice_setting("shuffle_options", checked)
+        self.render_question()
+
+    def _on_auto_next_changed(self, checked: bool) -> None:
+        self.auto_next = checked
+        self._save_choice_setting("auto_next", checked)
+
+    def _on_study_mode_changed(self, checked: bool) -> None:
+        self.study_mode = checked
+        self._save_choice_setting("study_mode", checked)
+        self.render_question()
 
     def _sync_favorite_button(self) -> None:
         self.favorite_button.setText("已收藏" if self._is_current_favorite() else "收藏题目")

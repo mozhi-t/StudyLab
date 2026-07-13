@@ -51,6 +51,11 @@ APP_SETTINGS_TEMPLATE = {
         "next_question": "2",
         "mark_question": "3",
     },
+    "choice_answer": {
+        "shuffle_options": False,
+        "auto_next": True,
+        "study_mode": False,
+    },
     "eye_care": {
         "enabled": True,
         "interval_minutes": 20,

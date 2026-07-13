@@ -28,5 +28,9 @@
     "pycharm_install_dir": "D:\\Program Files\\PyCharm Community Edition 2024.3.2",
     "remind_save_before_run": true
   },
-  "mica_enabled": false
+  "mica_enabled": false,
+  "choice_answer": {
+    "study_mode": false,
+    "shuffle_options": false
+  }
 }
