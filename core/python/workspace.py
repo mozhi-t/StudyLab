@@ -60,6 +60,16 @@ def split_template(source: str) -> tuple[str, str, str]:
     return before, program, after
 
 
+def fill_template(template: str, program: str) -> str:
+    before, _template_program, after = split_template(template)
+    program = program.strip("\r\n")
+    return (
+        f"{before}{PROGRAM_MARKER}\n"
+        f"{program}\n"
+        f"{END_MARKER}{after}"
+    )
+
+
 def validate_template(template: str, submitted: str) -> tuple[bool, str]:
     try:
         template_before, _template_program, template_after = split_template(template)

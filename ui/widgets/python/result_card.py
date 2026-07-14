@@ -16,7 +16,7 @@ class TerminalConsole(QPlainTextEdit):
         self.input_start = 0
         self.setUndoRedoEnabled(False)
         self.setStyleSheet(
-            "QPlainTextEdit{font-family: Consolas; font-size: 13px; background: transparent; border: none;}"
+            "QPlainTextEdit{font-family: Consolas; font-size: 14px; background: transparent; border: none;}"
         )
 
     def begin(self) -> None:
@@ -94,6 +94,9 @@ class PythonResultCard(StyledCardWidget):
         layout.setContentsMargins(16, 14, 16, 14)
         layout.setSpacing(8)
         self.title = StrongBodyLabel("运行结果", self)
+        title_font = self.title.font()
+        title_font.setPixelSize(title_font.pixelSize() + 1)
+        self.title.setFont(title_font)
         self.console = TerminalConsole(self)
         self.console.setReadOnly(True)
         self.console.setPlaceholderText("点击“运行”后，程序输出和输入将在这里显示")

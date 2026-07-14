@@ -1,12 +1,56 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QTimer, Qt, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPlainTextEdit, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, PushButton, SingleDirectionScrollArea, StrongBodyLabel
+from PyQt6.QtGui import QColor, QTextCharFormat, QTextCursor
+from PyQt6.QtWidgets import QDialog, QFrame, QHBoxLayout, QPlainTextEdit, QTextEdit, QVBoxLayout, QWidget
+from qfluentwidgets import BodyLabel, PrimaryPushButton, PushButton, SingleDirectionScrollArea, StrongBodyLabel
 
+from core.python.workspace import PROGRAM_MARKER, fill_template
 from models.python.grading import JudgeDetail, PythonJudgeResult
 from models.python.question import PythonQuestion
 from ui.widgets.base import StyledCardWidget
+
+
+class PythonStandardAnswerDialog(QDialog):
+    def __init__(self, question: PythonQuestion, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setWindowTitle(f"第 {question.id} 题 - 标准答案")
+        self.resize(760, 560)
+        self.setMinimumSize(620, 420)
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(18, 16, 18, 18)
+        root.setSpacing(12)
+        root.addWidget(StrongBodyLabel(f"第 {question.id} 题　标准答案", self))
+
+        answer_card = StyledCardWidget(self, radius=14, light_border_alpha=34)
+        answer_layout = QVBoxLayout(answer_card)
+        answer_layout.setContentsMargins(14, 12, 14, 12)
+        self.answer_view = QPlainTextEdit(answer_card)
+        self.answer_view.setReadOnly(True)
+        self.answer_view.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        source = fill_template(question.code, question.answer)
+        self.answer_view.setPlainText(source)
+        self.answer_view.setStyleSheet(
+            "QPlainTextEdit{font-family: Consolas; font-size: 13px; background: transparent; border: none;}"
+        )
+        self._highlight_answer(source, question.answer.strip("\r\n"))
+        answer_layout.addWidget(self.answer_view)
+        root.addWidget(answer_card, 1)
+
+    def _highlight_answer(self, source: str, answer: str) -> None:
+        if not answer:
+            return
+        answer_start = source.index(PROGRAM_MARKER) + len(PROGRAM_MARKER) + 1
+        cursor = QTextCursor(self.answer_view.document())
+        cursor.setPosition(answer_start)
+        cursor.setPosition(answer_start + len(answer), QTextCursor.MoveMode.KeepAnchor)
+        answer_format = QTextCharFormat()
+        answer_format.setForeground(QColor(18, 148, 78))
+        selection = QTextEdit.ExtraSelection()
+        selection.cursor = cursor
+        selection.format = answer_format
+        self.answer_view.setExtraSelections([selection])
 
 
 class JudgePointRow(BodyLabel):
@@ -57,9 +101,15 @@ class PythonJudgeDetailWindow(QWidget):
         title_row = QHBoxLayout()
         self.title = StrongBodyLabel(f"第 {question.id} 题　判分详情", self)
         title_row.addWidget(self.title, 1)
+        action_layout = QVBoxLayout()
+        action_layout.setSpacing(8)
         self.favorite_button = PushButton("收藏题目", self)
         self.favorite_button.clicked.connect(self.favorite_requested)
-        title_row.addWidget(self.favorite_button)
+        self.answer_button = PrimaryPushButton("查看答案", self)
+        self.answer_button.clicked.connect(self.show_standard_answer)
+        action_layout.addWidget(self.favorite_button)
+        action_layout.addWidget(self.answer_button)
+        title_row.addLayout(action_layout)
         root.addLayout(title_row)
         self.subtitle = BodyLabel("准备检查...", self)
         root.addWidget(self.subtitle)
@@ -102,6 +152,9 @@ class PythonJudgeDetailWindow(QWidget):
 
     def set_favorite(self, favorite: bool) -> None:
         self.favorite_button.setText("已收藏" if favorite else "收藏题目")
+
+    def show_standard_answer(self) -> None:
+        PythonStandardAnswerDialog(self.question, self).exec()
 
     def begin_checking(self) -> None:
         self.current_point = 0
