@@ -7,10 +7,11 @@ from models.python.question import (
     OutputTestCase,
     PythonQuestion,
     PythonQuestionBank,
+    TemplateIntegrityPoint,
 )
 
 __all__ = [
     "CodeFeaturePoint", "CodeFeatureRule", "ExecutionPoint", "JudgeDetail",
     "OutputPoint", "OutputTestCase", "PythonJudgeResult", "PythonQuestion",
-    "PythonQuestionBank", "RunResult",
+    "PythonQuestionBank", "RunResult", "TemplateIntegrityPoint",
 ]

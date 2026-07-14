@@ -7,7 +7,7 @@ from qfluentwidgets import BodyLabel, PrimaryPushButton, PushButton, SingleDirec
 
 from core.python.workspace import PROGRAM_MARKER, fill_template
 from models.python.grading import JudgeDetail, PythonJudgeResult
-from models.python.question import PythonQuestion
+from models.python.question import ExecutionPoint, PythonQuestion, SYNTAX_CHECK_NAME, TemplateIntegrityPoint
 from ui.widgets.base import StyledCardWidget
 
 
@@ -62,10 +62,11 @@ class JudgePointRow(BodyLabel):
     }
     ICONS = {"pending": "○", "checking": "●", "passed": "✓", "failed": "✕"}
 
-    def __init__(self, point_id: str, name: str, parent: QWidget | None = None):
+    def __init__(self, point_id: str, name: str, indent: int = 0, parent: QWidget | None = None):
         super().__init__(parent)
         self.point_id = point_id
         self.name = name
+        self.indent = indent
         self.setWordWrap(True)
         self.set_status("pending")
 
@@ -74,11 +75,15 @@ class JudgePointRow(BodyLabel):
         if status == "checking":
             suffix = "正在检查..."
         elif detail is not None:
-            suffix = f"{detail.earned:g}/{detail.possible:g}　{detail.message}"
+            suffix = f"{detail.earned:g}/{detail.possible:g}"
+            if detail.message:
+                suffix += f"　{detail.message}"
         elif message:
             suffix = message
         self.setText(f"{self.ICONS[status]}  {self.name}　{suffix}")
-        self.setStyleSheet(f"color: {self.COLORS[status]}; font-weight: 600;")
+        self.setStyleSheet(
+            f"color: {self.COLORS[status]}; font-weight: 600; padding-left: {self.indent}px;"
+        )
 
 
 class PythonJudgeDetailWindow(QWidget):
@@ -99,20 +104,20 @@ class PythonJudgeDetailWindow(QWidget):
         root.setContentsMargins(18, 16, 18, 18)
         root.setSpacing(12)
         title_row = QHBoxLayout()
-        self.title = StrongBodyLabel(f"第 {question.id} 题　判分详情", self)
-        title_row.addWidget(self.title, 1)
-        action_layout = QVBoxLayout()
-        action_layout.setSpacing(8)
         self.favorite_button = PushButton("收藏题目", self)
         self.favorite_button.clicked.connect(self.favorite_requested)
+        self.title = StrongBodyLabel(f"第 {question.id} 题　判分详情", self)
+        title_row.addWidget(self.title, 1)
+        title_row.addWidget(self.favorite_button)
+        root.addLayout(title_row)
+
+        result_row = QHBoxLayout()
+        self.subtitle = BodyLabel("准备检查...", self)
         self.answer_button = PrimaryPushButton("查看答案", self)
         self.answer_button.clicked.connect(self.show_standard_answer)
-        action_layout.addWidget(self.favorite_button)
-        action_layout.addWidget(self.answer_button)
-        title_row.addLayout(action_layout)
-        root.addLayout(title_row)
-        self.subtitle = BodyLabel("准备检查...", self)
-        root.addWidget(self.subtitle)
+        result_row.addWidget(self.subtitle, 1)
+        result_row.addWidget(self.answer_button)
+        root.addLayout(result_row)
 
         self.code_card = StyledCardWidget(self, radius=14, light_border_alpha=34)
         code_layout = QVBoxLayout(self.code_card)
@@ -140,8 +145,16 @@ class PythonJudgeDetailWindow(QWidget):
         point_list.setContentsMargins(0, 0, 0, 0)
         point_list.setSpacing(8)
         self.point_rows: list[JudgePointRow] = []
+        self.syntax_group_row: JudgePointRow | None = None
+        self.syntax_child_ids: list[str] = []
         for point in question.grading_points:
-            row = JudgePointRow(point.id, point.name, content)
+            is_syntax_child = isinstance(point, (TemplateIntegrityPoint, ExecutionPoint))
+            if is_syntax_child and self.syntax_group_row is None:
+                self.syntax_group_row = JudgePointRow("syntax_check", SYNTAX_CHECK_NAME, parent=content)
+                point_list.addWidget(self.syntax_group_row)
+            if is_syntax_child:
+                self.syntax_child_ids.append(point.id)
+            row = JudgePointRow(point.id, point.name, 20 if is_syntax_child else 0, content)
             point_list.addWidget(row)
             self.point_rows.append(row)
         point_list.addStretch(1)
@@ -158,6 +171,8 @@ class PythonJudgeDetailWindow(QWidget):
 
     def begin_checking(self) -> None:
         self.current_point = 0
+        if self.syntax_group_row is not None:
+            self.syntax_group_row.set_status("checking")
         for row in self.point_rows:
             row.set_status("pending")
         if self.point_rows:
@@ -183,6 +198,8 @@ class PythonJudgeDetailWindow(QWidget):
             return
         row.set_status("passed" if detail.passed else "failed", detail=detail)
         self.current_point += 1
+        if self.syntax_child_ids and row.point_id == self.syntax_child_ids[-1]:
+            self._update_syntax_group()
         if self.current_point < len(self.point_rows):
             next_row = self.point_rows[self.current_point]
             if any(item.point_id == next_row.point_id for item in self.result.details):
@@ -192,8 +209,27 @@ class PythonJudgeDetailWindow(QWidget):
                 return
         self._finish_display()
 
+    def _update_syntax_group(self) -> None:
+        if self.result is None or self.syntax_group_row is None:
+            return
+        child_details = [
+            detail for detail in self.result.details if detail.point_id in self.syntax_child_ids
+        ]
+        if len(child_details) != len(self.syntax_child_ids):
+            return
+        detail = JudgeDetail(
+            self.syntax_group_row.point_id,
+            self.syntax_group_row.name,
+            sum(item.earned for item in child_details),
+            sum(item.possible for item in child_details),
+            all(item.passed for item in child_details),
+            "",
+        )
+        self.syntax_group_row.set_status("passed" if detail.passed else "failed", detail=detail)
+
     def _finish_display(self) -> None:
         if self.result is not None:
+            self._update_syntax_group()
             self.subtitle.setText(f"成绩：{self.result.earned:g}/{self.result.possible:g}")
 
     def closeEvent(self, event) -> None:

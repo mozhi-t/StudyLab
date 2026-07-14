@@ -4,6 +4,15 @@ import ast
 from dataclasses import dataclass, field
 
 
+GRADING_POINT_NAMES = {
+    "template_integrity": "代码填写范围检查",
+    "execution": "程序正常运行",
+    "output": "输出测试",
+    "code_features": "关键代码检查",
+}
+SYNTAX_CHECK_NAME = "程序语法检查"
+
+
 @dataclass(frozen=True)
 class OutputTestCase:
     id: str
@@ -20,12 +29,26 @@ class CodeFeatureRule:
 
 
 @dataclass(frozen=True)
+class TemplateIntegrityPoint:
+    id: str
+    type: str
+    score: float
+
+    @property
+    def name(self) -> str:
+        return GRADING_POINT_NAMES[self.type]
+
+
+@dataclass(frozen=True)
 class ExecutionPoint:
     id: str
     type: str
     score: float
-    name: str = "程序正常运行"
     timeout_seconds: float = 3.0
+
+    @property
+    def name(self) -> str:
+        return GRADING_POINT_NAMES[self.type]
 
 
 @dataclass(frozen=True)
@@ -34,8 +57,11 @@ class OutputPoint:
     type: str
     score: float
     cases: list[OutputTestCase] = field(default_factory=list)
-    name: str = "输出测试"
     compare_mode: str = "normalized_text"
+
+    @property
+    def name(self) -> str:
+        return GRADING_POINT_NAMES[self.type]
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "cases", [item if isinstance(item, OutputTestCase) else OutputTestCase(**item) for item in self.cases])
@@ -47,26 +73,32 @@ class CodeFeaturePoint:
     type: str
     score: float
     rules: list[CodeFeatureRule] = field(default_factory=list)
-    name: str = "关键代码检查"
     minimum_match_ratio: float = 0.8
+
+    @property
+    def name(self) -> str:
+        return GRADING_POINT_NAMES[self.type]
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "rules", [item if isinstance(item, CodeFeatureRule) else CodeFeatureRule(**item) for item in self.rules])
 
 
-GradingPoint = ExecutionPoint | OutputPoint | CodeFeaturePoint
+GradingPoint = TemplateIntegrityPoint | ExecutionPoint | OutputPoint | CodeFeaturePoint
 
 
 def _grading_point(payload: dict) -> GradingPoint:
     point_type = payload.get("type")
     classes = {
+        "template_integrity": TemplateIntegrityPoint,
         "execution": ExecutionPoint,
         "output": OutputPoint,
         "code_features": CodeFeaturePoint,
     }
     if point_type not in classes:
         raise ValueError(f"未知 Python 判分点类型: {point_type}")
-    return classes[point_type](**payload)
+    normalized = dict(payload)
+    normalized.pop("name", None)
+    return classes[point_type](**normalized)
 
 
 @dataclass
@@ -78,7 +110,11 @@ class PythonQuestion:
     full_score: float
 
     def __post_init__(self) -> None:
-        self.grading_points = [item if isinstance(item, (ExecutionPoint, OutputPoint, CodeFeaturePoint)) else _grading_point(item) for item in self.grading_points]
+        self.grading_points = [
+            item if isinstance(item, (TemplateIntegrityPoint, ExecutionPoint, OutputPoint, CodeFeaturePoint))
+            else _grading_point(item)
+            for item in self.grading_points
+        ]
         if self.full_score != 20:
             raise ValueError(f"Python 题目 {self.id} 的满分必须为 20 分")
         if self.code.count("#********Program********") != 1 or self.code.count("#********End********") != 1:
@@ -88,9 +124,15 @@ class PythonQuestion:
         point_ids = [point.id for point in self.grading_points]
         if len(point_ids) != len(set(point_ids)):
             raise ValueError(f"Python 题目 {self.id} 存在重复的判分点 ID")
-        required_types = (ExecutionPoint, OutputPoint, CodeFeaturePoint)
+        required_types = (TemplateIntegrityPoint, ExecutionPoint, OutputPoint, CodeFeaturePoint)
         if any(not any(isinstance(point, required) for point in self.grading_points) for required in required_types):
-            raise ValueError(f"Python 题目 {self.id} 必须包含运行、输出和关键代码判分点")
+            raise ValueError(f"Python 题目 {self.id} 必须包含填写范围、运行、输出和关键代码判分点")
+        integrity_points = [point for point in self.grading_points if isinstance(point, TemplateIntegrityPoint)]
+        execution_points = [point for point in self.grading_points if isinstance(point, ExecutionPoint)]
+        if len(integrity_points) != 1 or integrity_points[0].score != 1:
+            raise ValueError(f"Python 题目 {self.id} 的代码填写范围检查应为且只能为 1 分")
+        if len(execution_points) != 1 or execution_points[0].score != 1:
+            raise ValueError(f"Python 题目 {self.id} 的程序正常运行检查必须且只能为 1 分")
         feature_points = [point for point in self.grading_points if isinstance(point, CodeFeaturePoint)]
         if feature_points and any(len(point.rules) < 5 for point in feature_points):
             raise ValueError(f"Python 题目 {self.id} 的关键代码规则不得少于 5 条")
