@@ -2,11 +2,23 @@ from __future__ import annotations
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QVBoxLayout, QWidget
-from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PipsPager, PipsScrollButtonDisplayMode, PrimaryPushButton, SingleDirectionScrollArea, SubtitleLabel
+from qfluentwidgets import (
+    BodyLabel,
+    ComboBox,
+    InfoBar,
+    InfoBarPosition,
+    LineEdit,
+    MessageBox,
+    PipsPager,
+    PipsScrollButtonDisplayMode,
+    PrimaryPushButton,
+    SingleDirectionScrollArea,
+    SubtitleLabel,
+)
 
 from config.settings import SUBJECTS
 from ui.styles.title_style import apply_page_title_style
-from ui.widgets.base import SelectableQuestionCard, StyledCardWidget, show_favorite_tip
+from ui.widgets.base import SelectionCommandBar, SelectableQuestionCard, StyledCardWidget, show_favorite_tip
 from ui.widgets.choice import QuestionDetailDialog
 from ui.widgets.python.record_detail_dialog import PythonWrongDetailDialog
 from models.base import FavoriteQuestion
@@ -14,6 +26,7 @@ from models.base import FavoriteQuestion
 
 class WrongBookPage(QWidget):
     practice_python_requested = pyqtSignal(str, int)
+    practice_selected_requested = pyqtSignal(object)
     favorite_changed = pyqtSignal()
 
     def __init__(self, wrong_manager, favorite_manager=None, parent: QWidget | None = None):
@@ -23,6 +36,7 @@ class WrongBookPage(QWidget):
         self.current_page = 1
         self.total_count = 0
         self.cards: list[SelectableQuestionCard] = []
+        self.selected_items: dict[tuple[str, str], object] = {}
 
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
@@ -36,9 +50,9 @@ class WrongBookPage(QWidget):
         filter_layout = QVBoxLayout(self.filter_card)
         filter_layout.setContentsMargins(12, 12, 12, 12)
         filter_widget = QWidget(self.filter_card)
-        top = QHBoxLayout(filter_widget)
-        top.setContentsMargins(0, 0, 0, 0)
-        top.setSpacing(8)
+        self.filter_toolbar = QHBoxLayout(filter_widget)
+        self.filter_toolbar.setContentsMargins(0, 0, 0, 0)
+        self.filter_toolbar.setSpacing(8)
         self.subject_combo = ComboBox(self)
         self.subject_combo.addItem("全部科目", "")
         for key, label in SUBJECTS.items():
@@ -49,9 +63,14 @@ class WrongBookPage(QWidget):
         self.search_edit.textChanged.connect(self._reset_then_reload)
         self.refresh_button = PrimaryPushButton("刷新", self)
         self.refresh_button.clicked.connect(self.reload)
-        top.addWidget(self.subject_combo)
-        top.addWidget(self.search_edit, 1)
-        top.addWidget(self.refresh_button)
+        self.command_bar = SelectionCommandBar(self)
+        self.command_bar.practice_requested.connect(self.practice_selected)
+        self.command_bar.delete_requested.connect(self.delete_selected)
+        self.command_bar.hide()
+        self.filter_toolbar.addWidget(self.subject_combo)
+        self.filter_toolbar.addWidget(self.search_edit, 1)
+        self.filter_toolbar.addWidget(self.command_bar)
+        self.filter_toolbar.addWidget(self.refresh_button)
         filter_layout.addWidget(filter_widget)
         root.addWidget(self.filter_card)
 
@@ -107,13 +126,85 @@ class WrongBookPage(QWidget):
             card = SelectableQuestionCard(
                 title=item.question,
                 right_meta=f"错误次数：{item.error_count}",
+                data=item,
                 parent=self.content,
+            )
+            key = self._selection_key(item)
+            card.checkbox.setChecked(key in self.selected_items)
+            card.checkbox.stateChanged.connect(
+                lambda state, payload=item: self._on_selection_changed(payload, state)
             )
             card.double_clicked.connect(lambda payload=item: self.show_detail(payload))
             self.content_layout.insertWidget(self.content_layout.count() - 1, card)
             self.cards.append(card)
+        self._update_selection_toolbar()
         max_page = max((self.total_count - 1) // 50 + 1, 1)
         self._sync_pager(max_page)
+
+    def _selected_items(self) -> list:
+        valid_items = []
+        stale_keys = []
+        for key, item in self.selected_items.items():
+            current = self.wrong_manager.get_question(item.subject, item.question_id)
+            if current is None:
+                stale_keys.append(key)
+            else:
+                self.selected_items[key] = current
+                valid_items.append(current)
+        for key in stale_keys:
+            self.selected_items.pop(key, None)
+        return valid_items
+
+    @staticmethod
+    def _selection_key(item) -> tuple[str, str]:
+        return item.subject, item.question_id
+
+    def _on_selection_changed(self, item, state: int) -> None:
+        key = self._selection_key(item)
+        if state == Qt.CheckState.Checked.value:
+            self.selected_items[key] = item
+        else:
+            self.selected_items.pop(key, None)
+        self._update_selection_toolbar()
+
+    def _update_selection_toolbar(self) -> None:
+        count = len(self._selected_items())
+        self.command_bar.set_selected_count(count)
+        self.command_bar.setVisible(count > 0)
+        if count:
+            self.search_edit.setMaximumWidth(240)
+            self.filter_toolbar.setStretchFactor(self.search_edit, 0)
+            self.filter_toolbar.setStretchFactor(self.command_bar, 1)
+        else:
+            self.search_edit.setMaximumWidth(16777215)
+            self.filter_toolbar.setStretchFactor(self.search_edit, 1)
+            self.filter_toolbar.setStretchFactor(self.command_bar, 0)
+
+    def practice_selected(self) -> None:
+        items = self._selected_items()
+        if items:
+            self.practice_selected_requested.emit(items)
+
+    def delete_selected(self) -> None:
+        items = self._selected_items()
+        if not items:
+            return
+        dialog = MessageBox("删除错题", f"确定删除选中的 {len(items)} 道错题吗？", self.window())
+        dialog.yesButton.setText("删除")
+        dialog.cancelButton.setText("取消")
+        if not dialog.exec():
+            return
+        for item in items:
+            self.wrong_manager.remove_wrong(item.subject, item.question_id)
+            self.selected_items.pop(self._selection_key(item), None)
+        self.reload()
+        InfoBar.success(
+            title="删除成功",
+            content=f"已删除 {len(items)} 道错题",
+            position=InfoBarPosition.TOP_RIGHT,
+            duration=2500,
+            parent=self,
+        )
 
     def show_detail(self, item):
         if item.question_type == "python_programming":

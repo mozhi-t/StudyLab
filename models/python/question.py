@@ -108,6 +108,10 @@ class PythonQuestion:
     answer: str
     grading_points: list[GradingPoint]
     full_score: float
+    source_question_id: str | None = None
+    source_bank_name: str | None = None
+    source_bank_question_id: int | None = None
+    source_question_title: str | None = None
 
     def __post_init__(self) -> None:
         self.grading_points = [

@@ -57,9 +57,11 @@ class SelectableQuestionCard(QWidget):
         subtitle: str = "",
         meta: str = "",
         right_meta: str = "",
+        data=None,
         parent: QWidget | None = None,
     ):
         super().__init__(parent)
+        self.data = data
         self.question_card = QuestionCard(
             title=title,
             subtitle=subtitle,

@@ -18,6 +18,7 @@ class AnswerCard(QWidget):
         self.grid.setContentsMargins(0, 0, 0, 0)
         self.grid.setHorizontalSpacing(4)
         self.grid.setVerticalSpacing(4)
+        self.grid.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
 
         self.summary_card = StyledCardWidget(self, radius=12, light_border_alpha=34)
         self.summary_label = BodyLabel("已做题数：0/0", self.summary_card)

@@ -90,8 +90,8 @@ class PythonAnswerWindow(AnswerWindow):
         root = QVBoxLayout(self.answer_page)
         root.setContentsMargins(16, 14, 16, 16)
         root.setSpacing(12)
-        toolbar = QHBoxLayout()
-        toolbar.setSpacing(10)
+        self.toolbar = QHBoxLayout()
+        self.toolbar.setSpacing(10)
         self.back_button = PushButton("返回", self)
         self.back_button.clicked.connect(self.close)
         self.title_label = StrongBodyLabel(question_bank.name, self)
@@ -107,14 +107,14 @@ class PythonAnswerWindow(AnswerWindow):
         self.reset_button.clicked.connect(self.reset_current_question)
         self.run_button.clicked.connect(self.run_current)
         self.submit_button.clicked.connect(self.submit_current)
-        toolbar.addWidget(self.back_button)
-        toolbar.addWidget(self.title_label, 1)
-        toolbar.addWidget(self.mode_switch)
-        toolbar.addWidget(self.favorite_button)
-        toolbar.addWidget(self.reset_button)
-        toolbar.addWidget(self.run_button)
-        toolbar.addWidget(self.submit_button)
-        root.addLayout(toolbar)
+        self.toolbar.addWidget(self.back_button)
+        self.toolbar.addWidget(self.title_label, 1)
+        self.toolbar.addWidget(self.mode_switch)
+        self.toolbar.addWidget(self.favorite_button)
+        self.toolbar.addWidget(self.reset_button)
+        self.toolbar.addWidget(self.run_button)
+        self.toolbar.addWidget(self.submit_button)
+        root.addLayout(self.toolbar)
 
         body = QHBoxLayout()
         body.setSpacing(8)
@@ -444,9 +444,13 @@ class PythonAnswerWindow(AnswerWindow):
         return self.favorite_manager.get_question("python", self._build_question_id()) is not None
 
     def _build_question_id(self) -> str:
+        if self.current_question.source_question_id:
+            return self.current_question.source_question_id
         return f"python_{self.question_bank.name}_{self.current_question.id}"
 
     def _question_title(self) -> str:
+        if self.current_question.source_question_title:
+            return self.current_question.source_question_title
         try:
             description = ast.get_docstring(ast.parse(self.current_question.code), clean=False) or ""
         except SyntaxError:
@@ -456,11 +460,21 @@ class PythonAnswerWindow(AnswerWindow):
                 return line.split(":", 1)[-1].split("：", 1)[-1].strip()
         return f"Python 编程题 {self.current_question.id}"
 
+    def _question_bank_name(self) -> str:
+        return self.current_question.source_bank_name or self.question_bank.name
+
+    def _question_bank_id(self) -> int:
+        return (
+            self.current_question.source_bank_question_id
+            if self.current_question.source_bank_question_id is not None
+            else self.current_question.id
+        )
+
     def _build_favorite(self) -> FavoriteQuestion:
         return FavoriteQuestion(
             question_id=self._build_question_id(),
-            bank_name=self.question_bank.name,
-            bank_question_id=self.current_question.id,
+            bank_name=self._question_bank_name(),
+            bank_question_id=self._question_bank_id(),
             subject="python",
             question=self._question_title(),
             options={},
@@ -479,9 +493,9 @@ class PythonAnswerWindow(AnswerWindow):
         user_code = path.read_text(encoding="utf-8") if path.exists() else self.current_question.code
         return WrongQuestion(
             question_id=self._build_question_id(),
-            question_num=self.current_question.id,
-            bank_name=self.question_bank.name,
-            bank_question_id=self.current_question.id,
+            question_num=self._question_bank_id(),
+            bank_name=self._question_bank_name(),
+            bank_question_id=self._question_bank_id(),
             subject="python",
             question=self._question_title(),
             options={},

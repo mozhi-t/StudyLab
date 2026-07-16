@@ -8,10 +8,13 @@ from qfluentwidgets import FluentIcon, MSFluentWindow
 
 from answer.choice_answer import ChoiceAnswerWindow
 from answer.python import PythonAnswerWindow
+from answer.selected_practice_window import SelectedPracticeWindow
 from config.settings import APP_SETTINGS_FILE, APP_SETTINGS_TEMPLATE
+from core.base.datetime_utils import now_text
 from core.base.json_store import JsonStore
 from ui.controllers import EyeCareReminder
-from models.python.question import PythonQuestionBank
+from models.choice import QuestionBank, QuestionItem
+from models.python.question import PythonQuestion, PythonQuestionBank
 from ui.pages.about_page import AboutPage
 from ui.pages.exam_page import ExamPage
 from ui.pages.favorite_page import FavoritePage
@@ -69,6 +72,8 @@ class MainWindow(MSFluentWindow):
         self.exam_page.favorite_changed.connect(self.favorite_page.reload)
         self.favorite_page.practice_python_requested.connect(self.open_python_favorite)
         self.wrong_book_page.practice_python_requested.connect(self.open_python_favorite)
+        self.favorite_page.practice_selected_requested.connect(self.open_selected_practice)
+        self.wrong_book_page.practice_selected_requested.connect(self.open_selected_practice)
         self.wrong_book_page.favorite_changed.connect(self.favorite_page.reload)
 
         self.eye_care_reminder = EyeCareReminder(
@@ -106,7 +111,7 @@ class MainWindow(MSFluentWindow):
 
     def _open_loaded_bank(self, bank, initial_question_id: int | None = None) -> None:
         if isinstance(bank, PythonQuestionBank):
-            self.answer_window = PythonAnswerWindow(
+            answer_window = PythonAnswerWindow(
                 question_bank=bank,
                 user_manager=self.user_manager,
                 wrong_manager=self.wrong_manager,
@@ -114,12 +119,16 @@ class MainWindow(MSFluentWindow):
                 initial_question_id=initial_question_id,
             )
         else:
-            self.answer_window = ChoiceAnswerWindow(
+            answer_window = ChoiceAnswerWindow(
                 question_bank=bank,
                 user_manager=self.user_manager,
                 wrong_manager=self.wrong_manager,
                 favorite_manager=self.favorite_manager,
             )
+        self._show_answer_window(answer_window)
+
+    def _show_answer_window(self, answer_window) -> None:
+        self.answer_window = answer_window
         self.answer_window.window_closed.connect(self._restore_after_answer)
         self._set_locked(True)
         self.showMinimized()
@@ -140,6 +149,128 @@ class MainWindow(MSFluentWindow):
             questions=[question],
         )
         self._open_loaded_bank(single_question_bank, question_id)
+
+    def open_selected_practice(self, items: list) -> None:
+        if not items:
+            return
+
+        choice_items = [item for item in items if item.question_type != "python_programming"]
+        python_items = [item for item in items if item.question_type == "python_programming"]
+        choice_bank = self._build_selected_choice_bank(choice_items)
+        python_bank = self._build_selected_python_bank(python_items)
+
+        if choice_bank is not None and python_bank is None:
+            self._show_answer_window(
+                ChoiceAnswerWindow(
+                    question_bank=choice_bank,
+                    user_manager=self.user_manager,
+                    wrong_manager=self.wrong_manager,
+                    favorite_manager=self.favorite_manager,
+                )
+            )
+            return
+
+        if python_bank is not None and choice_bank is None:
+            self._show_answer_window(
+                PythonAnswerWindow(
+                    question_bank=python_bank,
+                    user_manager=self.user_manager,
+                    wrong_manager=self.wrong_manager,
+                    favorite_manager=self.favorite_manager,
+                    initial_question_id=python_bank.questions[0].id,
+                )
+            )
+            return
+
+        answer_window = SelectedPracticeWindow(
+            choice_bank=choice_bank,
+            python_bank=python_bank,
+            user_manager=self.user_manager,
+            wrong_manager=self.wrong_manager,
+            favorite_manager=self.favorite_manager,
+        )
+        self._show_answer_window(answer_window)
+
+    @staticmethod
+    def _build_selected_choice_bank(items: list) -> QuestionBank | None:
+        if not items:
+            return None
+        questions = [
+            QuestionItem(
+                id=index,
+                question=item.question,
+                options=item.options,
+                answer=item.answer,
+                explanation=item.explanation,
+                source_question_id=item.question_id,
+                source_bank_name=item.bank_name,
+                source_bank_question_id=item.bank_question_id,
+                source_subject=item.subject,
+            )
+            for index, item in enumerate(items, 1)
+        ]
+        return QuestionBank(
+            name="选中选择题练习",
+            subject=items[0].subject,
+            create_time=now_text(),
+            difficulty=1,
+            total_questions=len(questions),
+            questions=questions,
+        )
+
+    @staticmethod
+    def _build_selected_python_bank(items: list) -> PythonQuestionBank | None:
+        if not items:
+            return None
+        questions = [
+            PythonQuestion(
+                id=index,
+                code=item.payload.get("code", ""),
+                answer=item.answer,
+                grading_points=MainWindow._normalize_python_grading_points(
+                    item.payload.get("grading_points", [])
+                ),
+                full_score=item.payload.get("full_score", 20),
+                source_question_id=item.question_id,
+                source_bank_name=item.bank_name,
+                source_bank_question_id=item.bank_question_id,
+                source_question_title=item.question,
+            )
+            for index, item in enumerate(items, 1)
+        ]
+        return PythonQuestionBank(
+            name="选中 Python 编程题练习",
+            subject="python",
+            create_time=now_text(),
+            difficulty=1,
+            total_questions=len(questions),
+            questions=questions,
+        )
+
+    @staticmethod
+    def _normalize_python_grading_points(points: list) -> list[dict]:
+        """Upgrade historical three-point grading data for selected practice."""
+        normalized = [dict(point) for point in points]
+        point_types = {point.get("type") for point in normalized}
+
+        if "template_integrity" not in point_types:
+            execution = next(
+                (point for point in normalized if point.get("type") == "execution"),
+                None,
+            )
+            if execution is not None and float(execution.get("score", 0)) >= 2:
+                execution["score"] = float(execution["score"]) - 1
+                insert_at = normalized.index(execution)
+                normalized.insert(
+                    insert_at,
+                    {
+                        "id": "template_integrity",
+                        "type": "template_integrity",
+                        "score": 1,
+                    },
+                )
+
+        return normalized
 
     def _restore_after_answer(self):
         if not self.isVisible():

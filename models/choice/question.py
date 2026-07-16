@@ -10,6 +10,10 @@ class QuestionItem:
     options: dict[str, str]
     answer: str
     explanation: str
+    source_question_id: str | None = None
+    source_bank_name: str | None = None
+    source_bank_question_id: int | None = None
+    source_subject: str | None = None
 
 
 @dataclass

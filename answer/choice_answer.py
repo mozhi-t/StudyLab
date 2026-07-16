@@ -356,7 +356,7 @@ class ChoiceAnswerWindow(AnswerWindow):
                 earned=1 if is_correct else 0,
                 possible=1,
             ),
-            subject=self.question_bank.subject,
+            subject=self._question_subject(question),
             session_id=self.study_session_id,
         )
 
@@ -462,7 +462,11 @@ class ChoiceAnswerWindow(AnswerWindow):
         self.favorite_button.setText("已收藏" if self._is_current_favorite() else "收藏题目")
 
     def _is_current_favorite(self) -> bool:
-        return self.favorite_manager.get_question(self.question_bank.subject, self._build_question_id(self.current_question)) is not None
+        question = self.current_question
+        return self.favorite_manager.get_question(
+            self._question_subject(question),
+            self._build_question_id(question),
+        ) is not None
 
     def _option_state(self, key: str, selected_option: str | None, answer: str) -> str:
         if selected_option is None:
@@ -474,15 +478,30 @@ class ChoiceAnswerWindow(AnswerWindow):
         return "default"
 
     def _build_question_id(self, question: QuestionItem) -> str:
+        if question.source_question_id:
+            return question.source_question_id
         return f"{self.question_bank.subject}_{self.question_bank.name}_{question.id}"
+
+    def _question_subject(self, question: QuestionItem) -> str:
+        return question.source_subject or self.question_bank.subject
+
+    def _question_bank_name(self, question: QuestionItem) -> str:
+        return question.source_bank_name or self.question_bank.name
+
+    def _question_bank_id(self, question: QuestionItem) -> int:
+        return (
+            question.source_bank_question_id
+            if question.source_bank_question_id is not None
+            else question.id
+        )
 
     def _build_wrong(self, question: QuestionItem) -> WrongQuestion:
         return WrongQuestion(
             question_id=self._build_question_id(question),
-            question_num=question.id,
-            bank_name=self.question_bank.name,
-            bank_question_id=question.id,
-            subject=self.question_bank.subject,
+            question_num=self._question_bank_id(question),
+            bank_name=self._question_bank_name(question),
+            bank_question_id=self._question_bank_id(question),
+            subject=self._question_subject(question),
             question=question.question,
             options=question.options,
             answer=question.answer,
@@ -492,9 +511,9 @@ class ChoiceAnswerWindow(AnswerWindow):
     def _build_favorite(self, question: QuestionItem) -> FavoriteQuestion:
         return FavoriteQuestion(
             question_id=self._build_question_id(question),
-            bank_name=self.question_bank.name,
-            bank_question_id=question.id,
-            subject=self.question_bank.subject,
+            bank_name=self._question_bank_name(question),
+            bank_question_id=self._question_bank_id(question),
+            subject=self._question_subject(question),
             question=question.question,
             options=question.options,
             answer=question.answer,
