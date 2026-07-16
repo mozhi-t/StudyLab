@@ -6,7 +6,7 @@ from qfluentwidgets import BodyLabel, ComboBox, LineEdit, PipsPager, PipsScrollB
 
 from config.settings import SUBJECTS
 from ui.styles.title_style import apply_page_title_style
-from ui.widgets.base import QuestionCard, StyledCardWidget, show_favorite_tip
+from ui.widgets.base import SelectableQuestionCard, StyledCardWidget, show_favorite_tip
 from ui.widgets.choice import QuestionDetailDialog
 from ui.widgets.python.record_detail_dialog import PythonFavoriteDetailDialog
 
@@ -19,7 +19,7 @@ class FavoritePage(QWidget):
         self.favorite_manager = favorite_manager
         self.current_page = 1
         self.total_count = 0
-        self.cards: list[QuestionCard] = []
+        self.cards: list[SelectableQuestionCard] = []
 
         root = QVBoxLayout(self)
         root.setContentsMargins(20, 20, 20, 20)
@@ -98,12 +98,11 @@ class FavoritePage(QWidget):
         self.total_count = total
         self._clear_cards()
         for item in items:
-            card = QuestionCard(
+            card = SelectableQuestionCard(
                 title=item.question,
-                checkable=True,
                 parent=self.content,
             )
-            card.mouseDoubleClickEvent = lambda event, payload=item: self.show_detail(payload)
+            card.double_clicked.connect(lambda payload=item: self.show_detail(payload))
             self.content_layout.insertWidget(self.content_layout.count() - 1, card)
             self.cards.append(card)
         max_page = max((self.total_count - 1) // 50 + 1, 1)

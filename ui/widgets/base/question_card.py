@@ -1,13 +1,86 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import BodyLabel, CaptionLabel, CardWidget, CheckBox, FluentIcon, PushButton, StrongBodyLabel
 
 from config.settings import SUBJECTS
 
 
+class QuestionSelectionCard(CardWidget):
+    """Standalone square card used to select a question."""
+
+    def __init__(self, size: int, parent: QWidget | None = None):
+        super().__init__(parent)
+        self.setFixedSize(size, size)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setBorderRadius(8)
+
+        self.checkbox = CheckBox(self)
+        self.checkbox.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.checkbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.checkbox.setAccessibleName("Select question")
+        self.checkbox.setStyleSheet(
+            self.checkbox.styleSheet()
+            + """
+            QCheckBox {
+                min-width: 22px;
+                min-height: 22px;
+                max-width: 22px;
+                max-height: 22px;
+                margin-left: 0;
+            }
+            """
+        )
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.checkbox, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(event.position().toPoint()):
+            self.checkbox.toggle()
+        super().mouseReleaseEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        event.accept()
+
+
+class SelectableQuestionCard(QWidget):
+    """A selection card followed by an unchanged question card."""
+
+    double_clicked = pyqtSignal()
+
+    def __init__(
+        self,
+        title: str,
+        subtitle: str = "",
+        meta: str = "",
+        right_meta: str = "",
+        parent: QWidget | None = None,
+    ):
+        super().__init__(parent)
+        self.question_card = QuestionCard(
+            title=title,
+            subtitle=subtitle,
+            meta=meta,
+            right_meta=right_meta,
+            parent=self,
+        )
+        self.selection_card = QuestionSelectionCard(self.question_card.sizeHint().height(), self)
+        self.checkbox = self.selection_card.checkbox
+        self.question_card.double_clicked.connect(self.double_clicked)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        layout.addWidget(self.selection_card, alignment=Qt.AlignmentFlag.AlignTop)
+        layout.addWidget(self.question_card, 1)
+
+
 class QuestionCard(CardWidget):
+    double_clicked = pyqtSignal()
+
     def __init__(
         self,
         title: str,
@@ -53,6 +126,10 @@ class QuestionCard(CardWidget):
             if not action_text:
                 self.action_button.setFixedWidth(36)
             layout.addWidget(self.action_button, alignment=Qt.AlignmentFlag.AlignVCenter)
+
+    def mouseDoubleClickEvent(self, event):
+        self.double_clicked.emit()
+        event.accept()
 
 
 def bank_card_title(subject: str, bank_name: str) -> str:
