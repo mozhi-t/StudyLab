@@ -162,15 +162,7 @@ class FavoritePage(QWidget):
     def _update_selection_toolbar(self) -> None:
         count = len(self._selected_items())
         self.command_bar.set_selected_count(count)
-        self.command_bar.setVisible(count > 0)
-        if count:
-            self.search_edit.setMaximumWidth(240)
-            self.filter_toolbar.setStretchFactor(self.search_edit, 0)
-            self.filter_toolbar.setStretchFactor(self.command_bar, 1)
-        else:
-            self.search_edit.setMaximumWidth(16777215)
-            self.filter_toolbar.setStretchFactor(self.search_edit, 1)
-            self.filter_toolbar.setStretchFactor(self.command_bar, 0)
+        self.command_bar.set_active(count > 0, self.search_edit, self.filter_toolbar)
 
     def practice_selected(self) -> None:
         items = self._selected_items()

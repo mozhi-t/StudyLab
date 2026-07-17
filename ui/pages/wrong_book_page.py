@@ -11,7 +11,6 @@ from qfluentwidgets import (
     MessageBox,
     PipsPager,
     PipsScrollButtonDisplayMode,
-    PrimaryPushButton,
     SingleDirectionScrollArea,
     SubtitleLabel,
 )
@@ -61,8 +60,6 @@ class WrongBookPage(QWidget):
         self.search_edit = LineEdit(self)
         self.search_edit.setPlaceholderText("搜索错题")
         self.search_edit.textChanged.connect(self._reset_then_reload)
-        self.refresh_button = PrimaryPushButton("刷新", self)
-        self.refresh_button.clicked.connect(self.reload)
         self.command_bar = SelectionCommandBar(self)
         self.command_bar.practice_requested.connect(self.practice_selected)
         self.command_bar.delete_requested.connect(self.delete_selected)
@@ -70,7 +67,6 @@ class WrongBookPage(QWidget):
         self.filter_toolbar.addWidget(self.subject_combo)
         self.filter_toolbar.addWidget(self.search_edit, 1)
         self.filter_toolbar.addWidget(self.command_bar)
-        self.filter_toolbar.addWidget(self.refresh_button)
         filter_layout.addWidget(filter_widget)
         root.addWidget(self.filter_card)
 
@@ -170,15 +166,7 @@ class WrongBookPage(QWidget):
     def _update_selection_toolbar(self) -> None:
         count = len(self._selected_items())
         self.command_bar.set_selected_count(count)
-        self.command_bar.setVisible(count > 0)
-        if count:
-            self.search_edit.setMaximumWidth(240)
-            self.filter_toolbar.setStretchFactor(self.search_edit, 0)
-            self.filter_toolbar.setStretchFactor(self.command_bar, 1)
-        else:
-            self.search_edit.setMaximumWidth(16777215)
-            self.filter_toolbar.setStretchFactor(self.search_edit, 1)
-            self.filter_toolbar.setStretchFactor(self.command_bar, 0)
+        self.command_bar.set_active(count > 0, self.search_edit, self.filter_toolbar)
 
     def practice_selected(self) -> None:
         items = self._selected_items()
